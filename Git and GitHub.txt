@@ -1,0 +1,471 @@
+What is Git?
+It's a free and open source version control system.
+
+What is Version Control?
+The management of changes to documents, computer programs, large websites and other collections of information.
+
+Terms used in the Git:
+Directory ---> Folder
+Terminal/Command Line ----> Interface for Text Commands
+CLI ----> Command Line Interface
+cd ----> Change Directory
+Code Editor ----> Word Processor for Writing Code
+Repository ---> Project, or the folder/place where your project is kept
+Github ----> A website to host your repositories  online
+Git ----> Tool that tracks changes, don't get confused.
+
+Git Commands:
+Clone ---> Bring a repository that is hosted somewhere like Github into a folder on your local machine.
+add ---> Track your files and changes in Git
+commit ---> Save your files in Git
+push --> Upload Git commits to a remote repo, like Github
+pull ---> Download changes from remote repo to your local machine, the opposite of push
+
+git clone <http path>
+git pull --> for any changes
+git restore ---> To ignore the changes
+git add .
+git commit -m "Any Upload message"
+Before git push it might ask for an authentication for first time
+git push ---> Unless and until you do git push the changes will not reflect in the GitHub
+
+******Note: we can use git commit -am "<Message>" ----> Short cut for add and commit at same time, works only for a modified file and not for newly adding file.
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git status
+On branch master
+Your branch is up to date with 'origin/master'.
+
+nothing to commit, working tree clean
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git status
+On branch master
+Your branch is up to date with 'origin/master'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   README.md
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        samplefile.xml
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git add .
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git status
+On branch master
+Your branch is up to date with 'origin/master'.
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+        modified:   README.md
+        new file:   samplefile.xml
+
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git commit -m "New Changes"
+[master 1ceec73] New Changes
+ 2 files changed, 2 insertions(+)
+ create mode 100644 samplefile.xml
+ 
+ ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ Additional Step during the Git Push i.e. --set-upstream (inshort just use -u) it's nothing but to specify to which branch I'm pushing the code to, feature branch/master branch:
+ +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git push -u origin master
+Enumerating objects: 9, done.
+Counting objects: 100% (9/9), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (7/7), 133.68 KiB | 8.91 MiB/s, done.
+Total 7 (delta 2), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (2/2), completed with 1 local object.
+remote: error: GH007: Your push would publish a private email address.
+remote: You can make your email public or disable this protection by visiting:
+remote: http://github.com/settings/emails
+To https://github.com/rajathtg/Practise.git
+ ! [remote rejected] master -> master (push declined due to email privacy restrictions)
+error: failed to push some refs to 'https://github.com/rajathtg/Practise.git'
+
+After DIsabling the changes:
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git push -u origin master
+Enumerating objects: 9, done.
+Counting objects: 100% (9/9), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (7/7), 133.68 KiB | 5.81 MiB/s, done.
+Total 7 (delta 2), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (2/2), completed with 1 local object.
+To https://github.com/rajathtg/Practise.git
+   6e663e9..d1eb0c3  master -> master
+branch 'master' set up to track 'origin/master'.
+
+***********Note: Next time onwards I can directly use git push instead of git push -u origin master. It's only for the first time usage
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Pull Request post creating the feature branch, so it can be reviewed:
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git branch
+* master
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git checkout -b feature
+Switched to a new branch 'feature'
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (feature)
+$ git branch
+* feature
+  master
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (feature)
+$ git checkout master
+Switched to branch 'master'
+Your branch is up to date with 'origin/master'.
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git branch
+  feature
+* master
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git checkout feature
+Switched to branch 'feature'
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (feature)
+$ git status
+On branch feature
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   README.md
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        PullRequestConceptFlow.png
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (feature)
+$ git add README.md PullRequestConceptFlow.png
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (feature)
+$ git status
+On branch feature
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+        new file:   PullRequestConceptFlow.png
+        modified:   README.md
+
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (feature)
+$ git commit "PR flow and Readme Modification"
+error: pathspec 'PR flow and Readme Modification' did not match any file(s) known to git
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (feature)
+$ git commit -m "PR flow and Readme Modification"
+[feature 8253215] PR flow and Readme Modification
+ 2 files changed, 1 insertion(+)
+ create mode 100644 PullRequestConceptFlow.png
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (feature)
+$ git push
+fatal: The current branch feature has no upstream branch.
+To push the current branch and set the remote as upstream, use
+
+    git push --set-upstream origin feature
+
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (feature)
+$ git push -u origin feature
+Enumerating objects: 6, done.
+Counting objects: 100% (6/6), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (4/4), done.
+Writing objects: 100% (4/4), 172.27 KiB | 7.18 MiB/s, done.
+Total 4 (delta 2), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (2/2), completed with 2 local objects.
+remote:
+remote: Create a pull request for 'feature' on GitHub by visiting:
+remote:      https://github.com/rajathtg/Practise/pull/new/feature
+remote:
+To https://github.com/rajathtg/Practise.git
+ * [new branch]      feature -> feature
+branch 'feature' set up to track 'origin/feature'.
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (feature)
+
+++++++++++++++++++++++++++++++++++++++++++++++++++
+Before and After Successful PR review and merger:
+++++++++++++++++++++++++++++++++++++++++++++++++++++
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (feature)
+$ git checkout master
+Switched to branch 'master'
+Your branch is up to date with 'origin/master'.
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$
+
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$
+
+**********Note : Before Merging changes to master branch git pull gave status as the code is uptodate.
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git pull
+Already up to date.
+
+**********Note : After Merging changes to master branch in UI git pull gave status as new changes are there in Master branch
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git pull
+remote: Enumerating objects: 1, done.
+remote: Counting objects: 100% (1/1), done.
+remote: Total 1 (delta 0), reused 0 (delta 0), pack-reused 0
+Unpacking objects: 100% (1/1), 639 bytes | 159.00 KiB/s, done.
+From https://github.com/rajathtg/Practise
+   d1eb0c3..bb7f4d9  master     -> origin/master
+Updating d1eb0c3..bb7f4d9
+Fast-forward
+ PullRequestConceptFlow.png | Bin 0 -> 187516 bytes
+ README.md                  |   1 +
+ 2 files changed, 1 insertion(+)
+ create mode 100644 PullRequestConceptFlow.png
+
++++++++++++++++++++++++++++++++++++++++++++++++++++
+To delete the feature branch after merger:
++++++++++++++++++++++++++++++++++++++++++++++++++++++
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git branch -d feature
+Deleted branch feature (was 8253215).
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git branch
+* master
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+In realtime, there is merge conflict, multiple ppl try to update same piece of code onto master branch and also through the feature branch:
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git checkout -b Feature_conflict
+Switched to a new branch 'Feature_conflict'
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (Feature_conflict)
+$ git status
+On branch Feature_conflict
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   README.md
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (Feature_conflict)
+$ git commit -am "Let's create a conflict"
+[Feature_conflict bd0730e] Let's create a conflict
+ 1 file changed, 1 insertion(+)
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (Feature_conflict)
+$ git push -u Feature_conflict
+fatal: 'Feature_conflict' does not appear to be a git repository
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (Feature_conflict)
+$ git push -u origin Feature_conflict
+Enumerating objects: 5, done.
+Counting objects: 100% (5/5), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 356 bytes | 356.00 KiB/s, done.
+Total 3 (delta 2), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (2/2), completed with 2 local objects.
+remote:
+remote: Create a pull request for 'Feature_conflict' on GitHub by visiting:
+remote:      https://github.com/rajathtg/Practise/pull/new/Feature_conflict
+remote:
+To https://github.com/rajathtg/Practise.git
+ * [new branch]      Feature_conflict -> Feature_conflict
+branch 'Feature_conflict' set up to track 'origin/Feature_conflict'.
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (Feature_conflict)
+$ git checkout -b master
+fatal: a branch named 'master' already exists
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (Feature_conflict)
+$ git pull
+Already up to date.
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (Feature_conflict)
+$ git checkout master
+Switched to branch 'master'
+Your branch is up to date with 'origin/master'.
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git pull
+Already up to date.
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git status
+On branch master
+Your branch is up to date with 'origin/master'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   README.md
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git commit -am "Master also update same line of code"
+[master 9bc3a39] Master also update same line of code
+ 1 file changed, 1 insertion(+)
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git push -u origin master
+Enumerating objects: 5, done.
+Counting objects: 100% (5/5), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 341 bytes | 341.00 KiB/s, done.
+Total 3 (delta 2), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (2/2), completed with 2 local objects.
+To https://github.com/rajathtg/Practise.git
+   bb7f4d9..9bc3a39  master -> master
+branch 'master' set up to track 'origin/master'.
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git Feature_conflict
+git: 'Feature_conflict' is not a git command. See 'git --help'.
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git checkout Feature_conflict
+Switched to branch 'Feature_conflict'
+Your branch is up to date with 'origin/Feature_conflict'.
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (Feature_conflict)
+$ git diff master
+diff --git a/README.md b/README.md
+index fc5af5a..09f8ab7 100644
+--- a/README.md
++++ b/README.md
+@@ -4,4 +4,4 @@
+ -To explore more on the Spark Core and Spark SQL as well
+ -Done with the first upload as well
+ -Now it's time for some PR
+--I'm also eager to create a conflict
+\ No newline at end of file
++-Let's make a multiple commits on Master and through Feature
+\ No newline at end of file
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (Feature_conflict)
+$ git merge master
+Auto-merging README.md
+CONFLICT (content): Merge conflict in README.md
+Automatic merge failed; fix conflicts and then commit the result.
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (Feature_conflict|MERGING)
+$ git status
+On branch Feature_conflict
+Your branch is up to date with 'origin/Feature_conflict'.
+
+You have unmerged paths.
+  (fix conflicts and run "git commit")
+  (use "git merge --abort" to abort the merge)
+
+Unmerged paths:
+  (use "git add <file>..." to mark resolution)
+        both modified:   README.md
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        ConflictFixer.png
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+**************Note: There is a conflict, accept both changes or the valid one, can be done in the UI or visual code editor.
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (Feature_conflict|MERGING)
+$ git diff
+diff --cc README.md
+index 09f8ab7,fc5af5a..0000000
+--- a/README.md
++++ b/README.md
+@@@ -4,4 -4,4 +4,5 @@@
+  -To explore more on the Spark Core and Spark SQL as well
+  -Done with the first upload as well
+  -Now it's time for some PR
+- -Let's make a multiple commits on Master and through Feature
+++-Let's make a multiple commits on Master and through Feature
++ -I'm also eager to create a conflict
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (Feature_conflict|MERGING)
+$ git add .
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (Feature_conflict|MERGING)
+$ git commit -am "Accepted the changes please proceed"
+[Feature_conflict d09252d] Accepted the changes please proceed
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (Feature_conflict)
+$ git push -u origin Feature_conflict
+Enumerating objects: 8, done.
+Counting objects: 100% (8/8), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (4/4), done.
+Writing objects: 100% (4/4), 56.26 KiB | 18.75 MiB/s, done.
+Total 4 (delta 2), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (2/2), completed with 2 local objects.
+To https://github.com/rajathtg/Practise.git
+   bd0730e..d09252d  Feature_conflict -> Feature_conflict
+branch 'Feature_conflict' set up to track 'origin/Feature_conflict'.
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (Feature_conflict)
+$ git diff master
+diff --git a/ConflictFixer.png b/ConflictFixer.png
+new file mode 100644
+index 0000000..f9fc92f
+Binary files /dev/null and b/ConflictFixer.png differ
+diff --git a/README.md b/README.md
+index fc5af5a..9e74a5a 100644
+--- a/README.md
++++ b/README.md
+@@ -4,4 +4,5 @@
+ -To explore more on the Spark Core and Spark SQL as well
+ -Done with the first upload as well
+ -Now it's time for some PR
++-Let's make a multiple commits on Master and through Feature
+ -I'm also eager to create a conflict
+\ No newline at end of file
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (Feature_conflict)
+$ git checkout master
+Switched to branch 'master'
+Your branch is up to date with 'origin/master'.
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git merge Feature_conflict
+Updating 9bc3a39..d09252d
+Fast-forward
+ ConflictFixer.png | Bin 0 -> 68612 bytes
+ README.md         |   1 +
+ 2 files changed, 1 insertion(+)
+ create mode 100644 ConflictFixer.png
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git status
+On branch master
+Your branch is ahead of 'origin/master' by 2 commits.
+  (use "git push" to publish your local commits)
+
+nothing to commit, working tree clean
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
