@@ -469,3 +469,185 @@ Your branch is ahead of 'origin/master' by 2 commits.
 nothing to commit, working tree clean
 
 91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+Undo git add
+++++++++++++++++++++++++++++++++++++++++++++++++
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git status
+On branch master
+Your branch is up to date with 'origin/master'.
+
+nothing to commit, working tree clean
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git status
+On branch master
+Your branch is up to date with 'origin/master'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   README.md
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git add README.md
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git status
+On branch master
+Your branch is up to date with 'origin/master'.
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+        modified:   README.md
+
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git reset
+Unstaged changes after reset:
+M       README.md
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git status
+On branch master
+Your branch is up to date with 'origin/master'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   README.md
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++
+Undo Git Commit
++++++++++++++++++++++++++++++++++++++++++++++++++++++
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git status
+On branch master
+Your branch is up to date with 'origin/master'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   README.md
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git add README.md
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git commit -m "To undo Git commit"
+[master 50eb7d2] To undo Git commit
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git status
+On branch master
+Your branch is ahead of 'origin/master' by 1 commit.
+  (use "git push" to publish your local commits)
+
+nothing to commit, working tree clean
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git reset HEAD~1
+Unstaged changes after reset:
+M       README.md
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git status
+On branch master
+Your branch is up to date with 'origin/master'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   README.md
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git diff
+diff --git a/README.md b/README.md
+index 9e74a5a..3381491 100644
+--- a/README.md
++++ b/README.md
+@@ -5,4 +5,5 @@
+ -Done with the first upload as well
+ -Now it's time for some PR
+ -Let's make a multiple commits on Master and through Feature
+--I'm also eager to create a conflict
+\ No newline at end of file
++-I'm also eager to create a conflict
++-To undo the git commit
+\ No newline at end of file
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+
++++++++++++++++++++++++++++++++++++++++++++
+To get any of the commit IDs we can do following
++++++++++++++++++++++++++++++++++++++++++++
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git log
+commit 8bed9adef98830e6a54d27b152d0ab4fa4d8acde (HEAD -> master, origin/master, origin/HEAD)
+Author: Rajath Gubbi <t.g.rajath@gmail.com>
+Date:   Sun Feb 27 21:17:57 2022 +0530
+
+    Notes
+
+commit d09252d669c616c327ef80e28cf29f2cee304917 (origin/Feature_conflict)
+Merge: bd0730e 9bc3a39
+Author: Rajath Gubbi <t.g.rajath@gmail.com>
+Date:   Sun Feb 27 21:09:02 2022 +0530
+
+    Accepted the changes please proceed
+
+++++++++++++++++++++++++++++++++++++++++++++++++++
+To undo Git / just unstage it at any given point of time
+++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git reset 8bed9adef98830e6a54d27b152d0ab4fa4d8acde
+Unstaged changes after reset:
+M       README.md
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git status
+On branch master
+Your branch is up to date with 'origin/master'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   README.md
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+To perform a hard reset
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git reset --hard 8bed9adef98830e6a54d27b152d0ab4fa4d8acde
+HEAD is now at 8bed9ad Notes
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+$ git status
+On branch master
+Your branch is up to date with 'origin/master'.
+
+nothing to commit, working tree clean
+
+91961@LAPTOP-QVINR7KN MINGW64 ~/Documents/Rajath/PySpark/Git/Practise (master)
+
+++++++++++++++++++++++++++++++++++++++++++
+Last topic is related to Git Fork
+++++++++++++++++++++++++++++++++++++++++++
+This needs to be done through the GitHub UI, where we can go to any one of the favorite code available and fork it to copy to our repo and play around to understand the same and find out any quality bugs in it.
+
+
