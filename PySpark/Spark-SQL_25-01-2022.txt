@@ -287,10 +287,7 @@ Create the access key and access id
 Create a bucket in S3
 In real time we use roles(called as svs) to access through code or to login to AWS.
 If it is mandatory to use, then it will be stored in param store and can be used.
-User : Spark_AWS
-Access Key : AKIAY6WAMWBSEYKTABY6
-Secret Key : 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
-BucketName : spark-dvs-aws
+****The AWS Key Details is available in SparkInstEnvVarSettings.txt Doc*****
 In real time for any external dependencies jar
 Athena is like Hive.
 Athena uses glue catalog to store the meta data.
