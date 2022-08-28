@@ -1,0 +1,59 @@
+File beat:
+Needs to be installed on the client server where the logs are generated.
+Ex: 113
+File beat yml file,
+-Path
+-Output path
+-Kibana details
+
+Add the required path and save it.
+Logstash is used when the incoming logs are not in the required format.
+https://www.elastic.co/guide/en/beats/filebeat/current/defining-processors.html#condition-regexp
+
+Metric beat to be installed on all the servers.
+Heart beat is installed on the server where it is up and running 24*7.
+
+Kibana - UI
+Elasticsearh - Warehouse stores all the segments / main storage
+Logstash - logstash
+
+Kibana :
+	There are three types of data
+		File beat
+		Heart beat
+		Metric beat
+
+Visualize library > Area > serach Filebeat > graph type. Done
+
+
++++++++++++++++++++++++++++++++
+
+
+
+Rollup Coordinator/Overlord JVM Config (147,138):
+Xmx reduce to 6gb
+
+Okay
+
+Historicals (124,125):
+xmx reduce to 24gb
+
+Rollup Broker (136):
+Xmx reduce to 10gb ************ if no increase in RAM after Reboot - Not increased
+
++++++++++++++++++++++++++++++++++++++
+
+bin/kafka-console-consumer.sh --bootstrap-server 10.66.49.106:19092 --topic BI.ENRL.OPERATOR.SYNC.INVALID --from-beginning >> operator_invalid.csv
+
+bin/kafka-console-consumer.sh --bootstrap-server 10.66.49.106:19092 --topic BI.SSUP.BPO.INVALID --from-beginning >> ssup_invalid.csv
+
+bin/kafka-console-consumer.sh --bootstrap-server 10.5.49.106:19092 --topic BI.FACERD.CAPTURE.INVALID --from-beginning >> facerd_invalid.csv
+
+bin/kafka-console-consumer.sh --bootstrap-server 10.5.49.106:19092 --topic BI.ENS.PACKETS.INVALID --from-beginning >> ens_invalid.csv
+
+bin/kafka-console-consumer.sh --bootstrap-server 10.5.49.106:19092 --topic BI.PRINT.SERVICE.INVALID --from-beginning >> print_invalid.csv
+
+bin/kafka-console-consumer.sh --bootstrap-server 10.5.49.106:19092 --topic BI.FACERD.CAPTURE.UNIQUE --from-beginning | grep '_event_timestamp":"2022-02-17'  >> frd_unique_17Feb.csv &
+bin/kafka-console-consumer.sh --bootstrap-server 10.5.49.106:19092 --topic BI.FACERD.CAPTURE.UNIQUE --from-beginning | grep '_event_timestamp":"2022-02-18'  >> frd_unique_18Feb.csv &
+bin/kafka-console-consumer.sh --bootstrap-server 10.5.49.106:19092 --topic BI.FACERD.CAPTURE.INVALID --from-beginning | grep '_event_timestamp":"2022-02-17'  >> frd_invalid_17Feb.csv &
+bin/kafka-console-consumer.sh --bootstrap-server 10.5.49.106:19092 --topic BI.FACERD.CAPTURE.INVALID --from-beginning | grep '_event_timestamp":"2022-02-18'  >> frd_invalid_18Feb.csv &

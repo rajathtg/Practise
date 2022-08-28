@@ -1,0 +1,51 @@
+Spark-SQL : 25Jan2022
+-We still have a Spark-Core which consists of RDD.
+-On top of the spark-core Spark-SQL is built.
+-Unlike Scala PySpark only supports Dataframes and not the Datasets.
+-When anything is submitted to Spark-SQL will get submitted to catalyst optimizer this inturns convert into RDDs, the catalyst takes care of creating logical and physical plan(RDD).
+-Spark SQL > DataFrames > Catalyst Optimizer > RDDs > Partitions > Executors.
+-Spark Session is an object which internally consists of two more objects SQL Context and Spark Context.
+	-The SQL Context is used to access the SQL API's
+	-The Spark Context is used to access the RDD API's
+-Let's execute the 
+
+18th Feb - GoTo meeting transcript
+Request for 27th Jan
+Request for 19th Jan
+Request for 18th Jan
+
+https://transcripts.gotomeeting.com/#/s/ae5ab71825b709becf25a6e3468d44a6e6f7479b69441d6e6a9e96c40878ce46
+
++++++++++++++++++++++++++++++
+
+Write to S3/HDFS storage:
+-The jar 'org.apache.hadoop:hadoop-aws:3.2.0' is required to write data into s3
+-In the local we have one executor and in this example it is running 4 tasks, hence 4 files.
+-CRC files are generated when files are written to local file system, but when written to S3 or HDFS, this not generated.
+-Let's repartition, the date column will act as predicate, the order by should be used only if the column is part of predicate pushdown.
+
+When an action is observed in the spark, what is the spark going to do? what we will be seeing in the UI?
+-A job will be created.
+-No of jobs is equal to the no of actions
+-For each and every action a job is created.
+-Next level of job is the stages.
+-The no of stages is decided based on the type of transformations.
+-If it is narrow transformation it is applied on the Parent RDD.
+-If there is a wide transformation, then shuffle RDDs are created.
+-What stages consists of ? it consists are tasks.
+-No. of tasks depends on the no of partitions.
+-At what all stages we can decide no. of partitions?
+	While reading the data
+	While applying the wide transformation
+	While writing the data also
+-While writing the data we can use two things.
+	repartition > To increase / decrease the partitions
+	coalesce > To decrease the partition
+-Behind the hood all the DataFrames or each sql query will be linked with a job > stages > RDDs (catalyst optimizer takes care of converting the DF to RDD).
+-For show and for loading the data a job will be created.
+	
+++++++++++++++++++++++++++++++++++++++++
+Applicable for CSV:
+dropmalformed : Remove the wrong format or corrupted records
+permissive : Permit everything wherever it fails to parse mark it as the null
+failfast : fail immediately if any records goes out of the agreed datatype or found the corrupted record

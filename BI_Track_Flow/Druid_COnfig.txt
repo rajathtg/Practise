@@ -1,0 +1,340 @@
+Rollup:
+==========
+vm.config************
+Heap: The heap size will vary based on data size and usage patterns, but 4GiB to 8GiB is a good starting point for a small or medium cluster (~15 servers or less). For a rough estimate of memory requirements on the high end, very large clusters with a node count on the order of ~100 nodes may need Broker heaps of 30GiB-60GiB. -- max Heap 15 GB
+Direct Memory: (druid.processing.numThreads + druid.processing.numMergeBuffers + 1) * druid.processing.buffer.sizeBytes -- 6 GB
+
+runtime.properties*****************
+druid.service=druid/broker
+druid.plaintextPort=8082
+
+# HTTP server settings
+druid.server.http.numThreads=60 (36) ----> (max(10, (Number of cores * 17) / 16 + 2) + 30)
+
+# HTTP client settings
+druid.broker.http.numConnections=50 (20)-------> (Default is 20,  to be lower than the value of druid.server.http.numThreads on your Historicals)---> less than druid.processing.numThreads in broker
+druid.broker.http.maxQueuedBytes=10000000 -------> (2MiB * number of Historicals, 4000000)
+
+# Processing threads and buffers
+druid.processing.buffer.sizeBytes=500000000 -------> (1000000000)
+druid.processing.numMergeBuffers=6 (2) ----------> (max(2, druid.processing.numThreads / 4))
+druid.processing.numThreads=1 (3) -----------> (number of cores - 1, higher than druid.broker.http.numConnections on the same Broker.)
+druid.processing.tmpDir=var/druid/processing
+
+# Query cache disabled -- push down caching and merging instead
+druid.broker.cache.useCache=false
+druid.broker.cache.populateCache=false
+#### Added on 09June2021#####
+druid.server.http.maxSubqueryRows=100000000
+#### Added on 06Sep2021#####
+druid.broker.http.readTimeout=PT25M
+druid.server.http.defaultQueryTimeout=900000
+
+
+#######################################Router:
+
+jvm.config:************************
+Heap: You can assign it 256MiB heap as a starting point, growing it if needed. 6 GB
+DirectMemory: Set it to approx value.
+
+runtime.properties*****************
+druid.service=druid/router
+druid.plaintextPort=8888
+
+# HTTP proxy
+druid.router.http.numConnections=50 (20) -----> (Default is 20,  to be lower than the value of druid.server.http.numThreads on your Historicals and broker)
+druid.router.http.readTimeout=PT5M
+druid.router.http.numMaxThreads=100 (36)  -----> (max(10, ((number of cores * 17) / 16 + 2) + 30))
+druid.server.http.numThreads=100 (20) ------> (###Didn't find answer)
+
+# Service discovery
+druid.router.defaultBrokerServiceName=druid/broker
+druid.router.coordinatorServiceName=druid/coordinator
+
+# Management proxy to coordinator / overlord: required for unified web console.
+druid.router.managementProxy.enabled=true
+
+
+#######################################Co-ordinator&Overlord:
+
+jvm.config***********
+Heap: You can set the Coordinator heap to the same size as your Broker heap, or slightly smaller: both services have to process cluster-wide state and answer API requests about this state. min heap has 1 GB - max heap has 10 & 10 GB 
+The Overlord tends to require less resources than the Coordinator or Broker. You can generally set the Overlord heap to a value that's 25-50% of your Coordinator heap.
+DirectMemory: Set it to approx value.
+
+runtime.properties*****************
+druid.service=druid/coordinator
+druid.plaintextPort=8181
+
+druid.coordinator.startDelay=PT10S
+druid.coordinator.period=PT5S
+
+# Run the overlord service in the coordinator process
+druid.coordinator.asOverlord.enabled=true
+druid.coordinator.asOverlord.overlordService=druid/overlord
+
+druid.indexer.queue.startDelay=PT5S
+
+druid.indexer.runner.type=remote
+druid.indexer.storage.type=metadata
+
+#segment locking
+druid.indexer.tasklock.forceTimeChunkLock=false
+
+###22Dec2021
+percentOfSegmentsToConsiderPerMove=66
+
+
+#######################################Middle Manager:
+
+jvm.config***********
+Heap: 1GiB + (2 * total size of lookup maps) -- max heap 14 & 14GB
+*************The MiddleManager itself does not require much resources, you can set the heap to ~128MiB generally.
+Direct Memory : (druid.processing.numThreads + druid.processing.numMergeBuffers + 1) * druid.processing.buffer.sizeBytes 10&14GB
+
+runtime.properties*****************
+druid.service=druid/middleManager
+druid.plaintextPort=8091
+
+# Number of tasks per middleManager
+#druid.worker.capacity=22
+druid.worker.capacity=16
+druid.processing.numThreads=22
+
+# Task launch parameters
+druid.indexer.runner.javaOpts=-server -Xms1g -Xmx70g (4) -XX:MaxDirectMemorySize=70g (10&14) -Duser.timezone=UTC -Dfile.encoding=UTF-8 -XX:+ExitOnOutOfMemoryError -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager -Dlog4j.configurationFile=conf/druid/cluster/_common/log4j2-task.xml
+druid.indexer.task.baseTaskDir=var/druid/task
+
+# HTTP server threads
+druid.server.http.numThreads=60 (49&58) ------> (max(10, (Number of cores * 17) / 16 + 2) + 30) and (***********For Tasks, druid.server.http.numThreads should be set to a value slightly higher than the sum of druid.broker.http.numConnections across all the Brokers in the cluster.)
+
+# Processing threads and buffers on Peons
+druid.indexer.fork.property.druid.processing.numMergeBuffers=2
+druid.indexer.fork.property.druid.processing.buffer.sizeBytes=100000000
+druid.indexer.fork.property.druid.processing.numThreads=2
+
+# Hadoop indexing
+druid.indexer.task.hadoopWorkingPath=var/druid/hadoop-tmp
+
+###22Dec2021
+druid.processing.numMergeBuffers=4&5 ----------> (max(2, druid.processing.numThreads / 4))
+druid.processing.buffer.sizeBytes=500000000
+
+
+#######################################Historical:
+
+jvm.config***********
+A general rule-of-thumb for sizing the Historical heap is (0.5GiB * number of CPU cores), with an upper limit of ~24GiB. -- max heap to 24 & 24 GB
+Direct Memory : (druid.processing.numThreads + druid.processing.numMergeBuffers + 1) * druid.processing.buffer.sizeBytes -- 10&13GB 
+
+runtime.properties*****************
+druid.service=druid/historical
+druid.plaintextPort=8083
+
+# HTTP server threads
+druid.server.http.numThreads=60 (49&58)-----> ((max(10, (Number of cores * 17) / 16 + 2) + 30),  For Historicals, druid.server.http.numThreads should be set to a value slightly higher than the sum of druid.broker.http.numConnections across all the Brokers in the cluster.)
+
+# Processing threads and buffers
+druid.processing.buffer.sizeBytes=500000000 ----> (Max of 500MB, Correct)
+druid.processing.numMergeBuffers=4&5 ----> (druid.processing.numThreads/4, Correct)
+druid.processing.numThreads=15&20 ----> ((number of cores - 1), Correct)
+druid.processing.tmpDir=var/druid/processing
+
+# Segment storage
+druid.segmentCache.locations=[{"path":"var/druid/segment-cache","maxSize":1000000000000}]  ---- /druid_127_hist_n2
+druid.server.maxSize=1000000000000
+
+# Query cache
+druid.historical.cache.useCache=true
+druid.historical.cache.populateCache=true
+druid.cache.type=caffeine
+druid.cache.sizeInBytes=256000000
+
+#Query Timeout
+druid.server.http.defaultQueryTimeout=900000
+
+
+
+#######################
+Heap Memory:
+It is created by the Java Virtual Machine when it starts. The memory is used as long as the application is running. Java runtime uses it to allocate memory to objects and Java Runtime Environment (JRE) classes.
+When an object is created, it is always created in Heap and has global access. That means all objects can be referenced from anywhere in the application.
+
+Direct Memory:
+This option specifies the maximum total size to do non-blocking IO
+ex: For instance, a thread can ask a channel to read data into a buffer. While the channel reads data into the buffer, the thread can do something else. 
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Granular:
+=======
+
+vm.config************
+Heap: The heap size will vary based on data size and usage patterns, but 4GiB to 8GiB is a good starting point for a small or medium cluster (~15 servers or less). For a rough estimate of memory requirements on the high end, very large clusters with a node count on the order of ~100 nodes may need Broker heaps of 30GiB-60GiB. -- max Heap 6 GB
+Direct Memory: (druid.processing.numThreads + druid.processing.numMergeBuffers + 1) * druid.processing.buffer.sizeBytes -- 9 GB
+
+runtime.properties*****************
+druid.service=druid/broker
+druid.plaintextPort=8082
+
+# HTTP server settings
+druid.server.http.numThreads=60 (40) ----> (max(10, (Number of cores * 17) / 16 + 2) + 30)
+
+# HTTP client settings
+druid.broker.http.numConnections=50 (20)-------> (Default is 20,  to be lower than the value of druid.server.http.numThreads on your Historicals)---> less than druid.processing.numThreads in broker
+druid.broker.http.maxQueuedBytes=10000000 -------> (2MiB * number of Historicals, 4000000)
+
+# Processing threads and buffers
+druid.processing.buffer.sizeBytes=500000000 -------> (1000000000)
+druid.processing.numMergeBuffers=6 (2) ----------> (max(2, druid.processing.numThreads / 4))
+druid.processing.numThreads=1 (6) -----------> (number of cores - 1, higher than druid.broker.http.numConnections on the same Broker.)
+druid.processing.tmpDir=var/druid/processing
+
+# Query cache disabled -- push down caching and merging instead
+druid.broker.cache.useCache=false
+druid.broker.cache.populateCache=false
+#### Added on 09June2021#####
+druid.server.http.maxSubqueryRows=100000000
+#### Added on 06Sep2021#####
+druid.broker.http.readTimeout=PT25M
+druid.server.http.defaultQueryTimeout=900000
+
+
+#######################################Router:
+
+jvm.config:************************
+Heap: You can assign it 256MiB heap as a starting point, growing it if needed. 3 GB
+DirectMemory: Set it to approx value.
+
+runtime.properties*****************
+druid.service=druid/router
+druid.plaintextPort=8888
+
+# HTTP proxy
+druid.router.http.numConnections=50 (20) -----> (Default is 20,  to be lower than the value of druid.server.http.numThreads on your Historicals and broker)
+druid.router.http.readTimeout=PT5M
+druid.router.http.numMaxThreads=100 (40)  -----> (max(10, ((number of cores * 17) / 16 + 2) + 30))
+druid.server.http.numThreads=100 (20) ------> (###Didn't find answer)
+
+# Service discovery
+druid.router.defaultBrokerServiceName=druid/broker
+druid.router.coordinatorServiceName=druid/coordinator
+
+# Management proxy to coordinator / overlord: required for unified web console.
+druid.router.managementProxy.enabled=true
+
+
+#######################################Co-ordinator&Overlord:
+
+jvm.config***********
+Heap: You can set the Coordinator heap to the same size as your Broker heap, or slightly smaller: both services have to process cluster-wide state and answer API requests about this state. min heap has 1 GB - max heap has 4 GB 
+The Overlord tends to require less resources than the Coordinator or Broker. You can generally set the Overlord heap to a value that's 25-50% of your Coordinator heap.
+DirectMemory: Set it to approx value.
+
+runtime.properties*****************
+druid.service=druid/coordinator
+druid.plaintextPort=8181
+
+druid.coordinator.startDelay=PT10S
+druid.coordinator.period=PT5S
+
+# Run the overlord service in the coordinator process
+druid.coordinator.asOverlord.enabled=true
+druid.coordinator.asOverlord.overlordService=druid/overlord
+
+druid.indexer.queue.startDelay=PT5S
+
+druid.indexer.runner.type=remote
+druid.indexer.storage.type=metadata
+
+#segment locking
+druid.indexer.tasklock.forceTimeChunkLock=false
+
+###22Dec2021
+percentOfSegmentsToConsiderPerMove=66
+
+
+#######################################Middle Manager:
+
+jvm.config***********
+Heap: 1GiB + (2 * total size of lookup maps) -- max heap 4GB
+*************The MiddleManager itself does not require much resources, you can set the heap to ~128MiB generally.
+Direct Memory : (druid.processing.numThreads + druid.processing.numMergeBuffers + 1) * druid.processing.buffer.sizeBytes (10)
+
+runtime.properties*****************
+druid.service=druid/middleManager
+druid.plaintextPort=8091
+
+# Number of tasks per middleManager
+#druid.worker.capacity=22
+druid.worker.capacity=10
+druid.processing.numThreads=14
+
+# Task launch parameters
+druid.indexer.runner.javaOpts=-server -Xms1g -Xmx70g (4) -XX:MaxDirectMemorySize=70g (10) -Duser.timezone=UTC -Dfile.encoding=UTF-8 -XX:+ExitOnOutOfMemoryError -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager -Dlog4j.configurationFile=conf/druid/cluster/_common/log4j2-task.xml
+druid.indexer.task.baseTaskDir=var/druid/task
+
+# HTTP server threads
+druid.server.http.numThreads=60 (49) ------> (max(10, (Number of cores * 17) / 16 + 2) + 30) and (***********For Tasks, druid.server.http.numThreads should be set to a value slightly higher than the sum of druid.broker.http.numConnections across all the Brokers in the cluster.)
+
+# Processing threads and buffers on Peons
+druid.indexer.fork.property.druid.processing.numMergeBuffers=2
+druid.indexer.fork.property.druid.processing.buffer.sizeBytes=100000000
+druid.indexer.fork.property.druid.processing.numThreads=2
+
+# Hadoop indexing
+druid.indexer.task.hadoopWorkingPath=var/druid/hadoop-tmp
+
+###22Dec2021
+druid.processing.numMergeBuffers=5 ----------> (max(2, druid.processing.numThreads / 4))
+druid.processing.buffer.sizeBytes=500000000
+
+
+#######################################Historical:
+
+jvm.config***********
+A general rule-of-thumb for sizing the Historical heap is (0.5GiB * number of CPU cores), with an upper limit of ~24GiB. -- max heap to 12 GB
+Direct Memory : (druid.processing.numThreads + druid.processing.numMergeBuffers + 1) * druid.processing.buffer.sizeBytes -- 10GB 
+
+runtime.properties*****************
+druid.service=druid/historical
+druid.plaintextPort=8083
+
+# HTTP server threads
+druid.server.http.numThreads=60 (58)-----> ((max(10, (Number of cores * 17) / 16 + 2) + 30),  For Historicals, druid.server.http.numThreads should be set to a value slightly higher than the sum of druid.broker.http.numConnections across all the Brokers in the cluster.)
+
+# Processing threads and buffers
+druid.processing.buffer.sizeBytes=500000000 ----> (Max of 500MB, Correct)
+druid.processing.numMergeBuffers=4 ----> (druid.processing.numThreads/4, Correct)
+druid.processing.numThreads=15 ----> ((number of cores - 1), Correct)
+druid.processing.tmpDir=var/druid/processing
+
+# Segment storage
+druid.segmentCache.locations=[{"path":"var/druid/segment-cache","maxSize":1000000000000}]
+druid.server.maxSize=1000000000000
+
+# Query cache
+druid.historical.cache.useCache=true
+druid.historical.cache.populateCache=true
+druid.cache.type=caffeine
+druid.cache.sizeInBytes=256000000
+
+#Query Timeout
+druid.server.http.defaultQueryTimeout=900000
+
+
+
+#######################
+Heap Memory:
+It is created by the Java Virtual Machine when it starts. The memory is used as long as the application is running. Java runtime uses it to allocate memory to objects and Java Runtime Environment (JRE) classes.
+When an object is created, it is always created in Heap and has global access. That means all objects can be referenced from anywhere in the application.
+
+Direct Memory:
+This option specifies the maximum total size to do non-blocking IO
+ex: For instance, a thread can ask a channel to read data into a buffer. While the channel reads data into the buffer, the thread can do something else. 
+
+Thanks & Regards,
+T G Rajath
+TCS-UIDAI Team
+rajathtg.tcs@uidai.net.in
++91-9611677807

@@ -1,0 +1,22 @@
+Python ETL project execution flow:
+=================================
+-Data collection(https://datahub.io) get some data
+-Through Rest API connect extract the data collection and push to Datapackage DB MySQL.
+-Each data into different table in the MySQL.
+Step1: Jusr getting the data and no need to perform anything else, like manipulation.
+Step 1 > Pull Data
+Step 2 > Initialize connection to Database
+SQL Alchemy is the module used to connect to the database
+To move to any function it is ctrl+left click
+Step 3 > To extract the data
+Note: Cloudwatch is used for logging
+Prepare data and template driven approach, it's a way of creating config.ini, needs of hardcoding it.
+After extarcting the data, it is stored in the CSV file format in the temp folder.
+Panda df > is for smaller df
+Spark df > is for larger df
+Joins are costly, don't run directly on Production databases, bring to your local, create a temp table, do joins and complete your work.
+
+To run the program:
+===================
+1. Right click on the config.ini under step3, copy the absolute path and in the Pycharm task bar Run > Edit COnfigurations > Parameters > Paste the path > Select the required project unser environment if prompted > Apply and OK we're done.
+2. Please keep the MySQL workbench on while running.

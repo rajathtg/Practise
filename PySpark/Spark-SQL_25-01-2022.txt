@@ -1,0 +1,410 @@
+Here is the Assignment
+Have to write a program to find the substring from a give string using while loop
+Program has to return either True or False
+Say String = "Prudhvi Akella"
+String is Akella
+it should return true
+if subsctring is Akella1
+it should return False
+both substring and string you need to take from the command line
+either using input() or using command line argument
+if any didn't understand the assignment please reach out to me
+
+Hints:
+ctrl + / (forward slash) to comment multiple lines in Jupyter Notebook
+-Scenario based questions
+-Major error you debugged
+-
+
+
+++++++++++++++++++
+C:/Users/91961/Downloads/PySpark/PySpark/Pyspark/SparkCore/Assignments/Datasets/tweets.csv
+C:/Users/91961/Documents/Rajath/PySpark/spark-3.2.0-bin-hadoop3.2
+C:/Users/91961/Documents/Rajath/PySpark/Datasets/Datasets/covid/archive/country_vaccinations.csv
++++++++++++++++++++
+
+Spark-SQL Points:
+-Most of the things is driven through SQL queries.
+-We will touch base RDD very less.
+-We don't have datasets in PySpark, but have dataframes.
+-Sparksession is an object and internally contains two more objects sql and spark context
+*****We had to get spark context from spark seesion to use any RDDs
+Spark doesn't have xml jar for processing, it needs to be downloaded as part of the program.
+***ivy2 the folder under which jars are downloaded.Interview question
+Two types of nested elements in Spark
+	Array
+	Struct
+If there is any struct, it means there is nested data
+-In spark core we use flatmap and in SparkSQL we use the Explode
+To flatten Array > Use Explode
+To flatten Struct > use 
+
+####31-Jan-2022:
+
+C:/Users/91961/Documents/Rajath/PySpark/spark-3.2.0-bin-hadoop3.2
+Had issue of unicodes
+We read the data in the Python way
+We need go for RDD type of approach
+	-Not a right approach
+	-Because we're loading everything into Driver memory
+Best solution is to split the big files into small files.
+
+####02-Feb
+Words which have no much meaning, called as Stop words ex (we,I,the,such etc.....)
+Regex is not much asked in the interviews
+
+####03-Feb:
+We're loading countries,states and cities xml
+gid : 0 --> group by both total.
+gid : 1 --> Sub Total of first Key
+gid : 2 --> Sub Total of Second Key(This is applicable only for cube)
+gid : 3 --> Main Total
+
+The rollup will be used in BI publishers, more than 3 columns can be used for rollups in Spark (even more columns, currently tried with 3).
+Cube is better, it allows grouping on both the keys
+
+****Joins:
+There are three types of Joins in Spark.
+Broadcast will store into the storage memory of the executor
+Shuffling will happen in SPark using hash partitioner
+By default Spark uses Sort Merge Join.
+HOw sort merge join works??****
+Sacn The data > exchange the data(shuffle) > shuffling will happen using hash partition and also ensuring both the patitions(based on key) ensure available in both the locations > Post shuffling both keys will not be in same order > hence on the key used for shuffling it will perform sorting > then it will perform joins
+By default Spark will create 200 partitions.
+
+#####04Feb:
+Consider we have two tables, state details and total pouplations.
+
+A	Stat_name			A	Population
+1	AP					1	1.3M
+2	Kar					1	1.4M
+3	Jhar				2	1.5M
+						2	2M
+						3	5M
+We need to join above two tables, consider we have three partitions.
+****Partitions will be stored in the executor partitions memory.
+Table 1 is stored into 3 partitions
+(1,AP)			(2,Kar)		(3,Jhar)
+(4,Jamm)		(5,Tel)	
+Population details stored into three partitions again.
+(1,1.3M)		(1,1.3M)	(2,2M)
+(2,3M)			(1,1.3M)	(4,6M)
+(5,1M)			(4,6M)		(5,6M)
+*****By default 200 shuffle partitions get created.
+When shuffling happens, then!
+The data will be equally distributed into different partitions.
+The data is exchanged.
+(2,KAR) (1,1.3M)  (5,Tela) (5,1M)  (4,Jam) (4,6M)
+(1,AP)	(2,3M)   (3,Jhar) (5,6M)  		  (4,8M)
+		(1,1M)
+		(2,2M)
+		(1,1.5M)
+Post exchange, now data has to get sorted.
+(1,AP) (1,1M)  (3,Jhar) (5,6M)  (4,Jam) (4,6M)
+(2,KAR)	(1,1.3M)   (5,Tela)(5,1M)  		  (4,8M)
+		(1,1.5M)
+		(2,2M)
+		(2,3M)
+Next step is merging:
+(1,((AP,((1.3M),(1.4M),(1.5M))))	(3,((Jhar),()))
+(2,((Kar),(2M),(3M)))				(5,((Tel),(1M),(6M)))
+
+(4,((Jam),(6M),(8M)))
+
+
+If we go for inner join then (3,((Jhar),())) won't come in output
+If we go for left outer join then (3,((Jhar),())) will come
+Full outer join then (3,((Jhar),())), bec it's a combination of left and right join.
+Equi join is also called as inner join.
+
+Advantage of Broadcast join in above example:
+Only in case of broadcast join the Driver will store data.
+Hence only small files are broadcast.
+we're avoiding shuffling.
+The metadata of how the bigger files got distributed into the partitions and later into the executor storage memory will be there with the driver(first we distribute bigger tables across partitions and then pushed into executor.
+The smaller table that is country details, will be broadcasted across all executor.)
+then both will be joined with the broadcasted small table.
+Disadvantage of Broadcast join in above example:
+There needs to be enough driver memory.
+The small tables to be broadcasted to many executors will take lot of time, which is a big problem and costlier.
+(No. of executors depends on the running application)
+
+In sort merge join both the data sets gets shuffled across diff partitions (making same key is kept) in required locations.
+Exchange, Sorting and Merging the three costlier operations to be performed.
+
+Big table is distributed and parent DF is cretaed and distributed across different partitions and tasks are created for those partitions, the small datasets will be broadcasted, hash table will be created that will help in the join.
+
+when we set property autoBroadcastJoinThreshold, then spark will itself convert the sort merge join to broadcast join, default size is 10MB, if want to disable then flag it from 10MB to -1
+
+###############################################
+##02-Feb-2022
+
+left - semi join > Works like inner join, but matching data on left side of table only those data is returned.
+Left - anti join > The non-matching data on left hand side of table will be returned, i.e. opp to left - semi join.
+
+Interview Questions:
+Broadcast join
+sort-merge join
+
+While viewing table, we need to convert into a temporary table and view the table data.
+When compared, SQL > Scala-Spark > PySpark-SQL
+-SQL is faster
+-PySpark-SQL is slowest because it has Python worker overhead.
+
+a.state_code == c.state.code, '==' is called theta join
+
+###############################
+
+Salting technique:
+Join between two tables causes shuffling, the keys are co-located, when there is skewness in data (the data set is not highly cardinal (less number of unique data present in a column))
+Ex:
+4keys
+1st Key - 50000 records Bangalore
+2nd Key - 100 records Tumakuru
+3rd Key - 10 Tiptur
+4th Key - 1 Hassan
+Now the data is not equally partitions, 1st Key is the hot partition, since that one single partition has the more data.
+The above situation is called skewing.
+
+Disadvantage of Salting techniques consumes more memory.
+
+Better way to handle skewness is using salting and adaptive query usage.
+
+Event struggler****************
+The task taking more time to complete compared to other task
+
+#####We're using lit(salt), lit means literals means to use the same column name, we go for this option.
+
+#####To further optimize the Spark joins and salting techniques we go for,
+Adaptive query etc is used.
+More small process will lead to more insufficient I/O operations.
+
+Adaptive query helped in converting the sort merge join to broadcast, this happens in runtime, the exchange was not avoidable
+
+
+# of files = # of fpartitions=#of tasks=# of core
+Within a cluster we can run n number of spark application.
+Each spark application wil have one Driver.
+The Driver for one spark application, will act as an executor for other.
+
+###########09-02-2022
+how the spark know which join is used, mobile recording between 16 to 18 minutes.
+If adaptive query is disabled. it creates 200 partitions, if enabled then it creates 2 partitions.
+
+-First step of spark cycle
+	Reading data
+	Parent RDD is created
+	Wide or Narrow transformation is created
+Dynamically coalescing
+Dynamically switch join
+Dynamically skewness join
+we need to accordingly enable the properties.
+
+Adaptive query happens in runtime, it happens based on looking at the exchange stage**********
+
+Imp interview question
+From SPark 3.0 onwards the data skewnness is auto taken care, below spark 3.0 it needs to be enabled.
+
+How to handle the more opartitions at time of reading?
+ex json_rdd_aprroach_
+
+How does the spark knows what is number of files?
+In the first stage, it reads data from json path
+
+No of input rows per file is controlled using the offset.
+
+#################10-02-2022
+is file splitable or not?
+How big the partition is decided by the maxsplitsize and bytespercore.
+consider there is a 1GB file and it's splittable, therefore that 1gb file can be splitted in each of 128MB(default value) chunk of 8 partitions.
+if it's not splittable, then only 1 partition will be created.
+Note: if the data is read from hdfs, yes it's splittable already by nature, if it's read from s3, it's not splittable in nature and even few exceptional file like csv with gzip.
+
+#####################11-02-2022
+Higher the data in partition, will lead to disk spills, higher the disk spills will be an over head.
+When required it will recover the spill from the disk, called as the deserialization.
+Solution is to increase the no.of partitions.
+One of the optimization technique, good example for interview question....
+The below optimization is auto taken care by Spark.....
+-Predicate Pushdown
+-Column pruning
+
+######################14-02-2022
+df.explain() --> gives the plan on how data is executed.
+while reading physical plan, we need to go from bottom to top
+There are three types of explain mode i.e. formatted, codegen and cost.
+--formatted : gives detailed execution plan.
+--codegen : NA, lot of detailing required.
+--cost : optimized logical and physical plan details
+******Windowing functions:
+dense_rank() > gives ran for each and every row
+rank() > need to explore on options
+
+###############15-02-2022
+-Open the MySQL workbench and "create database employee" (password for the MySQL is 'root123')
+-The path was updated in the file employees.sh in the source scetion to "C:/Users/91961/Documents/Rajath/PySpark/Datasets/MySql/MySql/mysql_employee_dataset/test_db-master/"
+-Open the cmd and navigate to the path "cd C:\Program Files\MySQL\MySQL Server 8.0\bin" and run the command for MySQL:
+"mysql -u root -p  employee < C:/Users/91961/Documents/Rajath/PySpark/Datasets/MySql/MySql/mysql_employee_dataset/test_db-master/employees.sql" (password: root123)
+Output on terminal will be as seen below:
+C:\Program Files\MySQL\MySQL Server 8.0\bin>mysql -u root -p  employee < C:/Users/91961/Documents/Rajath/PySpark/Datasets/MySql/MySql/mysql_employee_dataset/test_db-master/employees.sql
+Enter password: *******
+INFO
+CREATING DATABASE STRUCTURE
+INFO
+storage engine: InnoDB
+INFO
+LOADING departments
+INFO
+LOADING employees
+INFO
+LOADING dept_emp
+INFO
+LOADING dept_manager
+INFO
+LOADING titles
+INFO
+LOADING salaries
+data_load_time_diff
+00:02:40
+-offset is calculated based on the row numders given for the table.
+-data is already partitioned, again within partition, we can work on that data through frames.
+********within the partitions, the frames are created using the offsets.
+
+#############16-02-2022
+Flask framework is used for working on Webmodule
+SQLAlchemy is used for making connections with DBs
+Faker is used creatin fake data
+
+##############18-Feb-2022
+We have the 
+Predicate pushdown will happen when we use order by and whenever we perform predicates, they will be fast
+hash partition comes when repar happens based on repartition on specific col then hash partitio
+round robin will happen when repartition happens without giving the col name
+range partition will happen when writing data to csv/parquet file format
+
+###############22-Feb-2022
+Create the access key and access id
+Create a bucket in S3
+In real time we use roles(called as svs) to access through code or to login to AWS.
+If it is mandatory to use, then it will be stored in param store and can be used.
+User : Spark_AWS
+Access Key : AKIAY6WAMWBSEYKTABY6
+Secret Key : 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
+BucketName : spark-dvs-aws
+In real time for any external dependencies jar
+Athena is like Hive.
+Athena uses glue catalog to store the meta data.
+We need to give the output location or temp location store data
+create the temp location to store data
+create the database
+create the table:
+
+CREATE EXTERNAL TABLE covid (
+    country string,
+    iso_code string,
+    total_vaccinations double,
+    people_vaccinated double,
+    people_fully_vaccinated double,
+    daily_vaccinations_raw double,
+    daily_vaccinations  double,
+    total_vaccinations_per_hundred double,
+    people_vaccinated_per_hundred double,
+    people_fully_vaccinated_per_hundred double,
+    daily_vaccinations_per_million double,
+    vaccines string,
+    source_name string,
+    source_website string
+)
+PARTITIONED BY (date string)
+STORED AS PARQUET
+LOCATION 's3://spark-dvs-aws/output/'
+tblproperties ("parquet.compression"="SNAPPY");
+
+MSCK REPAIR TABLE covid;
+MSCK REPAIR TABLE customer;
+
+CREATE EXTERNAL TABLE customer (
+    Id int,
+    firstname string,
+    lastname string,
+    updateon string,
+    address string
+)
+PARTITIONED BY (effectiveDate string)
+STORED AS PARQUET
+LOCATION 's3://spark-dvs-aws/delta_output'
+tblproperties ("parquet.compression"="SNAPPY")
+
+
+
+Post creation of table, we need to perform msck repair to add the partitions to metadata or else select * will not work
+MSCK REPAIR TABLE covid;
+
+select * from covid limit 10;
+
+Important:
+IAM
+S3
+Athena & glue *****If it scans the data greater than 1TB 5$
+EMR & ECS *****Careful cost effective
+Redshift
+Lambda
+Cloudwatch
+
+##############23-Feb-2022
+*****Delta File format:
+It's around JDBC and delta file format
+For Incremental load, table must have unique identifier key column or incrementing column or composite key (when we concatenate multiple column should give unique columns) and also modified date is also needs to be created.
+Delta file format - Any sort of updates to that file format it is taken care by it.
+***********To achieve the parallelism with JDBC we need,
+-Partition Column
+-Lower boundary
+-Upper boundary
+-numPartitions
+-Duplicate the records can be removed through ranking in the DataFrames
+******  Append mode, append the data on the existing.
+		Whenever we set the overwrite, use dynamic to overwrite only the mentioned partition.
+		Just overwrite will overwrite the entire data, careful
++++++++++++++++++++++++++++
+step1: Perform the initial dump and note the max date or latest modified date.
+step2: Next day run the job again fetching the data greater than the latest modified date captured on the previous day.
++++++++++++++
+Processing / Analyzing of Excel file is not recommended.
+It's a tedious process, because it is being a binary file and parsing of the same is a headache.
+Rather go for CSV itself.
+****While creating the Pandas dataframe, it will be pulled into Driver's memory for creation, be careful
+
+++++++++++++++++++++++++++++++++++++
+
+use employees;
+
+CREATE TABLE `tables_info` (
+  `table_name` varchar(60) DEFAULT NULL,
+  `next_run_time` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE employees.`customer` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `firstname` varchar(240) DEFAULT NULL,
+  `lastname` varchar(240) DEFAULT NULL,
+  `effectiveDate` date DEFAULT NULL,
+  `updateon` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `address` varchar(240) DEFAULT NULL,
+  PRIMARY KEY (`Id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
++++++++++++++++++++++++++++++++++++++++++++++
+
+-S3 is not a proxy type file system.
+-Copy the file from location where it is and paste to where required and later delete the old location.
+
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+Kafka partitions the data based on the hash partitioning, here it uses the key-value pair
+
+GitHub
+Python
+Hacker Rank
+AWS

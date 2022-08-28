@@ -1,0 +1,226 @@
+Spark is a Master and Slave Architecture:
+-All the process in Spark is a JVM process and everything runs in a JVM containers.
+-Master > Driver
+-Slaves > Executors
+
+The Python API is a thin layer over the JAVA API for Spark which itself is only a wrapper around the core Scala functionality.
+
+Py4j is the path through which the Python connects Spark for executions.
+
+To run any pip install command in Jupyter-Lab, use '!' at the beginning
+
+The moment the Spark Context is created, it launches Driver and Executor in Stand alone setup. sc also acts as a channel which driver uses to communicate with the executor. Both Driver and Executors are Java process which will run in there dedicated JVM containers. If the Spark Context fails then Driver will go hay wire.
+
+We're using Standalone execution, here both driver and executor launches in the same JVM container and Spark Context is created between the two.
+By default it's always one executor and one driver that will be created.
+In Cluster mode both will run in the different containers.
+By Default Driver memory = 1GB and the Executor Memory = 380mb
+Note:
+One Partition = One Task = One Core (For Every partition as task will be created and gets executed by one VCore)
+
+Once the Spark COntext is created, then launch the Spark UI using localhost:4040/4041/4042 (Sometimes anyone of them will work)
+In the Environment Tab we will RuntimeInfo and Spark Properties
+By default the Driver Port number is 57574
+Currently whatever we're running, we're runningin the Client Mode
+
+What is a container? what is the use of it?
+When we look at the system like laptop, the physical resources hd,ram,n/w etc.
+When we launch executor and driver a container will be launchec, some part of vcore,ram and hd will created and inside that Driver & Executor will be created.
+Combination of some part of (ram,vcore,n/w and hd) is a container.
+
+In the code we mention local[*], it means use all the available vcore in the system, local[1] it means allocate 1 core
+conf = SparkConf().setMaster("local[*]")
+sc = SparkContext(conf=conf)
+
+What is an RDD, RDD is the basic unit of abstraction in Spark.
+RDD >  Resilient Distributed Dataset
+
+Let's read the wordcount.txt program.
+Once the sc is created
+Spark Driver will connect with the NameNode and get the Meta Data information.
+The Meta Information will have filename,no of partfiles,it's location, file type csv/json etc.
+The Driver after receiving meta data, it will look for no of part files and driver will create one partition for each and every part file.
+All these part files is linked to the RDDs.
+Here distributed in RDD means, distribute the data across the diff nodes na dprocess them in parallel.
+Through RDD only Spark is achieving the parallelism.
+	-RDD is created while loading the data
+The below behaviour of RDD is with respect to the HDFS as datasource: 
+Consider the file size is 4GB and block size is 128MB and also the slpit size is also 128MB.
+Then how many Splits it will create? then 16 splits.
+Then no of blocks = no of splits = no of partitions of RDDs = no of tasks
+The RDD will create an object called as partfile object for each partitions and each object holds partition info and partfile name and it's location.
+Post creation of the partfile objects, it will be pushed to the executors.
+***It's not like one executor will get one partfile object, it can get multiple partfile object, it will be decided by Driver.
+Then executor will connect to the respective datanode and loads data into it's memory and starts execution.
+******Through RDD only Driver program controls parallelism
+
+Reselient:
+One of the executor went down, part file is left unprocessed.
+All the part file present in it is no longer processed.
+The Spark will understand the executor is no longer healthy and all the part file present on the unhealthy exector will be launched on the other executors.
+Driver program will get info of the partfile details through the RDD object (yo! RDD object is imp).
+The behaviour of RDD changes with respect different sources like s3,jdbc/database,hdfs,azure etc.
+We have seen the behaviour with respect the HDFS.
+
+How many parallel tasks can a executor can execute at one go?
+It depends on the number of cores?
+Beacuse executor also has vcore,ram and hd
+ex: If executor has 4 cores, then executor can execute 4 tasks in parallel, *******it doesn't mean that executor should completely lock 4 cores, it means that the max capacity for the executor to use is 4 cores.
+
+The number of parallel tasks that will get created in the executor will be equal to number of partitions in the RDD.
+In above example 16 partitions are there.
+Consider there are 4 executors:
+Executor 1 will get 4 partitions
+Executor 2 will get 5 partitions
+Executor 3 will get 5 partitions
+Executor 4 will get 2 partitions
+Then Executor will happily run 4 tasks in parallel
+Executor 2 and 3 will process 4 partitions each at given time and then last remaining partition will be executed. 
+The executor 4 will run both the partitions with no issues.
+
+Simply we will not load data into executors memory, post loading we have two perform two things on top of the data i.e.
+	-Transformations
+	-Actions
+Transformations > They take RDD as input and return RDD as an output.
+Actions > Take RDD as input and return computed value of RDD as an output.
+
+Example of Word Program:
+-1st step read the data, in Spark UI doesn't show any job creation. Only RDD will be created and variable used for storing reference of RDD i.e. ex: trans1
+Through getNumPartitions(), gives the number of RDD partitions.
+The RDD created after reading the data for 1st time is called the Parent RDD.
+The type of RDD created in the JVM is print(trans1) > MapPartitionsRDD[1]
+The type of RDD created in the PVM is print(type(trans1)) > <class 'pyspark.rdd.RDD'>
+-Then we will apply a map transformation, that takes RDD as input and given RDD as output, reference variable is trans3
+-PVM datatype of trans3 will be pyspark.rdd.PipelinedRDD and for JVM : PythonRDD
+-Next is the flatmap, used to flatten the nested data structure, reference variable is trans4
+-PVM datatype of trans4 will be pyspark.rdd.PipelinedRDD and for JVM : PythonRDD
+-Again we're performing map partition to create a list of tuples,, reference variable is trans5
+-PVM datatype of trans5 will be pyspark.rdd.PipelinedRDD and for JVM : PythonRDD
+-Next we're performing a groupbykey transformations, any type of bykey operations to be performed then it expects the input RDD to be a paired RDD, it will ensure that all the keys are grouped with the there value is co-located in one partition, reference variable is tran6. This is a wide transformation since there will be a shuffling.
+-PVM datatype of trans6 will be pyspark.rdd.PipelinedRDD and for JVM : PythonRDD.
+******Even till now no job is created in Spark UI
+-Then we're going to do a sum on and do a collect finally.
+-The collect is an action and it will the data will be pull into Driver, better to deal with small data while firing the colect(), because it is a costly operation. If executor processed data is greater than Driver memory, then it will throw an Driver oom exception.
+-The transformations are lazy in behaviour and will come into picture only when action is fired.
+-Finally there is a job created.
+******-The number of jobs = no.of actions.
+******Whenever we use a wide transformation then a new stage is created. No.of stages = wide transformations + 1.
+******Note: If the data is already shuffled by key and again if we fire the groupbykey it will not create, just try it out once bud.
+-Perform the countbykey operation, new job is created.
+++++++++++++++++++++countbykey,collect() never recommended, costly operation, since it will pull data into the Driver.
+
+*****Reducebykey is efficient that groupbykey.
+-Even the reducebykey expects input RDD to be the pairedRDD
+-The reducebykey performs partial aggregation at partition level before shuffling (this will reduce the movement of data across network) and it applies hashing and does shuffle,after shuffle it performs full aggregation.
+The reducebykey works on the Parent RDD while groupbykey works doesnot work on the ParentRDD.
+The shuffle partition is always equal to parent partitions unless and until we're explicitly mentioning it.
+New stage is created.
+sortbykey
+again new stage is created.
+Check for 1:00:00 until 1:12:30 on Jan-10th for interview question
+Bykey databricks shown at the end of video for more information
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Internal of RDD in PySpark:
+When a job is executed what is the role of PVM and JVM?
+Whenever SC is created, Python Driver will be created, JVM driver is also created by Spark and both communicate through the Py4j and also the JVM & PVM executors.
+******Note: SC is just not means that Driver and Executor communication established, it also makes way/creates stage for running the program.
+*******textfile/whole text file api is binary file api to read data which is very imporatant created after SC is established.
+Python Driver takes care of launching APIs and running of jobs.
+There are certain optimization techniques to make sure PVM and JVM connection delay can be made negligible.
+An rdd will created at the PVM side, this RDD will have an instance level variable called as jrdd(created at JVM side) this holds the reference of the object created at JVM.
+The interaction happens through the Py4j
+(Refer the 11thJan 30:00 & 39:00)
+print(trans1._jrdd)
+print(trans1) both gives same output
+__str__ method was overidden
+
+RDD Properties, RDD holds below informations:
+-Partitions > The partitions for the data either can be controlled manually or if it is read from HDFS, the no.of split size equal to number of partitions.
+-Location of the data, also what all partitions are executed by each executor executing.
+-Compute(), that has information of computation details to be performed on each partition.
+-Dependencies, has info of the Parent RDD and which all RDDs is dependent on this RDD.
+-Patitioner, is been used to distribute the partitions across the different machine. This plays a very important role with wide transformations.
+
+Entry Points:
+RDD :  Created in PVM when you read the data into Spark using PySpark Read API (textfile,wholeTextFile).
+ex: type(trans1) = rdd
+Pipelined RDD : 
+This is the main RDD which does all the Work. When ever you try to map the partitions this RDD will be created.
+Which create PythonRDD object in JVM (Scala Side) and the reference of it is stored into _jrdd of pipelined RDD in PVM.
+ex: type(trans3) = pipelinedrdd
+*******(Refer the 11thJan 01:06:00)
+
+We understood the need of the Pytrhon Driver, now let's understand the need of the Python Executor:
+Ex: map(f)[map(removeunicodes_splitwords)] is an python function/lambda which cannot be executed in executor which is a JVM process so it launches Python worker which is an Python Process.
+Python executor never as acess to RDDs, it only has access to Data and action(code) to implement on that through the JVM executor.
+
+RDD Lineage Graph
+The data flow or RDD flow how it happens, incl the transformations.
+Can't be viewed on the UI
+
+DAG:
+It is a set of vertices and edges.
+Vertices > Represent the RDDs
+Edges > Represent the operations to be applied on RDD
+This can be viewed in the UI, this is the actual logical representation.
+
+*********************How to know what all are the transformations applied on the parent RDD?
+Until the new stage is created the previous or the 1st stage whatever the transformation is applied it is done on Parent RDD, once the new stage is created data will be shuffled, it will be called as shuffled RDD.
+******************Any narrow transformation inherit the properties from parent RDD or Shuffled RDD. Once the property like partitions set in the Parent RDD or Shuffled RDD can't be modified in the narrow transformation.
+Ex: trans1 property is inherited to trans3 and I can't change the partition count in trans3 as it is narrow transformation.
+*******************During the wide transformation we can change the number of partitions
+
++++++++++++++++++++++++++++++++++
+
+Executors Memory = On Heap + Off Heap + External Process
+Heap Memory:
+If I try to create any type of object, it will get created in the heap memory and it will be controlled by GC.
+The GC it will remove/clean the old generation objects in heap memory.
+When the GC starts it's cleaning process what will happen?
+-It cleans useless, old generation, n-1, n-2 etc...
+-It also request JVM to resumes while GC is busy while cleaning, post completion it will signal all the processes to resume.
+-There are short cycle and long cycle(older gen objevcts will be full), until cleaning is done JVM process will be on hold.
+-GC time seen in the UI (Jan20th 10:00) should be ideally less.
+-To overcome the issue of pausing the JVM Spark came up with an idea of the Off Heap, the off heap object creation is in control of application control and post creation it needs to be cleared by the application, because GC has no control.
+
+External Process : Are something depends on the memory used by APIs used PySpark/RSpark etc...
+
+Worker Node = Executor + Off-Heap
+Executor = On Heap 
+Off-Heap = Storage Memory + Execution Memory
+On-Heap = Storage Memory + Execution Memory + User Memory + Reserved Memory (300 MB)
+-Storage Memory > It's mainly used to store the spark cache data such as RDD cache, Broadcast variables.
+-Execution Mmeory > Its mainly used to store the temp data in the calculation process of shuffle (By Key Transformations, Joins) sorts etc.
+-User Memory > Its mainly used to store the data needed for RDD conversion operations, such as RDD dependencies.
+-Reserved Memory > The memory is reserved for the system and its used to store the spark's internal objects.
+Storage fraction > i.e. 75% allocated to storage mem and execution memory (75% is equally divided) and 25% is allocated to the user memory. Reserved memory has 300MB.
+
+Caching always gives priority to Onheap > off heap > finally if both on&off are full then it will spill to disk 
+
+Off Heap memory is by default set to false:
+
+spark.memory.offHeap.use : false (default)
+spark.memory.offHeap.size : The amount of off-heap memory used by Spark to store actual data frames/RDD.
+From Spark 3.0 onwards Spark off-heap a separate entity from the memory overhead, so users do not have to account for it explicitly during setting the executor memory overhead.
+************From Spark 3.0 allocate 10% of executors memory to off heap memory
+
+Python memory is divide into:
+-spark.python.worker.memory (Default value is 512MB)
+-spark.executor.pyspark.memory (to be discussed during YARN)
+
+Realtime Scenario:
+-The Spark application job took 2hours to execute since the data was not equally distributed across the executors.
+-Later the partition logic was re-wrtten to overcome the issue, time taken drastically reduced to 20minutes.
+
+Shufle Hash Join:
+The shuffle hash join is something that is performed on the paire-rdds, when we say paired-rdd it is having key,value.
+The moment when we perform by-key the spark make sures it co-locates the same key into single partitions.
+********In real time, Spark-Core joins are never touched. Just know it theoretically.
+
+Shared Variables (It's of two types) created at context level:
+Broadcast Variables and Accumulator
+-Broadcast Variables (Read Only Variables): Whenever we want to perform the braosdcast join, data will be copied to the driver program and distributed across to the executors cache memory.
+-Accumulator (Write Only Variables) : In general other way round
+-Map partitions - Just understand the theory, since no uses it much.
