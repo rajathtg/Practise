@@ -9,14 +9,56 @@ Spark-SQL : 25Jan2022
 	-The Spark Context is used to access the RDD API's
 -Let's execute the 
 
-18th Feb - GoTo meeting transcript
-Request for 27th Jan
-Request for 19th Jan
-Request for 18th Jan
+vaccinationsDF = spark\
+                    .read\
+                    .format("csv")\
+                     .option("header", "true")\
+                     .option("inferSchema", "true")\
+                    .load("C:/Users/91961/Documents/Rajath/PySpark/Datasets/Datasets/covid/archive/country_vaccinations.csv")
+.read > To read the data and we |||ly use write for writing the data
+.format > Read the given CSV file
+.header,true > Tells to use the column name
+.inferschema,true > Tells to use the schema/datatypes as given in the excel or else everything will considered as the string by default.
+******Even when the .header,true and .inferschema,true is deleted even then in the UI it tells 1 output row is read, because it will 
+read the first line and understand how many columns this csv files has with help of delimiter.
+******Even when the .inferschema,true is only deleted and run the step, the metadata time will be 0ms and output row will be 1 because .header,true
+**When inferschema is set to false, it takes less time to fetch meta data, becuase everything will be string, it makes it's work easy
+.option("quote",'"') >> To tell spark that anything defined inside the '"' as a complete/whole field and don't consider as two different ex: "Hey, I'm Rajath" (it shouldn't split Hey and I'm Rajath, please consider as whole string)
 
-https://transcripts.gotomeeting.com/#/s/ae5ab71825b709becf25a6e3468d44a6e6f7479b69441d6e6a9e96c40878ce46
+-Date will be considered as string while infering schema from CSV file, if required we need to cast it as timestamp later.
 
-+++++++++++++++++++++++++++++
+== Physical Plan ==
+CollectLimit (3)
++- * Filter (2)
+   +- Scan text  (1)
+
+(1) Scan text 
+Output [1]: [value#0]
+Batched: false
+Location: InMemoryFileIndex [file:/C:/Users/91961/Documents/Rajath/PySpark/Datasets/Datasets/covid/archive/country_vaccinations.csv]
+ReadSchema: struct<value:string>
+
+(2) Filter [codegen id : 1]
+Input [1]: [value#0]
+Condition : (length(trim(value#0, None)) > 0)
+
+(3) CollectLimit
+Input [1]: [value#0]
+Arguments: 1
+
+Applicable for CSV:
+------------------
+dropmalformed : Remove the wrong format or corrupted records
+permissive : Permit everything wherever it fails to parse mark it as the null
+failfast : fail immediately if any records goes out of the agreed datatype or found the corrupted record
+
+
+*****
+Check with Prudhvi on a sample template for performing validation of data prior processing : Answer is found in the last section of Spark SQL CSV file processing
+If for CSV no header is provided, how to define header/column names: Answer is in the struct type of the schema has column and datatype required mentioned.
+*****
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 Write to S3/HDFS storage:
 -The jar 'org.apache.hadoop:hadoop-aws:3.2.0' is required to write data into s3
@@ -24,7 +66,7 @@ Write to S3/HDFS storage:
 -CRC files are generated when files are written to local file system, but when written to S3 or HDFS, this not generated.
 -Let's repartition, the date column will act as predicate, the order by should be used only if the column is part of predicate pushdown.
 
-When an action is observed in the spark, what is the spark going to do? what we will be seeing in the UI?
+*******When an action is observed in the spark, what is the spark going to do? what we will be seeing in the UI?
 -A job will be created.
 -No of jobs is equal to the no of actions
 -For each and every action a job is created.
@@ -45,7 +87,3 @@ When an action is observed in the spark, what is the spark going to do? what we 
 -For show and for loading the data a job will be created.
 	
 ++++++++++++++++++++++++++++++++++++++++
-Applicable for CSV:
-dropmalformed : Remove the wrong format or corrupted records
-permissive : Permit everything wherever it fails to parse mark it as the null
-failfast : fail immediately if any records goes out of the agreed datatype or found the corrupted record
