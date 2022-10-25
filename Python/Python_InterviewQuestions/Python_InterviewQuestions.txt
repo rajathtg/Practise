@@ -1,0 +1,488 @@
+1. What is Python? What are the benefits of using Python?
+Python is a 
+@@high-level(user-oriented in that it has been designed to make it straightforward for a programmer to convert an algorithm into program code.), 
+@@interpreted (the source code of a Python program is converted into bytecode that is then executed by the Python virtual machine and An Interpreted language executes its statements line by line), @@general-purpose programming language (it can be used to build almost any type of application with the right tools/libraries.).
+Additionally, python supports objects, modules, threads, exception-handling, and automatic memory management which help in modelling real-world problems and building applications to solve these problems.
+
+Benefits of using Python:
+
+Python is a general-purpose programming language that has a simple, easy-to-learn syntax that emphasizes readability and therefore reduces the cost of program maintenance. Moreover, the language is capable of scripting, is completely open-source, and supports third-party packages encouraging modularity and code reuse.
+Its high-level data structures, combined with dynamic typing and dynamic binding, attract a huge community of developers for Rapid Application Development and deployment.
+
++++++++++++++++++++++++++++++++++++++++++++
+
+2. What is a dynamically typed language?
+Before we understand a dynamically typed language, we should learn about what typing is. Typing refers to type-checking in programming languages. In a strongly-typed language, such as Python, "1" + 2 will result in a type error since these languages don't allow for "type-coercion" (implicit conversion of data types). On the other hand, a weakly-typed language, such as Javascript, will simply output "12" as result.
+
+Type-checking can be done at two stages -
+
+Static - Data Types are checked before execution.
+Dynamic - Data Types are checked during execution.
+Python is an interpreted language, executes each statement line by line and thus type-checking is done on the fly, during execution. Hence, Python is a Dynamically Typed Language.
+
+++++++++++++++++++++++++++++++++++++++++++
+
+5. What is Scope in Python?
+Every object in Python functions within a scope. A scope is a block of code where an object in Python remains relevant. Namespaces uniquely identify all the objects inside a program. However, these namespaces also have a scope defined for them where you could use their objects without any prefix. A few examples of scope created during code execution in Python are as follows:
+
+A local scope refers to the local objects available in the current function.
+A global scope refers to the objects available throughout the code execution since their inception.
+A module-level scope refers to the global objects of the current module accessible in the program.
+An outermost scope refers to all the built-in names callable in the program. The objects in this scope are searched last to find the name referenced.
+Note: Local scope objects can be synced with global scope objects using keywords such as global.
+
+++++++++++++++++++++++++++++++++++++++++++++
+
+6. What are lists and tuples? What is the key difference between the two?
+Lists and Tuples are both sequence data types that can store a collection of objects in Python. The objects stored in both sequences can have different data types. Lists are represented with square brackets ['sara', 6, 0.19], while tuples are represented with parantheses ('ansh', 5, 0.97).
+But what is the real difference between the two? The key difference between the two is that while lists are mutable, tuples on the other hand are immutable objects. This means that lists can be modified, appended or sliced on the go but tuples remain constant and cannot be modified in any manner. You can run the following example on Python IDLE to confirm the difference:
+
+my_tuple = ('sara', 6, 5, 0.97)
+my_list = ['sara', 6, 5, 0.97]
+print(my_tuple[0])     # output => 'sara'
+print(my_list[0])     # output => 'sara'
+my_tuple[0] = 'ansh'    # modifying tuple => throws an error
+my_list[0] = 'ansh'    # modifying list => list modified
+print(my_tuple[0])     # output => 'sara'
+print(my_list[0])     # output => 'ansh'
+
++++++++++++++++++++++++++++++++++++++++++++++++++
+
+7. What are the common built-in data types in Python?
+There are several built-in data types in Python. Although, Python doesn't require data types to be defined explicitly during variable declarations type errors are likely to occur if the knowledge of data types and their compatibility with each other are neglected. Python provides type() and isinstance() functions to check the type of these variables. These data types can be grouped into the following categories-
+
+None Type:
+None keyword represents the null values in Python. Boolean equality operation can be performed using these NoneType objects.
+Class Name	Description
+NoneType	Represents the NULL values in Python.
+Numeric Types:
+There are three distinct numeric types - integers, floating-point numbers, and complex numbers. Additionally, booleans are a sub-type of integers.
+Class Name	Description
+int	Stores integer literals including hex, octal and binary numbers as integers
+float	Stores literals containing decimal values and/or exponent signs as floating-point numbers
+complex	Stores complex numbers in the form (A + Bj) and has attributes: real and imag
+bool	Stores boolean value (True or False).
+Note: The standard library also includes fractions to store rational numbers and decimal to store floating-point numbers with user-defined precision.
+
+Sequence Types:
+According to Python Docs, there are three basic Sequence Types - lists, tuples, and range objects. Sequence types have the in and not in operators defined for their traversing their elements. These operators share the same priority as the comparison operations.
+Class Name	Description
+list	Mutable sequence used to store collection of items.
+tuple	Immutable sequence used to store collection of items.
+range	Represents an immutable sequence of numbers generated during execution.
+str	Immutable sequence of Unicode code points to store textual data.
+Note: The standard library also includes additional types for processing:
+1. Binary data such as bytearray bytes memoryview , and
+2. Text strings such as str.
+
+Mapping Types:
+A mapping object can map hashable values to random objects in Python. Mappings objects are mutable and there is currently only one standard mapping type, the dictionary.
+
+Class Name 	Description
+dict	Stores comma-separated list of key: value pairs
+Set Types:
+Currently, Python has two built-in set types - set and frozenset. set type is mutable and supports methods like add() and remove(). frozenset type is immutable and can't be modified after creation.
+Class Name	Description
+set	Mutable unordered collection of distinct hashable objects.
+frozenset	Immutable collection of distinct hashable objects.
+Note: set is mutable and thus cannot be used as key for a dictionary. On the other hand, frozenset is immutable and thus, hashable, and can be used as a dictionary key or as an element of another set.
+
+Modules:
+Module is an additional built-in type supported by the Python Interpreter. It supports one special operation, i.e., attribute access: mymod.myobj, where mymod is a module and myobj references a name defined in m's symbol table. The module's symbol table resides in a very special attribute of the module __dict__, but direct assignment to this module is neither possible nor recommended.
+Callable Types:
+Callable types are the types to which function call can be applied. They can be user-defined functions, instance methods, generator functions, and some other built-in functions, methods and classes.
+Refer to the documentation at docs.python.org for a detailed view of the callable types.
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Question1:
+
+Difference between pypy3 and Python3?
+
+In Pypy3:
+if __name__ == '__main__':
+    print("Hello, World!")
+	
+In Python3:
+print("Hello, World!")
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Question2:
+
+If n is odd, print Weird
+If n is even and in the inclusive range of 2 to 5, print Not Weird
+If n is even and in the inclusive range of 6 to 20, print Weird
+If n is even and greater than 20, print Not Weird
+
+#!/bin/python3
+
+import math
+import os
+import random
+import re
+import sys
+
+if __name__ == '__main__':
+    n = int(input().strip())
+    #n=int(input("Please input a value : "))
+    a=range(2,6)
+    b=range(6,21)
+    if n%2!=0:
+        print("Weird")
+    elif n%2 == 0 and n in a:
+        print("Not Weird")
+    elif n%2 == 0 and n in b:
+        print("Weird")
+    else:
+        if n%2 == 0 and n > 20:
+            print("Not Weird")
+        else:
+            print('Exit')
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Question3:
+Task
+The provided code stub reads two integers from STDIN,  and . Add code to print three lines where:
+The first line contains the sum of the two numbers.
+The second line contains the difference of the two numbers (first - second).
+The third line contains the product of the two numbers.
+
+a=int(input("Print the 1st Value: "))
+b=int(input("Print the 2nd Value: "))
+print(a+b)
+print(a-b)
+print(a*b)
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Question4:
+Task
+The provided code stub reads two integers,  and , from STDIN.
+Add logic to print two lines. The first line should contain the result of integer division, a // b. The second line should contain the result of float division, a / b.
+No rounding or formatting is necessary.
+
+if __name__ == '__main__':
+    a = int(input())
+    b = int(input())
+    print(a//b)
+    print(a/b)
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Question5:
+Task
+The provided code stub reads two integers, a and b, from STDIN.
+
+Add logic to print two lines. The first line should contain the result of integer division, a//b. The second line should contain the result of float division, a/b.
+
+No rounding or formatting is necessary.
+
+if __name__ == '__main__':
+    a = int(input())
+    b = int(input())
+    print(a//b)
+    print(a/b)
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Question6:
+Task
+The provided code stub reads and integer, , from STDIN. For all non-negative integers i<n, print i^2.
+Example
+n=3
+The list of non-negative integers that are less than n=3 is [0,1,2]. Print the square of each number on a separate line.
+
+if __name__ == '__main__':
+    n = int(input())
+    a=range(0,n)
+    for i in a:
+        i = i*i
+        print(i)
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Question7:
+An extra day is added to the calendar almost every four years as February 29, and the day is called a leap day. It corrects the calendar for the fact that our planet takes approximately 365.25 days to orbit the sun. A leap year contains a leap day.
+
+In the Gregorian calendar, three conditions are used to identify leap years:
+
+The year can be evenly divided by 4, is a leap year, unless:
+The year can be evenly divided by 100, it is NOT a leap year, unless:
+The year is also evenly divisible by 400. Then it is a leap year.
+This means that in the Gregorian calendar, the years 2000 and 2400 are leap years, while 1800, 1900, 2100, 2200, 2300 and 2500 are NOT leap years. Source
+
+
+def is_leap(year):
+    leap = [ True, False ]
+    
+    if (year % 4 == 0) & (year % 400 == 0) | (year % 4 == 0) & (year % 400 != 0) & (year % 100 != 0):
+        return leap[0]
+    else:
+        return leap[1]
+year = int(input())
+print(is_leap(year))
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Question8:
+
+Print the list of integers from  through  as a string, without spaces:
+Sample Input:
+3
+Sample Output:
+123
+
+if __name__ == '__main__':
+    n = int(input())
+    for i in range(1,(n+1)):
+        print(i,end="")
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Question9:
+
+Use List comprehension:
+Each variable x,y and z will have values of 0 or 1.
+Remove all arrays that sum to n=2 to leave only the valid permutations.
+
+Sample Input:
+2
+2
+2
+2
+Sample Output:
+
+[[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 2], [0, 2, 1], [0, 2, 2], [1, 0, 0], [1, 0, 2], [1, 1, 1], [1, 1, 2], [1, 2, 0], [1, 2, 1], [1, 2, 2], [2, 0, 1], [2, 0, 2], [2, 1, 0], [2, 1, 1], [2, 1, 2], [2, 2, 0], [2, 2, 1], [2, 2, 2]]
+
+if __name__ == '__main__':
+    x = int(input())
+    y = int(input())
+    z = int(input())
+    n = int(input())
+    lst = [[i,j,k] for i in range(0,x+1) for j in range(0,y+1) for k in range(0,z+1) if (i+j+k!=n)]
+    print(lst)
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Question10:
+Given the participants' score sheet for your University Sports Day, you are required to find the runner-up score. You are given  scores. Store them in a list and find the score of the runner-up.
+Sample Input:
+5
+2 3 6 6 5
+Sample Output:
+5
+Explanation:
+Given list is [2,3,6,6,5]. The maximum score is 6, second maximum is 5. Hence, we print 5 as the runner-up score.
+
+if __name__ == '__main__':
+    n = int(input())
+    arr = map(int, input().split())
+    arr1 = list(arr)
+    #print(arr1)
+    win = max(arr1)
+    #print(win)
+    list = [arr1[i] for i in range(0, n) if (win - arr1[i] != 0)]
+    runup = max(list)
+    print(runup)
+	
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Question11:
+Given the names and grades for each student in a class of N students, store them in a nested list and print the name(s) of any student(s) having the second lowest grade.
+
+Note: If there are multiple students with the second lowest grade, order their names alphabetically and print each name on a new line.
+
+Sample Input 0
+
+5
+Harry
+37.21
+Berry
+37.21
+Tina
+37.2
+Akriti
+41
+Harsh
+39
+Sample Output 0
+
+Berry
+Harry
+Explanation 0
+
+There are 5 students in this class whose names and grades are assembled to build the following list:
+
+python students = [['Harry', 37.21], ['Berry', 37.21], ['Tina', 37.2], ['Akriti', 41], ['Harsh', 39]]
+
+The lowest grade of 37.2 belongs to Tina. The second lowest grade of 37.21 belongs to both Harry and Berry, so we order their names alphabetically and print each name on a new line.
+
+if __name__ == '__main__':
+    students = []
+    scores = []
+    for _ in range(int(input())):
+        name = input()
+        score = float(input())
+        students.append([name, score])
+        scores.append(score)
+    second_lowest = sorted(set(scores))[1]
+    #print(second_lowest)
+    res = [i[0] for i in students if i[1]==second_lowest]
+    for i in sorted(res):
+        print(i)
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Question12:
+
+The provided code stub will read in a dictionary containing key/value pairs of name:[marks] for a list of students. Print the average of the marks array for the student name provided, showing 2 places after the decimal.
+
+Sample Input:
+3
+Krishna 67 68 69
+Arjun 70 98 63
+Malika 52 56 60
+Malika
+
+Sample Output:
+56.00
+
+if __name__ == '__main__':
+    n = int(input())
+    student_marks = {}
+    for _ in range(n):
+        name, *line = input().split()
+        scores = list(map(float, line))
+        student_marks[name] = scores
+    query_name = input()
+    marks=student_marks[query_name]
+    avg=sum(marks)/len(marks)
+    result=format(avg,'.2f')
+    print(result)
+	
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Question13:
+
+You are given a string and your task is to swap cases. In other words, convert all lowercase letters to uppercase letters and vice versa.
+
+def swap_case(s):
+    result_str = ""
+    for item in s:
+        if item.isupper():
+            result_str += item.lower()
+            #print(result_str)
+        else:
+            result_str += item.upper()
+            #print(result_str)
+    return result_str
+
+if __name__ == '__main__':
+    s = input()
+    result = swap_case(s)
+    print(result)
+	
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Question14:
+
+Sample Input()
+this is a string   
+
+Sample Output()
+this-is-a-string
+
+def split_and_join(line):
+    # write your code here
+    line=line.split(" ")
+    result=("-".join(line))
+    return result
+
+if __name__ == '__main__':
+    line = input()
+    result = split_and_join(line)
+    print(result)
+	
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Question15:
+
+Sample Input:
+Ross
+Taylor
+
+Sample Output:
+Hello Ross Taylor! You just delved into python.
+
+def print_full_name(first_name, last_name):
+    print("Hello {} {}! You just delved into python.".format(first_name,last_name))
+
+if __name__ == '__main__':
+    first_name = input()
+    last_name = input()
+    print_full_name(first_name, last_name)
+	
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Question16:
+
+Sample Input:
+STDIN           Function
+-----           --------
+abracadabra     s = 'abracadabra'
+5 k             position = 5, character = 'k'
+
+Sample Output:
+abrackdabra
+
+def mutate_string(s, i, c):
+    s=list(s)
+    s[i]=c
+    result= ''.join(s)
+    return result
+
+if __name__ == '__main__':
+    s = input()
+    i, c = input().split()
+    s_new = mutate_string(s, int(i), c)
+    print(s_new)
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Question17:
+To find the sub_string occurance count in a string:
+
+Sample Input:
+ABCDCDC
+CDC
+
+Sample Output
+2
+
+def count_substring(string, sub_string):
+    state = 0
+    count = 0
+    while state != -1:
+        state = string.find(sub_string, state)
+        #print("while state: ",state)
+        if state != -1:
+            count += 1
+            #print("if count: ",count)
+            state += 1
+            #print("if state: ",state)
+    return count
+if __name__ == '__main__':
+    string = input().strip()
+    sub_string = input().strip()
+    
+    count = count_substring(string, sub_string)
+    print(count)
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Question18:
+
+Sample Input:
+qA2
+
+Sample Output:
+True
+True
+True
+True
+True
+
+if __name__ == '__main__':
+    s = input()
+    print(any([x.isalnum() for x in s]))
+    print(any([x.isalpha() for x in s]))
+    print(any([x.isdigit() for x in s]))
+    print(any([x.islower() for x in s]))
+    print(any([x.isupper() for x in s]))
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Question19:

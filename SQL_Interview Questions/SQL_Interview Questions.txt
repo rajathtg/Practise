@@ -1,0 +1,256 @@
+1. Difference between Rank and Dense Rank?
+If you’d like to rank rows in the result set, SQL offers the RANK() and DENSE_RANK functions. These functions are used in SELECT with others columns. After RANK or DENSE_RANK, we call the OVER() function, which takes an ORDER BY clause with the name of the column to sort before assigning a ranking.
+Unlike DENSE_RANK, RANK skips positions after equal rankings. The number of positions skipped depends on how many rows had an identical ranking. For example, Mary and Lisa sold the same number of products and are both ranked as #2. With RANK, the next position is #4; with DENSE_RANK, the next position is #3.
+Both RANK and RANK_DENSE work on partitions of data:
+
+Query:
+SELECT RANK() OVER(PARTITION BY month ORDER BY sold products DESC) AS r,
+  DENSE_RANK() OVER(PARTITION BY month ORDER BY sold products DESC) AS dr,
+  first_name,
+  last_name,
+  month,
+  sold products
+FROM sales_assistant;
+
+r	dr	f_nme	l_name	mnt	sld_prdts
+1	1	Mary	Jacobs	5	2400
+2	2	Lisa	Black	5	2300
+1	1	Alex	Smith	6	2900
+2	2	Lisa	Black	6	2700
+2	2	Mary	Jacobs	6	2700
+1	1	Mary	Jacobs	7	1200
+1	1	Lisa	Black	7	1200
+3	2	Alex	Smith	7	1000
+
+========================================================================================================================================================
+
+2. Finding Nth highest salary in a table is the most common question asked in interviews. Here is a way to do this task using dense_rank() function.
+select * from(  
+select ename, salary, dense_rank()   
+over(order by salary desc)rank from Emp)   
+where rank = & num;  
+  
+In order to calculate the second highest salary use num = 2  
+In order to calculate the third highest salary use num = 3   
+and so on...  
+
+As this query is nested query lets understand each part step by step:  
+Step 1: First this part of the query will get executed then the outer part of the query will act on the result produced by this query :  
+select ename, salary, dense_rank() over(order by salary desc)rank from Emp   
+dense_rank() calculates the rank of each row in an ordered group of rows and returns the rank as a number. The ranks start from integer 1 and so on in a consecutive manner.   
+  
+If we talk about the above SQL query, based on the salary of the emp table the rank is returned. In case two or more than two rows have an equal salary, it assigns an equal rank to all the rows.  
+  
+As you can see that few employees are getting the same salary(for example Bhaskar, Parul, and Chandan, Garima are getting the same salary, therefore we have used dense_rank(), order by salary desc will arrange salary in descending order.  
+  
+  
+  
+  
+Output of : select ename, salary, dense_rank() over(order by salary desc)rank from Emp   
+ENAME            SALARY       RANK  
+------------ ---------- ----------  
+sonoo             40000          1  
+ravi              37000          2  
+rohit             32000          3  
+bhaskar           30000          4  
+parul             30000          4  
+akshita           28000          5  
+durgesh           28000          5  
+garima            25000          6  
+chandan           25000          6  
+amit              20000          7       
+  
+you can see from the output that Bhaskar, Parul are getting rank 4 as they both are getting equal salary) and Akshita, Durgesh are getting rank 4(as they both are getting equal salary)  similarly Garima and Chandan.  
+  
+Step 2: SQL> select * from(  
+select ename, salary, dense_rank()   
+over(order by salary desc)rank from Emp)   
+where r = &n;  
+In step 2 we are applying the outer part of the nested query into the result we obtained from the internal query.  
+  
+Select * from: will select all the rows which are not the second-highest salary, because of which we have used r = &n, the r = &n will only give the matching rows according to the values entered by the user for n. if n = 2 resultant will be  
+Output for n = 2 will be:  
+Enter the value for n: 2  
+old   1: select * from(select ename, salary, dense_rank() over(order by salary desc)r from Emp) where r=&n  
+new   1: select * from(select ename, salary, dense_rank() over(order by salary desc)r from Emp) where r=2  
+  
+ENAME            SALARY          R  
+------------ ---------- ----------  
+ravi              37000          2  
+  
+To Find fourth highest salary:      
+Enter value for n: 4  
+old   1: select * from(select ename, salary, dense_rank() over(order by salary desc)r from Emp) where r=&n  
+new   1: select * from(select ename, salary, dense_rank() over(order by salary desc)r from Emp) where r=4  
+  
+ENAME            SALARY          R  
+------------ ---------- ----------  
+bhaskar           30000          4  
+parul             30000          4  
+  
+Similarly, to find:  
+To find 5th highest salary set n = 5  
+To find 6th highest salary set n = 6  
+And so on...  
+
+========================================================================================================================================================
+
+Or Another approach:
+
+The nth highest salary in SQL SERVER using TOP keyword
+You can use the TOP keyword to find the Nth highest salary in SQL SERVER. This is also faster than the previous solution because here we are calculating Nth maximum salary without a subquery.
+
+SELECT TOP 1 salary
+FROM (
+SELECT DISTINCT TOP N salary
+FROM #Employee
+ORDER BY salary DESC
+) AS temp
+ORDER BY salary
+
+Explanation: 
+By default ORDER BY clause print rows in ascending order, since we need the highest salary at the top, we have used ORDER BY DESC, which will display salaries in descending order. Again DISTINCT is used to remove duplicates. The outer query will then pick the topmost salary, which would be your Nth highest salary.
+
+And, if you like books and just learning these queries from the interview's sake then I suggest you first read a good book on SQL like Head First SQL. It will help you to build your fundamentals.
+
+3rd highest salary in SQL SERVER
+
+SELECT TOP 1 salary
+FROM (
+SELECT DISTINCT TOP 3 salary
+FROM #Employee
+ORDER BY salary DESC
+) AS temp
+ORDER BY salary
+
+Result:
+salary
+4000
+
+
+Here is another example where we have used the TOP keyword to find the second highest salary in Microsoft SQL SERVER 2008.
+
+========================================================================================================================================================
+3. Difference between limit and top?
+As stated in my comment for Martin Smith's answer above, there are products that support both, LIMIT and TOP (as you can see here). The difference is that TOP only selects the first n records, but LIMIT allows the definition of an offset to retrieve a specific range of records.
+SELECT TOP 3 * FROM Customers;
+SELECT * FROM Customers LIMIT 0 OFFSET 3; (Starts from 0 and prints 3 records)
+
++++++++++++++++++++++++++++++++++++++++++++++++++
+Question1:
+Query all columns for all American cities in the CITY table with populations larger than 100000. The CountryCode for America is USA:
+select * from CITY where COUNTRYCODE='USA' and POPULATION > 100000;
+
++++++++++++++++++++++++++++++++++++++++++++++++++
+Question2:
+Query the NAME field for all American cities in the CITY table with populations larger than 120000. The CountryCode for America is USA.
+select NAME from CITY where COUNTRYCODE='USA' and POPULATION > 120000;
+
++++++++++++++++++++++++++++++++++++++++++++++++++
+Question3:
+Query all columns (attributes) for every row in the CITY table.
+select * from CITY;
+
++++++++++++++++++++++++++++++++++++++++++++++++++
+Question4:
+Query all columns for a city in CITY with the ID 1661.
+select * from CITY where ID=1661;
+
++++++++++++++++++++++++++++++++++++++++++++++++++
+Question5:
+Query all attributes of every Japanese city in the CITY table. The COUNTRYCODE for Japan is JPN.
+select * from CITY where COUNTRYCODE='JPN'
+
++++++++++++++++++++++++++++++++++++++++++++++++++
+Question6:
+Query the names of all the Japanese cities in the CITY table. The COUNTRYCODE for Japan is JPN.
+select NAME from CITY where COUNTRYCODE='JPN'
+
++++++++++++++++++++++++++++++++++++++++++++++++++
+Question7:
+Query a list of CITY and STATE from the STATION table.
+select CITY,STATE from STATION;
+
++++++++++++++++++++++++++++++++++++++++++++++++++
+Question8:
+Query a list of CITY names from STATION for cities that have an even ID number. Print the results in any order, but exclude duplicates from the answer.
+select DISTINCT CITY from STATION where ID%2=0
+
++++++++++++++++++++++++++++++++++++++++++++++++++
+Question9:
+Find the difference between the total number of CITY entries in the table and the number of distinct CITY entries in the table.
+select (COUNT(CITY)-COUNT(DISTINCT CITY)) from STATION;
+
++++++++++++++++++++++++++++++++++++++++++++++++++
+Question10:
+Query the two cities in STATION with the shortest and longest CITY names, as well as their respective lengths (i.e.: number of characters in the name). If there is more than one smallest or largest city, choose the one that comes first when ordered alphabetically.
+SELECT CITY, LENGTH(CITY) FROM STATION ORDER BY LENGTH(CITY) ASC, CITY ASC LIMIT 1;
+SELECT CITY, LENGTH(CITY) FROM STATION ORDER BY LENGTH(CITY) DESC, CITY DESC LIMIT 1;
+
++++++++++++++++++++++++++++++++++++++++++++++++++
+Question11:
+Query the list of CITY names starting with vowels (i.e., a, e, i, o, or u) from STATION. Your result cannot contain duplicates.
+SELECT DISTINCT CITY FROM STATION WHERE LEFT(CITY,1) IN ('a','e','i','o','u','A','E','I','O','U');
+
++++++++++++++++++++++++++++++++++++++++++++++++++
+Question12:
+Query the list of CITY names ending with vowels (i.e., a, e, i, o, or u) from STATION. Your result cannot contain duplicates.
+SELECT DISTINCT CITY FROM STATION WHERE RIGHT(CITY,1) IN ('a','e','i','o','u','A','E','I','O','U');
+
++++++++++++++++++++++++++++++++++++++++++++++++++
+Question13:
+Query the list of CITY names from STATION which have vowels (i.e., a, e, i, o, and u) as both their first and last characters. Your result cannot contain duplicates.
+SELECT DISTINCT CITY FROM STATION WHERE LEFT(CITY,1) IN ('a','e','i','o','u','A','E','I','O','U') and RIGHT(CITY,1) IN ('a','e','i','o','u','A','E','I','O','U');
+
++++++++++++++++++++++++++++++++++++++++++++++++++
+Question14:
+Query the Name of any student in STUDENTS who scored higher than  Marks. Order your output by the last three characters of each name. If two or more students both have names ending in the same last three characters (i.e.: Bobby, Robby, etc.), secondary sort them by ascending ID.
+SELECT NAME FROM STUDENTS WHERE MARKS>75 ORDER BY RIGHT(NAME, 3), ID;
+
++++++++++++++++++++++++++++++++++++++++++++++++++
+Question15:
+Query the list of CITY names from STATION that either do not start with vowels """""or""""" do not end with vowels. Your result cannot contain duplicates.
+SELECT DISTINCT CITY FROM STATION WHERE LEFT(CITY,1) NOT IN ('a','e','i','o','u','A','E','I','O','U') OR RIGHT(CITY,1) NOT IN ('a','e','i','o','u','A','E','I','O','U');
+
++++++++++++++++++++++++++++++++++++++++++++++++++
+Question16:
+Write a query that prints a list of employee names (i.e.: the name attribute) from the Employee table in alphabetical order.
+select name from Employee ORDER BY name ASC;
+
++++++++++++++++++++++++++++++++++++++++++++++++++
+Question17:
+Write a query that prints a list of employee names (i.e.: the name attribute) for employees in Employee having a salary greater than  per month who have been employees for less than  months. Sort your result by ascending employee_id.
+select name from Employee where salary > 2000 and months < 10 ORDER BY employee_id
+
++++++++++++++++++++++++++++++++++++++++++++++++++
+Question18:
+Query the sum of Northern Latitudes (LAT_N) from STATION having values greater than 38.7880 and less than 137.2346. Truncate your answer to  decimal places.
+Note: between is always inclusive of begin and start.
+select ROUND(SUM(LAT_N),4) from STATION where LAT_N between 38.7881 and 137.2346;
+
++++++++++++++++++++++++++++++++++++++++++++++++++
+Question19:
+Query the greatest value of the Northern Latitudes (LAT_N) from STATION that is less than 137.2345. Truncate your answer to  decimal places.
+select ROUND(MAX(LAT_N),4) from STATION where LAT_N < 137.2345
+
+
++++++++++++++++++++++++++++++++++++++++++++++++++
+Question20:
+Query the Western Longitude (LONG_W) for the largest Northern Latitude (LAT_N) in STATION that is less than 137.2345. Round your answer to 4 decimal places.
+select ROUND(LONG_W,4) from STATION where LAT_N < 137.2345 ORDER BY LAT_N DESC LIMIT 1;
+
++++++++++++++++++++++++++++++++++++++++++++++++++
+Question20:
+Write a query identifying the type of each record in the TRIANGLES table using its three side lengths. Output one of the following statements for each record in the table:
+Equilateral: It's a triangle with 3 sides of equal length.
+Isosceles: It's a triangle with 2 sides of equal length.
+Scalene: It's a triangle with 3 sides of differing lengths.
+Not A Triangle: The given values of A, B, and C don't form a triangle.
+
+SELECT CASE 
+WHEN a + b <= c OR a + c <= b OR b + c <= a THEN 'Not A Triangle'
+WHEN a = b AND b = c THEN 'Equilateral'
+WHEN a != b AND a != c AND b != c THEN 'Scalene'
+ELSE 'Isosceles'
+END
+FROM Triangles;

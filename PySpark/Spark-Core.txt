@@ -262,4 +262,4 @@ Generally re-computation may lead change in the data, it should be write only on
 Map partition can also acts like combiner or like mini reducer that means when ever you want to perform some sort of aggregation then spark application will enter reduce phase because without having values that belongs to same partition we cannot perform aggrgation in this process lots of data will be shuffle across which causes network congestion to decrease that whatever the logic your reducer is doing the same thing we put in mapper phase as combiner to achieve this we use mapPartitions.
 
 -saveAsTextFile > Is used to save the file to the mentioned path.
--Number partition files depends on partitions and internally depends on from where we're reading the data and how we're handling it.
+-Number partition files depends on partitions and internally depends on from where we're reading the data, how we're handling it, during wide transformations and while writing the data using coalesce/repartition*****************

@@ -36,8 +36,8 @@ The Product: 2000
 
 """Types of functions in Python:
 There are two functions
-    -Built in functions or predefined functions : This are Python provided functions i.e. id(), type(), print(), eval(), input().....
-    -User defined functions / customized functions : This are written by the user to meet requirements ex : calculate in previous example.
+    -Built in functions or predefined functions : These are Python provided functions i.e. id(), type(), print(), eval(), input().....
+    -User defined functions / customized functions : These are written by the user to meet requirements ex : calculate in previous example.
 Syntax:
     def function_name(parameters):
     '''doc string'''
@@ -97,7 +97,7 @@ def f1():
 x = f1()
 print("The Return Value :",x)
 
-##Output: Becaues function execution "Hello" is printed, since nothing is returned, the return value of x is None (default return value)
+##Output: Because function execution "Hello" is printed, since nothing is returned, the return value of x is None (default return value)
 Hello
 The Return Value : None
 

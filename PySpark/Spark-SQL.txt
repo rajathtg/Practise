@@ -87,3 +87,64 @@ Write to S3/HDFS storage:
 -For show and for loading the data a job will be created.
 	
 ++++++++++++++++++++++++++++++++++++++++
+
+*******The jars will be downloaded to C:\Users\91961\.ivy2\jars, important interview questions.
+The above path will be generally configured by Admins, we can come to know about it through Spark UI, under environmanent tab.
+
+========================================================================
+-In Spark-Core we can use flatmap to flatten an array and we need to use explode to flatten an array in SQL.
+-Generally we see two nested types of Datastructures/Datatypes in SparkSQL, they're struct and an array.
+-To flatten an array we can use >>>> explode(col("dataset")).alias('explode_col')
+-To flatten a struct we can use >>>> col('explode_col.*')
+-We're doing Dataframe explode, what's the purpose of it?
+-Can we explode struct column or only an array column?
+	-Above question is for Json example, here we are doing it for struct column
+-[["city":"rjy",pincode:533101],["city":"hyd",pincode:533102]] >> It's an array of struct.
+-Explode of DF works as below,
+-Prior to explode:
+Employee_ID		Employee_Name	Address_Info
+1004			Prudhvi			[["city":"rjy",pincode:533101],["city":"hyd",pincode:533102]]
+
+-Post Explode:
+Employee_ID		Employee_Name	Address_Info
+1004			Prudhvi			["city":"rjy",pincode:533101]
+1004			Prudhvi			["city":"hyd",pincode:533102]
+
+-.withColumn helps in creating a new column.
+-##json.loads helps in creating json objects by taking in json strings
+-To register anything as udf we need below things:
+	-Either lambda function or user defined Python function
+	-Return type of the function
+	-Say in the below example convert_Str_JSON_UDF_1 is the user defined python function which takes col("spatial") values as an input for each row and going to return json object as an output.
+
+*****How to create an UDF? ##Refer Below
+*****Use of an UDF? ##Refer Below
+*****Use of explode function?
+
+a	b	c
+1	2	3
+4	5	6
+7	8	9
+10	11	12
+
+Need to add a column 'd' by adding a+b
+
+def add(a,b):
+	return a+b
+##******Below is the way to create an UDF/to register function add as an udf
+add_udf = udf(add, DoubleType()) ##DoubleType() is part of SparkSQL datatypes, we can also use IntegerType()
+df.withColumn("d",add_udf(col('a'),col('b')))
+
+Output:
+=======
+a	b	c	d
+1	2	3	3.0
+4	5	6	9.0
+7	8	9	15.0
+10	11	12	21.0
+
+Explanation given below:
+Row1:a=1,b=2 add(1,2)=>3=d
+Row2:a=4,b=5 add(4,5)=>9=d
+:
+:
