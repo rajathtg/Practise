@@ -500,9 +500,450 @@ print(d.popitem())##Will throw error
 KeyError: 'popitem(): dictionary is empty'
 
 ##Example5:
-d={400:'D',300:'C',200:'E'}
+d={400:'D',300:'C',200:'E'}cdcd
 d.clear()
 print(d)
 
 ##Output:
 {}
+
+===========================================================================
+
+Important functions/methods for dict : setdefault() and copy()
+--------------------------------------------------------------
+
+Syntax >> setdefault(k,v):
+    -If the specified key is already available then simply returns associated value without any replacement
+    -If the specified key is not already available then new key-value pair will be added
+
+##Example1:
+d={100:'A',200:'B'}
+print(d.setdefault(300,'Durga'))
+print(d)
+print(d.setdefault(100,'Durga')) ##It returns A not Durga since key 100 is already there and has value 'A'
+print(d)
+
+##Output:
+Durga
+{100: 'A', 200: 'B', 300: 'Durga'}
+A
+{100: 'A', 200: 'B', 300: 'Durga'}
+
+Aliasing and Cloning:
+--------------------
+
+##Example2: Aliasing concept
+dict1={100:'A',200:'B'}
+dict2=dict1
+dict2[300]='C'
+print(dict1) ##Changes made to dict2, affects dict1 as well
+print(dict2)
+
+##Output:
+{100: 'A', 200: 'B', 300: 'C'}
+{100: 'A', 200: 'B', 300: 'C'}
+
+##Example3: Creating a copy()
+dict1={100:'A',200:'B'}
+dict2=dict1.copy()
+dict2[300]='C'
+print(dict1) ##Changes made to dict2, doesn't affect dict1
+print(dict2)
+
+##Output:
+{100: 'A', 200: 'B'}
+{100: 'A', 200: 'B', 300: 'C'}
+
+==============================================================================
+
+##Write a program to take dictionary from the keyboard and print sum of values??
+
+d=eval(input('Enter Dictionary: '))
+sum=0
+for item in d.items():
+    sum=sum+item[1] ##It creates tuples and we're extracting second index which is a value
+print('The sum of values: ',sum)
+
+##Output:
+Enter Dictionary: {'A':500,'B':350}
+The sum of values:  850
+
+##Using the inbuilt sum function:
+d=eval(input('Enter Dictionary: '))
+print('The sum of values: ',sum(d.values()))
+
+##Output:
+Enter Dictionary: {'A':69,'B':350}
+The sum of values:  419
+
+=================================================================================
+
+##Write a program to find number of occurrences of each letter present in the given string?
+
+##Program skeleton structure:
+input = 'AAABBC'
+##Here A has occurred 3 times, B has occurred 2 times and C only once.
+output = {'A':3,'B':2,'C':1}
+
+##Actual Program:
+word=input('Enter any string: ')
+d={}
+for char in word:
+    d[char]=d.get(char,0)+1
+ """   Here d[A] = d.get(A,0)+1
+              =0+1
+         d={'A':1}
+         d[A] = d.get(A,0)+1
+              =1+1
+         d={'A':2}
+         :
+         :
+         :"""
+    
+print(d)
+for k,v in d.items():
+    print(k,'Occurs',v,'times')
+
+##Output:
+Enter any string: BBBCCCDDAAA
+{'B': 3, 'C': 3, 'D': 2, 'A': 3}
+B Occurs 3 times
+C Occurs 3 times
+D Occurs 2 times
+A Occurs 3 times
+
+========================================================================
+
+##Write a program to find number of occurrences of each vowel present in the given string:
+
+word=input('Enter any string: ').lower()
+vowels={'a','e','i','o','u'}
+d={}
+for char in word:
+    if char in vowels:
+        d[char]=d.get(char,0)+1
+    else:
+        print(char,'Is not a Vowel')
+print(d)
+for k,v in d.items():
+    print(k,'Is a vowel and it occurred',v,'times')
+##If sorting is required we can use below two lines:
+#for k,v in sorted(d.items()):
+#    print(k,'Is a vowel and it occurred',v,'times')
+
+##Ouput:
+Enter any string: VVVAAAIIIooooPPlluuuuuuuUU
+v Is not a Vowel
+v Is not a Vowel
+v Is not a Vowel
+p Is not a Vowel
+p Is not a Vowel
+l Is not a Vowel
+l Is not a Vowel
+{'a': 3, 'i': 3, 'o': 4, 'u': 9}
+a Is a vowel and it occurred 3 times
+i Is a vowel and it occurred 3 times
+o Is a vowel and it occurred 4 times
+u Is a vowel and it occurred 9 times
+
+=============================================================================
+
+##Write a program to accept student name and marks from the keyboard and create a dictionary. Also display student marks by taking student name as input?
+
+##Example1:
+n = int(input('Enter no of Students: '))
+d = {}
+for i in range(n):
+    name=input('Enter Student Name: ')
+    marks=int(input('Enter Student Marks: '))
+    d[name]=marks
+print('Student data insertion completed...')
+print('*'*30)
+print('NAME','\t\t','MARKS') ##\t\t is used to provide tab space
+print('*'*30)
+for k,v in d.items():
+    print(k,'\t\t',v)
+    
+##Output:
+Enter no of Students: 2
+Enter Student Name: Sunny
+Enter Student Marks: 69
+Enter Student Name: Mia
+Enter Student Marks: 96
+Student data insertion completed...
+******************************
+NAME 		 MARKS
+******************************
+Sunny 		 69
+Mia 		 96
+
+##Example2: To implenent the search operation
+n = int(input('Enter no of Students: '))
+d = {}
+for i in range(n):
+    name=input('Enter Student Name: ')
+    marks=int(input('Enter Student Marks: '))
+    d[name]=marks
+print('Student data insertion completed...')
+print('*'*30)
+print('NAME','\t\t','MARKS')
+print('*'*30)
+for k,v in d.items():
+    print(k,'\t\t',v)
+print('Search Operation Started...')
+while True:
+    name=input('Enter Student Name to get marks: ')
+    marks=d.get(name,-1) ##if -1 is not mentioned, it will print none
+    if marks==-1:
+        print('Student not found')
+    else:
+        print('Marks of',name,'are',marks)
+    option=input('Do you want to find another Student marks(yes/no): ').upper()
+    if option=='NO':
+        break
+print('Thanks for using our application')
+
+##Output:
+Enter no of Students: 2
+Enter Student Name: Shiva
+Enter Student Marks: 100
+Enter Student Name: Mani
+Enter Student Marks: 200
+Student data insertion completed..
+******************************
+NAME 		 MARKS
+******************************
+Shiva 		 100
+Mani 		 200
+Search Operation Started...
+Enter Student Name to get marks: Mani
+Marks of Mani are 200
+Do you want to find another Student marks(yes/no): yEs
+Enter Student Name to get marks: Shiva
+Marks of Shiva are 100
+Do you want to find another Student marks(yes/no): Y
+Enter Student Name to get marks: Nino
+Student not found
+Do you want to find another Student marks(yes/no): y'
+Enter Student Name to get marks: Heman'
+Student not found
+Do you want to find another Student marks(yes/no): N
+Enter Student Name to get marks: Ji
+Student not found
+Do you want to find another Student marks(yes/no): nO
+Thanks for using our application
+
+========================================================================
+
+Dict Comprehension:
+-------------------
+Syntax:
+d={x:x*x for x in range(1,6)}
+##In x:x*x >>> x=key & x*x=value
+
+##Example1:
+d={x:x*x for x in range(1,6)}
+print(d)
+
+##Output:
+{1: 1, 2: 4, 3: 9, 4: 16, 5: 25}
+
+##Example2:
+d={x:2**x for x in range(1,6)}
+print(d)
+
+##Output:
+{1: 2, 2: 4, 3: 8, 4: 16, 5: 32}
+
+=============================================================================
+
+##Merging of Collections:
+-------------------------
+
+##List Merging:
+l1=[10,20]
+l2=[30,40]
+l3=l1+l2
+print(l3)
+##Alternative way to merge
+l4=[*l1,*l2] ##*l1 means, all values of l1 and *l2 means, all values of l2
+print(l4)
+
+##Output:
+[10, 20, 30, 40]
+[10, 20, 30, 40]
+
+
+##Tuple Merging:
+t1=(10,20)
+t2=(30,40)
+t3=t1+t2
+print(t3)
+t4=(*t1,*t2)
+print(t4)
+
+##Output:
+(10, 20, 30, 40)
+(10, 20, 30, 40)
+
+
+##Set Merging:
+s1={10,20}
+s2={30,20}
+s3=s1+s2 ##TypeError
+print(s3)
+s4={*s1,*s2}
+print(s4) ##Duplicates will be removed and order will not be maintained
+
+##Output:
+TypeError: unsupported operand type(s) for +: 'set' and 'set'
+{10, 20, 30}
+
+##Dict Merging:
+dict1={100:'A',200:'B'}
+dict2={300:'C',400:'D'}
+d1=dict1+dict2 ##TypeError
+print(d1)
+d2={**dict1,**dict2}
+print(d2)
+
+##Output:
+{100: 'A', 200: 'B', 300: 'C', 400: 'D'}
+
+##Dict Merging: Conclusion2
+dict1={100:'A',200:'B'}
+dict2={100:'C',400:'D'}
+d2={**dict1,**dict2} ##Values of dict1 are replaced with dict2, if we give {**dict2,**dict1} then whatever in dict2 is replaced with dict1
+print(d2)
+
+##Output:
+{100: 'C', 200: 'B', 400: 'D'}
+
+=================================================================================
+
+##Nested Collections:
+---------------------
+-Collections inside a collection is called Nested Collections.
+-In Django and Rest API, the Nested collection is widely used.
+
+##Example:
+l1=[(10,20,30),(40,50,60)]
+print(l1[0][1]) ##20
+print(l1[1][2]) ##60
+
+##Output:
+20
+60
+
+##Example2:
+d={'Cars':('Innova','Honda','Maruthi'),
+   'Mobiles':('Samsung','Iphone','Nokia')
+   } ##It's a dictionary of Tuples
+##To display second car
+print(d['Cars'][1]) ##We can also try d.get(key)
+print(d.get('Cars')[2])
+##To display Mobile names
+print(d['Mobiles'][1]) ##We can also try d.get(key)
+print(d.get('Mobiles')[2])
+##To display all mobiles:
+print(d.get('Mobiles'))
+##To display in each row
+for x in d['Mobiles']:
+    print(x)
+    
+##Output:
+Honda
+Maruthi
+Iphone
+Nokia
+('Samsung', 'Iphone', 'Nokia')
+Samsung
+Iphone
+Nokia
+
+====================================================================================
+##Implementation of Supermarket by using Dict:
+
+##Example1:
+Supermarket = {
+                    'store1':
+                            {
+                                'name' : 'Durga General Store',
+                                'items': [
+                                    {'name':'soap','quantity':20},
+                                    {'name':'brush','quantity':30},
+                                    {'name':'pen','quantity':40}
+                                ] ##List
+                            }, ##Dict
+                    'store2':
+                            {
+                                'name':'Sunny Book Store',
+                                'items':[
+                                    {'name':'python','quantity':100},
+                                    {'name':'django','quantity':200},
+                                    {'name':'java','quantity':300}
+                                ] ##List
+                            } ##Dict
+} ##Dict
+print(Supermarket)
+##To print name of Stores:
+print('Name of the Store1:')
+print(Supermarket['store1']['name'])
+print(Supermarket.get('store1')['name'])
+##To print names of all items present in store1:
+print('To print names of all items present in store1:')
+print(Supermarket['store1']['items'])
+for d in Supermarket['store1']['items']:
+    print(d['name'])
+##To print quantity of django:
+print('To print quantity of django')
+print(Supermarket['store2']['items'][1]['quantity'])
+for d in Supermarket['store2']['items']:
+    if d['name']=='django':
+        print(d['quantity'])
+        
+##Output:
+{'store1': {'name': 'Durga General Store', 'items': [{'name': 'soap', 'quantity': 20}, {'name': 'brush', 'quantity': 30}, {'name': 'pen', 'quantity': 40}]}, 'store2': {'name': 'Sunny Book Store', 'items': [{'name': 'python', 'quantity': 100}, {'name': 'django', 'quantity': 200}, {'name': 'java', 'quantity': 300}]}}
+Name of the Store1:
+Durga General Store
+Durga General Store
+To print names of all items present in store1:
+[{'name': 'soap', 'quantity': 20}, {'name': 'brush', 'quantity': 30}, {'name': 'pen', 'quantity': 40}]
+soap
+brush
+pen
+To print quantity of django
+200
+200
+
+======================================================================================
+
+##List inside Set and Dictionary:
+
+-Set, Dict and Tuple are hashable
+-Where as List is unhashable, hence we can't add list to set and also list to dict as keys
+-******But in dict we can use list for values
+
+##Example1:
+set={(10,20,30)}
+print(set)
+set={[1,2,3]}
+print(set) ##TypeError
+
+##Output:
+{(10, 20, 30)}
+TypeError: unhashable type: 'list'
+
+##Example2:
+dict={(1,2):'One'}
+print(dict)
+dict={[1,2]:'One'}
+print(dict)
+dict={(2,3):['Goa','Gone']} ##We can use list for values in dict
+print(dict)
+
+##Output:
+{(1, 2): 'One'}
+TypeError: unhashable type: 'list'
+{(2, 3): ['Goa', 'Gone']}
+
