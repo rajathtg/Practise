@@ -1,0 +1,129 @@
+Kafka Topics:
+=============
+-Kafka is High Throughput Distributed Messaging System to build low latency system.
+-It's a Publisher/Subscriber model (Pub/Sub model)
+-What all are present in Kafka?
+	-Kafka Connect
+	-Kafka SQL
+	-Kafka Streams
+	-Kafka Core
+-Major Components of Kafka:
+	-Brokers > Mediator between producer and consumer
+	-Zookeeper
+	-Topic
+	-Producer > To produce the messages to kafka cluster
+	-Consumers > To consume the messages from the kafka cluster
+-Any click,over,search on Amazon is an event generated in Kafka Flow of Amazon
+-Amazon uses Kafka to capture all these information and stored on to S3/Object storage, So the event will be captured and stored somewhere
+-Single Broker is one single server with HDD/RAM/N/W Card/Cores/Processors
+	-Group of brokers is called a bootstrap servers
+	-Each broker communicate to each other through zookeepers
+	-If we connect to one broker, we're connected to everything
+-The Message from Producer will be stored in the hard disk (Topics) of the broker and when consumer poll for the message then broker will provide the message to the consumer
+-How does the broker store the messages?
+The broker store messages on the topic, it should be created first
+A topic is very similar to the table in the RDBMS having set of columns and rows
+Or A topic is also a folder (logical division of data)
+When a producer sends a message to topic, it creates an _event_timestamp
+Topic always has 3 columns Timestamp,Key and Value and for these data multiple rows will be created
+*****The datatype of key,value stored is always a byte
+-A topic is divided into partitions and they are distributed across brokers so that cluster will be balanced. We can achieve parallel processing / distributed processing only when we have a distributed storage
+-The data will be shuffled/distributed across the different partition based on the hashpartitioning, it uses the key for the same to achieve
+-So if there are 4 partitions, it will take the number of performs in the modulo value and gets the partition number and it will push that message to that particular partition of one of the broker
+			Topic
+
+Part1	Part2	Part3	PartN
+
+BrkA	BrkB	BrkC	BrkN
+k:R,v:1 k:G,v:1 k:O,v:1 k:E,v:1
+k:R,v:2 k:G,v:2 k:O,v:2 k:E,v:2
+k:R,v:3
+
+-The Kafka's default Paritioner is Murmur2 Hash Algorithm
+-Murmur2 Algorithm hashes the key and puts the records into a particular partition and using a below formula,
+Targetpartition=Utils.abs(utils.murmur2(record.key)%numpartitions)
+-Generic Hash Partitioner Formula => Partition Number = (hash(key)%number of partitions)
+-It is also made sure that same key is co-located in the same partition
+-Note : If the key is null, Kafka will not go for hash partitioning, instead it will go for round robin
+-Producer before publishing the messages, it will first get the topic details from Kafka Broker  by making a http request to it
+-If there are 3 brokers and a topic is created with 5 partitions, then at first go all the three will get one partition each and later out of three  brokers, 2 of them will receive additional 1 partition each
+-Producer Sends messages to the Topic partitions, the message will be in the form of key & value
+-The partition will store that message as a log file, here log file is a place where messages will be stored physically and partition are called logical existence
+
+Offsets:
+========
+				Topic
+
+Part1		Part2		Part3		PartN
+			
+BrkA		BrkB		BrkC		BrkN
+k:R,v:1 	k:G,v:1 	k:O,v:1 	k:E,v:1
+offset:1	offset:1	offset:1	offset:1
+
+k:R,v:2 	k:G,v:2 	k:O,v:2 	k:E,v:2
+offset:2	offset:2	offset:2	offset:2
+
+k:R,v:3
+offset:3
+
+-Each message within a partition gets an incremental id called offset
+-The offset is maintained at partition level and not at topic level
+-Once the data is written to a partition in can't be changed(immutability)
+-Order is gauranteed only with a partition not across partitions. That means each partition is independent of each other
+-Let's talk more about offset when we talk about consumer
+
+Replication factor:
+===================
+-A copy of data of partition1 is placed in BrokerA, BrokerB abd BrokerC. Even if one broker goes down a copy will be available in other brokers. This helps in overcoming the fault tolerance.
+-Every topic partitions will have replica
+-Out of replicas there will be one leader and remaining are called in-sync replicas
+-Zookeeper will conduct election b/w replicas and choose the leader out of it
+-So when messages are received on topic > partition1 > leader replica > in-sync replicas
+-We will discuss more about this when we talk about Producer Configuration
+
+Partitions Count:
+-It generally depends on the throughput
+-Partitions should be not more than 2000 to 4000 for broker and 20,000 per cluster, if broker goes down zookeeper has to perform lots of leader elections
+
+Replication Factor:
+-RF should be atleast 2, usually 3 and max 4
+-Better the resilience of your system N-1 brokers can fail
+-In case of more replications(higher the latency if acks = all (we will discuss in details when we talk about producer))
+
+The cleanup policy of a topic is divided in Delete/Compact:
+-Delete:
+	-This is furthe r divided into Time/Size based
+	-Time based, by default broker is configured to delete messages in 7 days and this can be controlled using log.retention.hours
+	-Size based, the broker starts cleaning up the messages based on space
+	-Lets say max size for topic is set to to 20kb and lets say each message has 5kb so in your topic we can store max 4 messages, now lets say when 5 message arrives the system the old ones are deleted
+	-By default no value will be set in configuration
+	-The property to set size is log.retention.bytes
+-Compaction:
+	-Generally not seen in the Pub/Sub model, it is preferred in the KSQL/KSTREAMS/KafkaConnect
+	-Compaction in Kafka works as Upsert(Update+Insert), that means when a new message is produced by the producer to broker then broker check whether record with key exists or not if exist it updates the value and if it is not will insert the value
+	-So if the consumer is down, meawhile a key which already exists will get updated two or three times, then there will be a data loss, just because of this compaction is not preferred in Pub/Sub model
+	
+Zookeeper:
+	-Distributed configuration Management
+	-Self election
+	-Coordination and locks (low level)
+	-Key value store
+	-Zookeper is used in many distributed systems such as hadoop, kafka , Hbase etc
+	-It's an apache project that's proven to be very stable and hasn't had a major release in many years
+	-3.4.x stable version
+	-Internally it has znodes
+	-Any broker that registers with kafka has to get registered with znode, Broker registration, with heart beat mechanism to keep the list of current
+	-When broker registration happens a znode will be created
+	-All the communication between brokers will happen through zookeeper
+	-If zookeeper goes down, Kafka Cluster will be down
+	
+Serialization (happens at Producer end):
+	-This place a very very important role in Kafka
+	-The process of transforming object to byte is called serialization
+	-Kafka cluster/topic can store only bytes so when producer is sending the messages to topic messages(Key,Value) has to be serialized or converted to bytes
+	-Conversion process will happen at producer end using serializes
+	-Default serializers provided by kafka are string,long,int for custom object serialization we have to depend on AVRO serialization
+	
+De-Serialization (happens at Consumer end):
+	-The process of transforming byte to object is called de-serialization
+	-When consumer connects to the Kafka and subscribe for a topic then kafka send messages in bytes which has to be de-serialized back to message at consumer for the further processing

@@ -284,16 +284,17 @@ range partition will happen when writing data to csv/parquet file format
 
 ###############22-Feb-2022
 Create the access key and access id
+IAM > 'Identity Access Managment' system
 Create a bucket in S3
-In real time we use roles(called as svs) to access through code or to login to AWS.
+In real time we use roles(called as svs) to access through code or to login to AWS, don't ask your colleagues or managers give access key/id ;)
 If it is mandatory to use, then it will be stored in param store and can be used.
 ****The AWS Key Details is available in SparkInstEnvVarSettings.txt Doc*****
 In real time for any external dependencies jar
 Athena is like Hive.
 Athena uses glue catalog to store the meta data.
-We need to give the output location or temp location store data
+We need to give the output location or temp location to store data
 create the temp location to store data
-create the database
+create the database ##Will be stored in AWS Glue
 create the table:
 
 CREATE EXTERNAL TABLE covid (
@@ -314,10 +315,10 @@ CREATE EXTERNAL TABLE covid (
 )
 PARTITIONED BY (date string)
 STORED AS PARQUET
-LOCATION 's3://spark-dvs-aws/output/'
+LOCATION 's3://pyspark-aws-doit/output/'
 tblproperties ("parquet.compression"="SNAPPY");
 
-MSCK REPAIR TABLE covid;
+MSCK REPAIR TABLE covid; ##To add all the partitions to metadata
 MSCK REPAIR TABLE customer;
 
 CREATE EXTERNAL TABLE customer (
@@ -347,6 +348,7 @@ EMR & ECS *****Careful cost effective
 Redshift
 Lambda
 Cloudwatch
+AWS Cloud Formation
 
 ##############23-Feb-2022
 *****Delta File format:
@@ -405,3 +407,25 @@ GitHub
 Python
 Hacker Rank
 AWS
+
+========================================================
+
+YARN >> Yet Another Resource Negotiator
+-It's a Master-Slave Architecture
+-It has a Per App Master and Node Manager/Worker Nodes
+-Worker Nodes consists of a container 
+-When we allocated some executors for a job
+-The executor will get a launched inside the container 
+-A container is a sub operating system created on top of operating system where it will be allocated with some part of CPU, disk, RAM and network I/O to it
+
+Standalone Mode:
+Executor and Driver run in same JVM
+
+Cluster Mode (Real Time), we never use client mode:
+Driver and Executors will run in a separate JVMs on a separate containers which is been allocated with VCORES, Memory, Disk and Some Part of I/O
+
+##EMR : Elastic Map Reduce
+Cluster Name : 
+S3 Folder Location : 
+Launch Mode : Cluster Execution
+Software Configuration : 
