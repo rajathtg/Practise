@@ -1,0 +1,25 @@
+Hadoop:
+=======
+1. What are the five V's associated with Big Data?
+-Initially IBM had quoted 3 V's > Volume,Variety and Velocity
+	Volume > It is the amount of data we're dealing with. (SocialNetworking, Medical Domain etc.)
+	Variety > Each domain produces it's own type of data i.e. structured, unstructured and semi structured etc.
+	Velocity > The speed the data is getting generated i.e. take example of FB and twitter each second there is a like,comment, audio or image or video upload.
+Later came the,
+	Veracity > The data which we receive cannot be always a complete one, there can be something missing, corrupted.so, how deal with such data.
+	Value > The data what we received I want to know what is a importance / does it carry any value. Because once after we process it, it shouldn't go as complete waste that's y.
+Note: Later few came up with Visualisation,Validity and Vocabulary etc, but above five are important.
+
+2. What are the different structures of data?
+-Structured >	Organised data format
+		Data Schema is fixed
+		Ex: RDBMS data etc.
+-Semi_Structured > Partial organised data
+		   Lacks formal structure of a data model
+		   Ex: XML and JSON files etc.
+-Unstructured > Un-Organised data
+		Unknown Schema
+		Ex: Multi-media files etc. 
+			
+3. How Hadoop differs from Traditional Processing System using RDBMS?
+		

@@ -1,0 +1,268 @@
+**************In spark 80% of the code uses map and flatmap:
+
+Transformations:
+----------------
+-In scala to perform transformations we two separate functions i.e. map() and flat map().
+-Similar to where in SQL we have filter here in scala.
+-Transformation is nothing but performing operation on each and every element.
+
+scala> val x = List(10,20,30,40,50,60)
+x: List[Int] = List(10, 20, 30, 40, 50, 60)
+
+scala> val y = x.map(v => v+100)
+y: List[Int] = List(110, 120, 130, 140, 150, 160)
+Here the input for y is x, where x is the list of numbers.
+v represents the each element of x.
+
+-Let's include some boolean condition.
+scala> val z = y.map(v => v>140)
+z: List[Boolean] = List(false, false, false, false, true, true)
+
+-Let's work on characters or strings:
+scala> val name = List("RavI","rani","vani","veni","venU")
+name: List[String] = List(RavI, rani, vani, veni, venU)
+
+-Task is to conver each element into the uppercase:
+scala> val Name = name.map(v => v.toUpperCase)
+Name: List[String] = List(RAVI, RANI, VANI, VENI, VENU)
+
+scala> Name.foreach(print)
+RAVIRANIVANIVENIVENU
+scala> Name.foreach(println)
+RAVI
+RANI
+VANI
+VENI
+VENU
+
+-Simple one without map:
+scala> val str = "computer".toUpperCase
+str: String = COMPUTER
+------------------------------------------------------------------------------------------------------------
+-Some useful short cuts:
+
+scala> x
+res14: List[Int] = List(10, 20, 30, 40, 50, 60)
+
+scala> val y = x.map(_+100)
+y: List[Int] = List(110, 120, 130, 140, 150, 160)
+
+scala> val z = y.map(_>140)
+z: List[Boolean] = List(false, false, false, false, true, true)
+
+-When we're required to do multiple operations/transformations:
+
+scala> val sals = List(100000,20000,30000,40000,10000,50000)
+sals: List[Int] = List(100000, 20000, 30000, 40000, 10000, 50000)
+
+scala> //net sal --> tax 10%,hra 20%
+
+scala> val nets = sals.map{sal =>
+     | val tax = sal*10/100
+     | val hra = sal*20/100
+     | val net = sal + hra - tax
+     | }
+nets: List[Unit] = List((), (), (), (), (), ())
+
+Note:
+-For single transformation use normal brackets.
+-For multi transformations use curly brackets.
+-Even code everything is correct the output displays as blank the reason is we haven't mentioned any return type.
+-Hope we have understood now the importance of it.
+
+scala> val nets = sals.map{sal =>
+     | val tax = sal*10/100
+     | val hra = sal*20/100
+     | val net = sal + hra -tax
+     | net
+     | }
+nets: List[Int] = List(110000, 22000, 33000, 44000, 11000, 55000)
+
+-Next task is to keep 1st character in upper case and remaining all in lower case.
+scala> name
+res16: List[String] = List(RavI, rani, vani, veni, venU)
+
+scala> val names = name.map{x =>
+     | val trim = x.trim() //This will trim any additional spaces on left and right side of the character
+     | val fc = trim.substring(0,1).toUpperCase //Substring(0,1) means, just consider first character and exclude remaining
+     | val rc = trim.substring(1).toLowerCase //This means just consider remaining character excluding 1st one
+     | fc+rc //concatinating them
+     | }
+names: List[String] = List(Ravi, Rani, Vani, Veni, Venu)
+=======================================================================================================================================
+Slices & Take:
+=======
+To access range of elements.
+scala> x.slice(2,5)
+res22: List[Int] = List(30, 40, 50)
+
+scala> x.slice(0,3)
+res23: List[Int] = List(10, 20, 30)
+
+scala> x.take(3)
+res24: List[Int] = List(10, 20, 30)
+Note: take is similar to limit statement in our SQL
+
+scala> x.slice(2,x.size)
+res26: List[Int] = List(30, 40, 50, 60)
+
+Applying slice on string.
+
+scala> val names = name.map{x =>
+     | val trim = x.trim() //This will trim any additional spaces on left and right side of the character
+     | val fc = trim.slice(0,1).toUpperCase
+     | val rc = trim.slice(1,trim.size).toLowerCase
+     | fc+rc //concatinating them
+     | }
+names: List[String] = List(Ravi, Rani, Vani, Veni, Venu)
+
+================================================================================================================
+Flat Maps:
+---------
+scala> val l = List(List(1,2,3),List(3,4),List(1,3,5,6),List(1,2,3))
+l: List[List[Int]] = List(List(1, 2, 3), List(3, 4), List(1, 3, 5, 6), List(1, 2, 3))
+
+Consider the above elements as day number 1,2 & 3 sales.
+Calculate the how many tranasactions per day.
+
+scala> val r = l.map(x => x.size)
+r: List[Int] = List(3, 2, 4, 3)
+
+
+I want what is the total sales happened:
+scala> val rsum = l.map(x => x.sum)
+rsum: List[Int] = List(6, 7, 15, 6) 
+
+scala> val tsum = rsum.sum
+tsum: Int = 34
+
+Let's make it little simpler:
+scala> val l2 = l.flatMap(x => x)
+l2: List[Int] = List(1, 2, 3, 3, 4, 1, 3, 5, 6, 1, 2, 3)
+This is equivalent to the flatten present in PIG.
+
+scala> val rsum = l.flatMap(x => x).sum
+rsum: Int = 34
+-----------------------------------------------------------------------------------------------------
+When to use Map and flatMap:
+-Let's work on word count example.
+-Task is to calculate how many times each word is repeated in below example.
+
+scala> val lines = List("I Love Hadoop",
+     | "I Love Spark","I Love Scala","I Love Machine Learning")
+lines: List[String] = List(I Love Hadoop, I Love Spark, I Love Scala, I Love Machine Learning)
+
+-If input is a key-value pair it becomes easy for us to do the task.
+	Let's divide each line into words.
+	We have split function in Java.
+	Each line will splitted into array.
+
+scala> val words = lines.map(x => x.split("")) //Here ("") is the delimiter, we're using that for splitting.
+words: List[Array[String]] = List(Array(I, " ", L, o, v, e, " ", H, a, d, o, o, p), Array(I, " ", L, o, v, e, " ", S, p, a, r, k), Array(I, " ", L, o, v, e, " ", S, c, a, l, a), Array(I, " ", L, o, v, e, " ", M, a, c, h, i, n, e, " ", L, e, a, r, n, i, n, g))
+
+scala> val words = lines.map(x => x.split(" ")) //Here (" ") is the delimiter, we're using that for splitting.
+words: List[Array[String]] = List(Array(I, Love, Hadoop), Array(I, Love, Spark), Array(I, Love, Scala), Array(I, Love, Machine, Learning))
+
+Note: Small mistake in mentioning space between quotation brings huge diff in output.
+
+scala> val w = lines.flatMap(x => x.split(" "))
+w: List[String] = List(I, Love, Hadoop, I, Love, Spark, I, Love, Scala, I, Love, Machine, Learning)
+
+Note:
+-When we use flatMap, if each element is a collection, it is forming a single collection.
+-When every element is important then we got to use flatmap
+
+scala> val pair = w.map(x => (x,1))
+pair: List[(String, Int)] = List((I,1), (Love,1), (Hadoop,1), (I,1), (Love,1), (Spark,1), (I,1), (Love,1), (Scala,1), (I,1), (Love,1), (Machine,1), (Learning,1))
+
+Example2:
+scala> val recs = List("101,amar,40000,m,11","102,amala,50000,f,12","103,giri,60000,m,11","104,giriraja,90000,f,13","105,Mani,100000,m,12")
+recs: List[String] = List(101,amar,40000,m,11, 102,amala,50000,f,12, 103,giri,60000,m,11, 104,giriraja,90000,f,13, 105,Mani,100000,m,12)
+
+-Task is "select sex,sum(sal) from emp group by sex;"
+-To perform any grouping aggregations as per theory the input should be collection of pairs i.e sex as key and sal as value.
+-expectation: Array((m,40000),(f,50000),(m,60000).......)
+
+scala> recs.foreach(println)
+101,amar,40000,m,11
+102,amala,50000,f,12
+103,giri,60000,m,11
+104,giriraja,90000,f,13
+105,Mani,100000,m,12
+
+scala> val arr = recs.map(x => x.split(",")) //delimiter is , this time
+arr: List[Array[String]] = List(Array(101, amar, 40000, m, 11), Array(102, amala, 50000, f, 12), Array(103, giri, 60000, m, 11),
+ Array(104, giriraja, 90000, f, 13), Array(105, Mani, 100000, m, 12))
+
+-Previously each element was string, now we have converted that into array of the string.
+-Unlike the previous example here only specific words are important for me.
+-So let's go with map function.
+
+scala> val spair = arr.map(x => (x(3),x(2).toInt)) //we're performing explicit casting and converting string into int by using .toInt.
+spair: List[(String, Int)] = List((m,40000), (f,50000), (m,60000), (f,90000), (m,100000))
+
+Example_3:
+scala> val data = List("100,200,500","800,200,300,400,500","10000,30000","900,1000,5000,10000")
+data: List[String] = List(100,200,500, 800,200,300,400,500, 10000,30000, 900,1000,5000,10000)
+
+-We need number of transaction for each customer:
+scala> val r = data.map{x =>
+     | val w = x.split(",")
+     | val count = w.size
+     | count
+     | }
+r: List[Int] = List(3, 5, 2, 4)
+
+scala> val r = data.flatMap{x =>
+     | x.split(",")}
+r: List[String] = List(100, 200, 500, 800, 200, 300, 400, 500, 10000, 30000, 900, 1000, 5000, 10000)
+
+scala> r.size
+res31: Int = 14
+
+-----------------------------------------------------------------------------------------------------------------------
+Let's play with little filter operation: This is similar to 'Where' in SQL.
+
+Ex1:
+-Reconsider the previous input:
+scala> l
+res32: List[List[Int]] = List(List(1, 2, 3), List(3, 4), List(1, 3, 5, 6), List(1, 2, 3))
+
+-Task is I need transaction list in which customer did more than two transactions.
+scala> val r = l.filter(x => x.size > 2)
+r: List[List[Int]] = List(List(1, 2, 3), List(1, 3, 5, 6), List(1, 2, 3))
+
+Ex2:
+scala> recs.foreach(println)
+101,amar,40000,m,11
+102,amala,50000,f,12
+103,giri,60000,m,11
+104,giriraja,90000,f,13
+105,Mani,100000,m,12
+
+-I want to take only male's data: "select * from emp where sex="m";"
+scala> val males = recs.filter(x => x.contains("m")).foreach(println)
+101,amar,40000,m,11
+102,amala,50000,f,12
+103,giri,60000,m,11
+105,Mani,100000,m,12
+Note: Even one with "f" also got printed because of "m" in the name amala.
+
+-Let's try with new code.
+
+scala> val males = recs.filter{x =>
+     | val sex = x.split(",")(3).toLowerCase //Post splitting we get array and all the array we're converting into LowerCase since few males can be mentioned in "M"
+     | sex=="m"
+     | }
+males: List[String] = List(101,amar,40000,m,11, 103,giri,60000,m,11, 105,Mani,100000,m,12)
+
+scala> males.foreach(println)
+101,amar,40000,m,11
+103,giri,60000,m,11
+105,Mani,100000,m,12
+
+Note:
+-In this way we can apply filters, we can apply filters to strings,numbers... 
+-Within filter statements only boolean values are valid.
+
+

@@ -1,0 +1,317 @@
+1. Initially Create a Project:
+Right click under package > New > Scala Project > Give name > next and finish
+
+*************************************************************************************************
+
+2.Let's start of with Interpreter:
+Windows > Show view > Scala Interpreter > select First Code(Project name) > OK
+Write "Hello World" > Ctrl+Enter to execute it > it's that simple.
+
+In Scala variable name is more important than data type name:
+Ex: var i=9;
+ output > i : Int = 9 (It will auto take the datatype)
+
+or var num : Int = 7; (Int I is case sensitive, don't use int, similarly String etc)
+output > num : Int = 7
+
+next type i+num
+output > 16
+
+We can also enter string here,
+var name : String = "Rajath"
+output > name : String = Rajath
+
+Note: Above things are called as REPL (Read Eval Print Loop)
+
+*****************************************************************************************************
+
+3.Let's start working with worksheet:
+Things to know
+In JAVA we have int, float, double, char and so on, these are called as Primitive Data types
+Bec of data types JAVA is not completely odject oriented.
+
+***Here in Scala Int is a class itself and num,8 is an object
+Ex: var num : Int = 8
+
+***Semi Colons are not mandatory at the end of the code
+
+*****Once done writing code save it (ctrl+s) to view output immediately
+object Demo {
+  println("Welcome to the Scala worksheet Rajath")//> Welcome to the Scala worksheet Rajath
+   var num : Int = 8                              //> num  : Int = 8
+   var i : Int = 9                                //> i  : Int = 9
+  println(num*i)                                  //> 72
+}
+
+
+**Mutation is not encouraged in Scala since it believes in con-currency,
+i.e if we assign num with another object still it considers that as well, generally it's not good
+Because if same variable is shared with another object then it affects that as well therefore please avoid
+on changing variable which is,
+object Demo {
+  println("Welcome to the Scala worksheet Rajath")//> Welcome to the Scala worksheet Rajath
+   var num : Int = 8                              //> num  : Int = 8
+   var i : Int = 9                                //> i  : Int = 9
+   num = 6
+  println(num*i)                                  //> 54
+}
+
+To overcome above problem and to uplift the concurrency we use ""val"" inplace of var
+it makes it final (similarly we use final in JAVA)
+
+***********************************************************************************************************
+
+4.Scala is also called as functional programming and there is concept of operation overloading
+var result = 8 + 7 > here '+' is not an operator instead a method or function
+
+var result = 8 + 7                             //> result  : Int = 15
+var resulted = 8.+(7)                          //> resulted  : Int = 15
+
+Note : 8 is object, . is operator, + is function, (7) parameter passed
+something of this type def+(x:Int):int
+
+*****Scala is both object oriented and functional programming language.
+
+*********************************************************************************************************
+
+5.Class and Object in Scala:
+ 
+The below is how we create class in Scala:
+object Demo {
+case class student()
+}
+
+() in above program is constructor, here we can create construcor as soon as we get class in Scala
+
+We can specify the variables inside,
+object Demo {
+case class student(var rollno : Int,var name : String,var marks : Int)
+}
+
+We can also define default values inside:
+object Demo {
+case class student(var rollno : Int = 12,var name : String = "Rajath",var marks : Int = 85)
+}
+
+if we need to provide methods or definitions we can mention like below,
+object Demo {
+case class student(var rollno : Int = 12,var name : String = "Rajath",var marks : Int = 85)
+{
+}
+var s1 = student();                               //> s1  : Demo.student = student(12,Rajath,85)
+var s2 = student(3,name = "Rakshith",85)          //> s2  : Demo.student = student(3,Rakshith,85)
+var s3 = student(10)                              //> s3  : Demo.student = student(10,Rajath,85)
+var s4 = student(marks = 70)                      //> s4  : Demo.student = student(12,Rajath,70)
+var s5 = student(name = "Lohith")                 //> s5  : Demo.student = student(12,Lohith,85)
+}
+
+In s2,3,4,5 we're doing constructor overloading
+
+This how we create class,object and constructor
+
+***********************************************************************************
+
+6.Define or Creating Methods or Function in Scala:
+
+object Demo {
+case class student(var rollno : Int = 12,var name : String = "Rajath",var marks : Int = 85)
+{
+def show() = println("hiii")
+}
+var s1 = student();                               //> s1  : Demo.student = student(12,Rajath,85)
+s2.show()                                         //> hiii
+}
+
+def show() = println("hiii") is used to define method, we can include methods in curly bracket if they're more in number
+
+object Demo {
+case class student(var rollno : Int = 12,var name : String = "Rajath",var marks : Int = 85)
+{
+def show()
+{
+println("hiii")
+println("Mera naam joker")
+println("I love India")
+}
+}
+var s1 = student()                                //> s1  : Demo.student = student(12,Rajath,85)
+s1.show()                                         //> hiii
+                                                  //| Mera naam joker
+                                                  //| I love India
+}
+
+*****************************************************************************************************************************
+
+7.To Compare two objects using method. Since it allows operator overloading,
+object Demo {
+case class student(var rollno : Int = 12,var name : String = "Rajath",var marks : Int = 85)
+{
+def show() = println("hiii")
+def >(s2 : student) : Boolean = marks > s2.marks
+}
+var s1 = student();                               //> s1  : Demo.student = student(12,Rajath,85)
+var s2 = student(10,"Rohan",100)                  //> s2  : Demo.student = student(10,Rohan,100)
+s1.show()                                         //> hiii
+s1.>(s2)                                          //> res0: Boolean = false
+}
+
+************************************************************************************************************************************
+
+8.List and Lambda expression in Scala:
+
+object Demo {
+var nums = List(4,7,2,3)                          //> nums  : List[Int] = List(4, 7, 2, 3)
+}
+
+To use for loop in Scala,
+object Demo {
+var nums = List(4,7,2,3)                          //> nums  : List[Int] = List(4, 7, 2, 3)
+
+for(n<- nums)
+println(n)                                        //> 4
+                                                  //| 7
+                                                  //| 2
+                                                  //| 3
+}
+
+
+Cocept of lambda expression,(Go through more about this and try to understand the diff)
+object Demo {
+var nums = List(4,7,2,3)                          //> nums  : List[Int] = List(4, 7, 2, 3)
+
+for(n<- nums)
+println(n)                                        //> 4
+                                                  //| 7
+                                                  //| 2
+                                                  //| 3
+nums.foreach{i:Int =>println(i)}                  //> 4
+                                                  //| 7
+                                                  //| 2
+                                                  //| 3
+}
+
+******************************************************************************************************
+
+9.List Reverse, Drop and Take in Scala:
+
+Below when we do reversing also it is creating new list for that and it is not mutating, i.e when 
+next code foreach is ran it is not mutated to reverse instead it retains it values isn't that amazing
+cheers to Scala, love you buddy.
+
+object Demo {
+var nums = List(4,7,2,3)                          //> nums  : List[Int] = List(4, 7, 2, 3)
+
+for(n<- nums)
+println(n)                                        //> 4
+                                                  //| 7
+                                                  //| 2
+                                                  //| 3
+nums.reverse                                      //> reverseNums  : List[Int] = List(3, 2, 7, 4)
+nums.foreach{i:Int =>println(i)}                  //> 4
+                                                  //| 7
+                                                  //| 2
+                                                  //| 3
+}
+
+or 
+above and below means the same,
+
+object Demo {
+var nums = List(4,7,2,3)                          //> nums  : List[Int] = List(4, 7, 2, 3)
+
+for(n<- nums)
+println(n)                                        //> 4
+                                                  //| 7
+                                                  //| 2
+                                                  //| 3
+var reverseNums = nums.reverse                    //> reverseNums  : List[Int] = List(3, 2, 7, 4)
+nums.foreach{i:Int =>println(i)}                  //> 4
+                                                  //| 7
+                                                  //| 2
+                                                  //| 3
+}
+
+***********************************************************************************************************************************
+
+10.To remove/drop and take elements in Scala
+
+When we use drop(2) it drops first 2 numbers and displays remaining and mutation is not happening we can see it while foreach is executed
+When we use take(3) it displays next 3 numbers post drop when used alomg with drop
+When only take(2) is used it takes only first two numbers 
+We can use a simple language of english without using (),space etc..  
+
+object Demo {
+var nums = List(4,7,2,3,8,4)                      //> nums  : List[Int] = List(4, 7, 2, 3, 8, 4)
+
+nums.drop(2)                                      //> res0: List[Int] = List(2, 3, 8, 4)
+nums.drop(2) take (3)                             //> res1: List[Int] = List(2, 3, 8)
+nums drop 2 take 1                                //> res2: List[Int] = List(2)
+nums drop 3 take 2                                //> res3: List[Int] = List(3, 8)
+nums take 3                                       //> res4: List[Int] = List(4, 7, 2)
+
+nums.foreach{i:Int =>println(i)}                  //> 4
+                                                  //| 7
+                                                  //| 2
+                                                  //| 3
+                                                  //| 8
+                                                  //| 4
+}
+
+*************************************************************************************************************
+
+11.Type of Hierarchy in Scala:
+
+better to look into flow chart in the video on how the things get displayed
+
+object Demo {
+var nums = List(4,7,2,true)                       //> nums  : List[AnyVal] = List(4, 7, 2, true)
+var nums1 = List(4,7,2,false,"Dhoni")             //> nums1  : List[Any] = List(4, 7, 2, false, Dhoni)
+}
+*************************************************************************************************************
+
+12.List of Complex Objects in Scala:
+
+object Demo {
+var nums = List(4,7,2,true)                       //> nums  : List[AnyVal] = List(4, 7, 2, true)
+var nums1 = List(4,7,2,false,"Dhoni")             //> nums1  : List[Any] = List(4, 7, 2, false, Dhoni)
+
+case class Stud(rollno : Int,name : String,marks : Int)
+val students = List(Stud(1,"Navin",40),Stud(2,"Pooja",60),Stud(3,"Nadeem",80),Stud(4,"Mohan",30))
+                                                  //> students  : List[Demo.Stud] = List(Stud(1,Navin,40), Stud(2,Pooja,60), Stud(
+                                                  //| 3,Nadeem,80), Stud(4,Mohan,30))
+val first = students.head                         //> first  : Demo.Stud = Stud(1,Navin,40)
+val rest = students.tail                          //> rest  : List[Demo.Stud] = List(Stud(2,Pooja,60), Stud(3,Nadeem,80), Stud(4,M
+                                                  //| ohan,30))
+val rest1 = students.tail.tail                    //> rest1  : List[Demo.Stud] = List(Stud(3,Nadeem,80), Stud(4,Mohan,30))
+val rest2 = students.tail.head                    //> rest2  : Demo.Stud = Stud(2,Pooja,60)
+val toppers = students.filter(s => s.marks>=60)   //> toppers  : List[Demo.Stud] = List(Stud(2,Pooja,60), Stud(3,Nadeem,80))
+val parts = students.partition (s => s.marks>=60) //> parts  : (List[Demo.Stud], List[Demo.Stud]) = (List(Stud(2,Pooja,60), Stud(3
+                                                  //| ,Nadeem,80)),List(Stud(1,Navin,40), Stud(4,Mohan,30)))
+}
+
+In the above program filter & partition is a method
+
+*******************************************************************************************************************
+
+13.Tuples in Scala:
+
+If he look into previous example we have two parts, In scala when we work with methods it returns more than one value is called tuples
+
+val parts = students.partition (s => s.marks>=60) //> parts  : (List[Demo.Stud], List[Demo.Stud]) = (List(Stud(2,Pooja,60), Stud(3
+                                                  //| ,Nadeem,80)),List(Stud(1,Navin,40), Stud(4,Mohan,30)))
+
+To fetch Tuples as parts that is part 1 & 2:
+val part1 = parts._1                              //> part1  : List[Demo.Stud] = List(Stud(2,Pooja,60), Stud(3,Nadeem,80))
+val part2 = parts._2                              //> part2  : List[Demo.Stud] = List(Stud(1,Navin,40), Stud(4,Mohan,30))
+
+Note: It is mandatory to use ._1 we can't go with part(1) 0r part 1
+
+or better we can do this
+
+val (part1,part2) = students.partition (s => s.marks>=60)
+                                                  //> part1  : List[Demo.Stud] = List(Stud(2,Pooja,60), Stud(3,Nadeem,80))
+                                                  //| part2  : List[Demo.Stud] = List(Stud(1,Navin,40), Stud(4,Mohan,30))
+
+part1                                             //> res0: List[Demo.Stud] = List(Stud(2,Pooja,60), Stud(3,Nadeem,80))
+part2   
+

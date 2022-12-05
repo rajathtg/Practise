@@ -1,0 +1,6 @@
+Please create a table partitioned by country and bucketed by state and sorted in ascending order of city.
+ 
+Need hive script file like hivescript.hql with all the commands written inside.
+
+
+create table t1(all non-partitioned columns list) partitioned by (country string) clustered by (state) into 4 buckets sorted by city;

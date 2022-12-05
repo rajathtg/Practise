@@ -1,0 +1,295 @@
+Upto now we used two type of context:
+	-sc > Spark Context
+	-HiveContext
+Next our target is to learn Hive Context
+
+-To access hive tables from Spark we need hive context.
+
+Copying hive-site.xml to spark conf path because spark needs access to Hive metastore.
+[cloudera@quickstart ~]$ su root
+Password: 
+[root@quickstart cloudera]# find / -name hive-site.xml
+/etc/hive/conf.dist/hive-site.xml
+/etc/impala/conf.dist/hive-site.xml
+^C
+[root@quickstart cloudera]# ls /etc/hive/conf.dist/hive-site.xml
+/etc/hive/conf.dist/hive-site.xml
+[root@quickstart cloudera]# ls /home/cloudera/spark-2.3.1-bin-hadoop2.6/conf 
+hive-site.xml
+ --------------------------------------------------------------
+
+scala> import org.apache.spark.sql.hive.HiveContext
+import org.apache.spark.sql.hive.HiveContext
+
+scala> val hc = new HiveContext(sc)
+hc: org.apache.spark.sql.hive.HiveContext = org.apache.spark.sql.hive.HiveContext@3135c732
+
+==========================================================================
+
+Let's start with HQL:(Everything stored in Hive but processed through Spark)
+
+-To create the database in Hive, a data frame come into the picture.
+scala> hc.sql("create database myspark")
+res64: org.apache.spark.sql.DataFrame = [result: string]
+
+Scala> hc.sql("create table samp(id int, name string, sal int, sex string, dno int)row format delimited fields terminated by ','")
+res4: org.apache.spark.sql.DataFrame = [result: string]
+
+scala> hc.sql("load data local inpath '/home/cloudera/dvs/spark' into table samp")
+res5: org.apache.spark.sql.DataFrame = [result: string]
+
+scala> hc.sql("select * from samp")
+res6: org.apache.spark.sql.DataFrame = [id: int, name: string, sal: int, sex: string, dno: int]
+
+scala> hc.sql("select * from samp").show()
++---+----+-----+---+---+
+| id|name|  sal|sex|dno|
++---+----+-----+---+---+
+|101| aaa|10000|  m| 11|
+|102| bbb|20000|  f| 12|
+|103| ccc|30000|  m| 13|
+|104| ddd|40000|  f| 11|
+|105| eee|50000|  m| 12|
+|106| fff|60000|  f| 13|
+|107| ggg|70000|  m| 11|
+|108| hhh|80000|  f| 12|
++---+----+-----+---+---+
+
+scala> val res1 = hc.sql("select dno, sum(sal) as tot from samp group by dno")
+res1: org.apache.spark.sql.DataFrame = [dno: int, tot: bigint]
+
+scala> res1.show()
+[Stage 4:===========================>                            (99 + 
+[Stage 4:========================================>              (147 + 
+[Stage 4:=================================================>     (179 +                                                                        
++---+------+
+|dno|   tot|
++---+------+
+| 11|120000|
+| 12|150000|
+| 13| 90000|
++---+------+
+
+*****Note: Here In memory and DAG is added for quick process and 
+	Even with the help of catalyst optimizer is also used.
+
+hive> create table raw(line string);
+OK
+Time taken: 2.24 seconds
+
+hive> load data local inpath '/home/cloudera/dvs/json1' into table raw; 
+Loading data to table myspark.raw
+Table myspark.raw stats: [numFiles=1, totalSize=93]
+OK
+Time taken: 2.639 seconds
+
+hive> create table sparktest(name string,age int,city string);
+OK
+Time taken: 0.424 seconds
+
+hive> select get_json_object(line, '$.name')from raw;
+OK
+Ravi
+Savi
+Mani
+
+hive> select get_json_object(line, '$.name'),
+    > get_json_object(line, '$.age'),
+    > get_json_object(line, '$.city') from raw;
+OK
+Ravi	20	NULL
+Savi	NULL	hyd
+Mani	24	Del
+Time taken: 0.309 seconds, Fetched: 3 row(s)
+
+hive> select x.*from raw
+    > lateral view json_tuple(line,'name','age','city')x as n,a,c;
+OK
+Ravi	20	NULL
+Savi	NULL	hyd
+Mani	24	Del
+Time taken: 0.19 seconds, Fetched: 3 row(s)
+
+hive> insert into table sparktest
+    > select x.*from raw
+    > lateral view json_tuple(line,'name','age','city')x as n,a,c;
+
+hive> select * from sparktest;
+OK
+Ravi	20	NULL
+Savi	NULL	hyd
+Mani	24	Del
+Time taken: 0.447 seconds, Fetched: 3 row(s)
+===========================================================================
+
+But in spark it's simple:
+
+scala> val df = sqlContext.read.json("sqlLab/json1")
+[Stage 5:>                                                          (0 
+[Stage 5:>                                                          (0                                                                        
+df: org.apache.spark.sql.DataFrame = [age: bigint, city: string, name: string]
+
+scala> df.show()
++----+----+----+
+| age|city|name|
++----+----+----+
+|  20|null|Ravi|
+|null| hyd|Savi|
+|  24| Del|Mani|
++----+----+----+
+
+We can continue working on this by reg and applying statements and we can save the results to hdfs directory
+
+****Note: At the time of loading itself data is becoming structured yay!!
+Same facility if needed in Hive we need to use SerDe, ofcourse for json we have predefined SerDe,
+but again that will use Mapreduce.
+In Spark no need to apply any external SerDe********
+
+=================================================================
+[cloudera@quickstart dvs]$ cat json2
+{"name":"Ravi","age":20,"wife":{"name":"Mani","age":24,"city":"Del"},"city":"hyd"}
+{"name":"Mani","age":24,"wife":{"name":"Mani","qual":"BE","city":"hyd"},"city":"chn"}
+[cloudera@quickstart dvs]$ hadoop fs -copyFromLocal json2 sqlLab
+
+hive> create table jraw(line string);
+OK
+Time taken: 0.401 seconds
+hive> load data local inpath '/home/cloudera/dvs/json2' into table jraw;
+Loading data to table myspark.jraw
+Table myspark.jraw stats: [numFiles=1, totalSize=170]
+OK
+Time taken: 1.786 seconds
+hive> create table raw2(name string, age int, wife string, city string);
+OK
+Time taken: 0.355 seconds
+hive> insert into table raw2
+    > select x.* from jraw
+    > lateral view json_tuple(line,'name','age','wife','city')x as n,a,w,c;
+It's painful process.
+
+hive (myspark)> select * from raw2;
+OK
+Ravi	20	{"name":"Mani","age":24,"city":"Del"}	hyd
+Mani	24	{"name":"Mani","qual":"BE","city":"hyd"}	chn
+Time taken: 0.1 seconds, Fetched: 4 row(s)
+
+hive (myspark)> select name,get_json_object(wife,'$.name'),
+              > age,get_json_object(wife,'$.age'),
+              > get_json_object(wife,'$.qual'),
+              > city,get_json_object(wife,'$.city')from raw2;
+OK
+Ravi	Mani	20	24	NULL	hyd	Del
+Mani	Mani	24	NULL	BE	chn	hyd
+Time taken: 0.177 seconds, Fetched: 4 row(s)
+
+let's load same json data into spark and validate:
+scala> val couples = sqlContext.read.json("sqlLab/json2")
+[Stage 0:>                                                          (0                                                                        
+couples: org.apache.spark.sql.DataFrame = [age: bigint, city: string, name: string, 
+wife: struct<age:bigint,city:string,name:string,qual:string>]
+
+here wife is considered as struct datatype and it's valid for data frame.
+
+ala> couples.show()
++---+----+----+------------------+
+|age|city|name|              wife|
++---+----+----+------------------+
+| 20| hyd|Ravi|[24,Del,Mani,null]|
+| 24| chn|Mani|[null,hyd,Mani,BE]|
++---+----+----+------------------+
+Did you see that Jack???it's so simple.
+
+scala> couples.collect
+[Stage 3:>                                                          (0                                                                        
+res1: Array[org.apache.spark.sql.Row] = Array
+([20,hyd,Ravi,[24,Del,Mani,null]], [24,chn,Mani,[null,hyd,Mani,BE]])
+
+scala> couples.collect.map(x => x(3))
+res2: Array[Any] = Array([24,Del,Mani,null], [null,hyd,Mani,BE])
+
+scala> couples.collect.map(x => x(2))
+res3: Array[Any] = Array(Ravi, Mani)
+
+scala> couples.collect.map(x => x(0))
+res4: Array[Any] = Array(20, 24)
+
+scala> couples.collect.map(x => x(1))
+res5: Array[Any] = Array(hyd, chn)
+
+===========================================================================
+In the industry latest semistructured is Json, but old semi-structured is xml files:
+If I have xml data hive has powerful features for xml parses and databrics like third party are
+giving libraries for xml, download those libraries link to spark and play with them.
+
+[cloudera@quickstart ~]$ cat dvs/xml
+<rec><name>Ravi</name><age>25</age></rec>
+<rec><name>Rani</name><sex>F</sex></rec>
+ec><name>Ravi</name><age>25</age><sex>M</sex></rec>
+[cloudera@quickstart ~]$ hadoop fs -copyFromLocal /home/cloudera/dvs/xml sqlLab
+
+Let's go around and parse above data, generally spark-sql can't process above data, let's use hive parses / third party 
+libraries to process this.
+
+scala> hc.sql("use myspark")
+19/12/28 03:52:09 WARN metastore.ObjectStore: Version information not found in metastore. hive.metastore.schema.verification is not enabled so recording the schema version 1.1.0-cdh5.15.0
+19/12/28 03:52:09 WARN metastore.ObjectStore: Failed to get database default, returning NoSuchObjectException
+res8: org.apache.spark.sql.DataFrame = [result: string]
+
+scala> hc.sql("create table xraw(line string)")
+res9: org.apache.spark.sql.DataFrame = [result: string]
+
+scala> hc. sql("create table xinfo(name string,age int,city string)row format delimited fields terminated by','")
+res11: org.apache.spark.sql.DataFrame = [result: string]
+
+scala> hc.sql("load data local inpath '/home/cloudera/dvs/xml' into table xraw")
+res13: org.apache.spark.sql.DataFrame = [result: string]
+
+scala> hc.sql("select * from xraw")
+res15: org.apache.spark.sql.DataFrame = [line: string]
+
+scala> hc.sql("select * from xraw").show()
++--------------------+
+|                line|
++--------------------+
+|<rec><name>Ravi</...|
+|<rec><name>Rani</...|
+|ec><name>Ravi</na...|
++--------------------+
+
+scala> hc.sql("insert into table xinfo select xpath_string
+(line,'rec/name'),xpath_int(line,'rec/age'),xpath_string(line,'rec/city')from xraw")
+
+Scala> hc.sql("select xpath_string(line,'rec/city')from xraw").show()
+
+Scala> hc.sql("select xpath_string(line,'rec/name')from xraw").show()
+
+Scala> hc.sql("select xpath_string(line,'rec/age')from xraw").show()
+
+Scala> hc.sql("select xpath_string(line,'rec/sex')from xraw").show()
+
+Note: We can create a table xresults and insert data from xraw to that table(don't forget to mention xpath details) and later use
+hc.sql("select * from xresults").show()
+
+Later the above results can be accessed from Hive as well. later we can play around with the results, we can save it if needed as well.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

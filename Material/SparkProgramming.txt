@@ -1,0 +1,400 @@
+Joins:
+======
+-Let's create a scala object or scala list collection and elements are in terms of key-value pair and later make it as RDD:
+scala> val r1 = List((11,10000),(11,20000),(12,30000),(12,40000),(13,5000))
+r1: List[(Int, Int)] = List((11,10000), (11,20000), (12,30000), (12,40000), (13,5000))
+
+-Let's again create one more scala object or scala list collection:
+scala> val r2 = List((11,"Hyd"),(12,"Del"),(13,"Hyd"))
+r2: List[(Int, String)] = List((11,Hyd), (12,Del), (13,Hyd))
+
+-Let's create RDDs now:
+scala> val rdd1 = sc.parallelize(r1)
+rdd1: org.apache.spark.rdd.RDD[(Int, Int)] = ParallelCollectionRDD[0] at parallelize at <console>:29
+
+scala> rdd1.collect.foreach(println)
+(11,10000)
+(11,20000)
+(12,30000)
+(12,40000)
+(13,5000)
+
+scala> rdd1.collect
+res6: Array[(Int, Int)] = Array((11,10000), (11,20000), (12,30000), (12,40000), (13,5000))
+
+scala> val rdd2 = sc.parallelize(r2)
+rdd2: org.apache.spark.rdd.RDD[(Int, String)] = ParallelCollectionRDD[1] at parallelize at <console>:29
+
+scala> rdd2.collect.foreach(println)
+(11,Hyd)
+(12,Del)
+(13,Hyd)
+
+scala> rdd2.collect
+res3: Array[(Int, String)] = Array((11,Hyd), (12,Del), (13,Hyd))
+
+-Let's apply inner Join
+scala> val j = rdd1.join(rdd2)
+j: org.apache.spark.rdd.RDD[(Int, (Int, String))] = MapPartitionsRDD[4] at join at <console>:35
+
+Note: Even here we can use all different types of joins like left, right, inner etc
+
+scala> j.collect.foreach(println)
+[Stage 0:>                                                          
+[Stage 1:>                                                                                                                              (12,(30000,Del))
+(12,(40000,Del))
+(13,(5000,Hyd))
+(11,(10000,Hyd))
+(11,(20000,Hyd))
+
+Here, even though we haven't mentioned on what basis joining has to happen, by default it has taken the
+first element of tuple as keythat is 11 as key and performed the joining.
+
+-Now our next task is to find out for each city what is the salary budget.
+-Let's separate city as key, salary as value:
+-Here for us the input is join statement
+-In the below code we use curly '{' brackets so that we can give multiple statements
+-In the below code we're considering (12,(40000,Del)) as one tuple 'x' were
+	12 is 1st tuple and (4000,Del) is 2nd tuple
+	To access Del which 2nd tuple's second element hence x._2._2
+	Similarly for salary x._2._1
+	Once city,sal is ready next we need to prepare key value pairs for city and salary for returning (city,sal)
+
+scala> val citySalPair = j.map{ x =>
+     |       val city = x._2._2
+     |       val sal = x._2._1
+     |       (city,sal)
+     | }
+citySalPair: org.apache.spark.rdd.RDD[(String, Int)] = MapPartitionsRDD[5] at map at <console>:37
+
+cala> citySalPair.collect.foreach(println)
+(Del,30000)
+(Del,40000)
+(Hyd,5000)
+(Hyd,10000)
+(Hyd,20000)
+
+-Key values are ready, next we can perform the aggregations.
+scala> val res = citySalPair.reduceByKey(_+_)
+res: org.apache.spark.rdd.RDD[(String, Int)] = ShuffledRDD[6] at reduceByKey at <console>:39
+
+scala> res.collect.foreach(println)
+(Del,70000)
+(Hyd,35000)
+
+****Note: If we want to save this then save it as text file, prior to that transfer this as string since it is a tuple right now.
+
+-One more example of Dept,Sal and Bonus:
+scala> val e = List((11,30000,10000),(11,40000,20000),(12,50000,30000),(13,60000,20000),(12,80000,30000))
+e: List[(Int, Int, Int)] = List((11,30000,10000), (11,40000,20000), (12,50000,30000), (13,60000,20000), (12,80000,30000))
+
+-Let's create an rdd:
+scala> val ee = sc.parallelize(e)
+ee: org.apache.spark.rdd.RDD[(Int, Int, Int)] = ParallelCollectionRDD[7] at parallelize at <console>:29
+
+scala> ee.collect.foreach(println)
+(11,30000,10000)
+(11,40000,20000)
+(12,50000,30000)
+(13,60000,20000)
+(12,80000,30000)
+
+scala> rdd2.collect.foreach(println)
+(11,Hyd)
+(12,Del)
+(13,Hyd)
+
+-Task is to join above two data based on dept number, but in the 1st set we have 3 fields in the tuple and the
+ second set we have key-value structure. 
+-If it is not key-value structure what will happen let's see 
+
+-As we see below it throws error, therefore in order to join both should be key-value structure.
+scala> val j2 = ee.join(rdd2)
+<console>:35: error: value join is not a member of org.apache.spark.rdd.RDD[(Int, Int, Int)]
+         val j2 = ee.join(rdd2)
+
+-Let's do a tranformation to transfer the 3 element tuple into key-value pair.
+scala> val e3 = ee.map{x =>
+     | val dno = x._1
+     | val sal = x._2
+     | val bonus = x._3
+     | (dno,(sal,bonus))
+     | }
+e3: org.apache.spark.rdd.RDD[(Int, (Int, Int))] = MapPartitionsRDD[9] at map at <console>:31
+
+scala> e3.collect.foreach(println)
+(11,(30000,10000))
+(11,(40000,20000))
+(12,(50000,30000))
+(13,(60000,20000))
+(12,(80000,30000))
+
+scala> val j3 = e3.join(rdd2)
+j3: org.apache.spark.rdd.RDD[(Int, ((Int, Int), String))] = MapPartitionsRDD[12] at join at <console>:37
+
+scala> j3.collect.foreach(println)
+(12,((50000,30000),Del))
+(12,((80000,30000),Del))
+(13,((60000,20000),Hyd))
+(11,((30000,10000),Hyd))
+(11,((40000,20000),Hyd))
+
+-Next task is to find out for each city how much salary is included in the budget.
+scala> val pair = j3.map{x=>
+     | val sal = x._2._1._1
+     | val bonus = x._2._1._2
+     | val tot = sal+bonus
+     | val city = x._2._2
+     | (city,tot)
+     | }
+pair: org.apache.spark.rdd.RDD[(String, Int)] = MapPartitionsRDD[13] at map at <console>:39
+
+scala> pair.collect.foreach(println)
+[Stage 22:>                                                                                                                             (Del,80000) 
+(Del,110000)
+(Hyd,80000)
+(Hyd,40000)
+(Hyd,60000)
+
+-Next task is to total budget for each city:
+scala> val res2 = pair.reduceByKey(_+_)
+res2: org.apache.spark.rdd.RDD[(String, Int)] = ShuffledRDD[14] at reduceByKey at <console>:41
+
+scala> res.collect.foreach(println)
+(Del,70000)
+(Hyd,35000) 
+
+======================================================================================================
+We have the data in file as see below and task is to join and get output in below format:
+>>> 105,cccc,70000,f,finance,hyd
+
+[cloudera@quickstart dvs]$ cat emp
+101,aaaa,70000,m,12
+102,bbbb,90000,f,12
+103,cccc,10000,m,11
+104,dddd,40000,m,12
+105,cccc,70000,f,13
+106,dede,80000,f,13
+107,ioio,90000,m,14
+108,yuyu,10000,f,14
+109,popo,30000,m,11
+110,aaaa,60000,f,14
+123,djdj,90000,m,15
+122,asas,10000,m,15
+
+[cloudera@quickstart dvs]$ cat dept
+11,marketing,hyd
+12,hr,del
+13,finance,hyd
+14,admin,del
+15,accounts,hyd
+
+-First task is to move the above two files into Spark directory
+[cloudera@quickstart dvs]$ hadoop fs -copyFromLocal emp Sparks
+[cloudera@quickstart dvs]$ hadoop fs -copyFromLocal dept Sparks
+[cloudera@quickstart dvs]$ hadoop fs -ls Sparks
+Found 2 items
+-rw-r--r--   1 cloudera cloudera         71 2020-02-12 01:19 Sparks/dept
+-rw-r--r--   1 cloudera cloudera        240 2020-02-12 01:18 Sparks/emp
+
+-Let's load files into Spark:
+
+scala> val emp = sc.textFile("Sparks/emp")
+emp: org.apache.spark.rdd.RDD[String] = Sparks/emp MapPartitionsRDD[16] at textFile at <console>:27
+
+scala> val dept = sc.textFile("Sparks/dept")
+dept: org.apache.spark.rdd.RDD[String] = Sparks/dept MapPartitionsRDD[18] at textFile at <console>:27
+
+Directly we can't apply joins since both are strings, to apply joins each RDD should be key-value pair.
+
+scala> val e = emp.map{x =>
+     | val w = x.split(",") #we're converting emp into an array and w means set of words
+     | val dno = w(4).toInt #we will be joining both data on dno column
+     | val id = w(0)
+     | val name = w(1)
+     | val sal = w(2).toInt
+     | val sex = w(3)
+     | val info = id+","+name+","+sal+","+sex #we're concatinating the columns so it will be easy to write return type
+     | (dno,info)
+     | }
+e: org.apache.spark.rdd.RDD[(Int, String)] = MapPartitionsRDD[23] at map at <console>:29
+
+scala> e.collect.foreach(println)
+[Stage 30:>                                                                                                                             (12,101,aaaa,70000,m)
+(12,102,bbbb,90000,f)
+(11,103,cccc,10000,m)
+(12,104,dddd,40000,m)
+(13,105,cccc,70000,f)
+(13,106,dede,80000,f)
+(14,107,ioio,90000,m)
+(14,108,yuyu,10000,f)
+(11,109,popo,30000,m)
+(14,110,aaaa,60000,f)
+(15,123,djdj,90000,m)
+(15,122,asas,10000,m)
+
+Note: The above result even though it looks like single string infact it's key value pair
+
+scala> val d = dept.map{x =>
+     | val w = x.split(",")
+     | val dno = w(0).toInt
+     | val info = w(1)+","+w(2)
+     | (dno,info)
+     | }
+d: org.apache.spark.rdd.RDD[(Int, String)] = MapPartitionsRDD[24] at map at <console>:29
+
+scala> d.collect.foreach(println)
+(11,marketing,hyd)
+(12,hr,del)
+(13,finance,hyd)
+(14,admin,del)
+(15,accounts,hyd)
+
+scala> val ed = e.join(d)
+ed: org.apache.spark.rdd.RDD[(Int, (String, String))] = MapPartitionsRDD[27] at join at <console>:35
+
+scala> ed.collect.foreach(println)
+(14,(107,ioio,90000,m,admin,del))
+(14,(108,yuyu,10000,f,admin,del))
+(14,(110,aaaa,60000,f,admin,del))
+(12,(101,aaaa,70000,m,hr,del))
+(12,(102,bbbb,90000,f,hr,del))
+(12,(104,dddd,40000,m,hr,del))
+(13,(105,cccc,70000,f,finance,hyd))
+(13,(106,dede,80000,f,finance,hyd))
+(15,(123,djdj,90000,m,accounts,hyd))
+(15,(122,asas,10000,m,accounts,hyd))
+(11,(103,cccc,10000,m,marketing,hyd))
+(11,(109,popo,30000,m,marketing,hyd))
+
+-Let's concatenate the employee personal and departmental information because they're acting as separate values:
+scala> val ed2 = ed.map { x=>
+     | val einfo = x._2._1
+     | val dinfo = x._2._2
+     | val info = einfo+","+dinfo
+     | info
+     | }
+ed2: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[28] at map at <console>:37
+
+scala> ed2.collect.foreach(println)
+[Stage 38:>                                                                                                                             107,ioio,90000,m,admin,del
+108,yuyu,10000,f,admin,del
+110,aaaa,60000,f,admin,del
+101,aaaa,70000,m,hr,del
+102,bbbb,90000,f,hr,del
+104,dddd,40000,m,hr,del
+105,cccc,70000,f,finance,hyd
+106,dede,80000,f,finance,hyd
+123,djdj,90000,m,accounts,hyd
+122,asas,10000,m,accounts,hyd
+103,cccc,10000,m,marketing,hyd
+109,popo,30000,m,marketing,hyd
+
+-Next task is to save it to HDFS:
+scala> ed2.saveAsTextFile("Sparks/res1")
+
+[cloudera@quickstart dvs]$ hadoop fs -ls Sparks/res1
+Found 3 items
+-rw-r--r--   1 cloudera cloudera          0 2020-02-12 01:59 Sparks/res1/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        153 2020-02-12 01:59 Sparks/res1/part-00000
+-rw-r--r--   1 cloudera cloudera        180 2020-02-12 01:59 Sparks/res1/part-00001
+[cloudera@quickstart dvs]$ hadoop fs -cat Sparks/res1/part-00000
+107,ioio,90000,m,admin,del
+108,yuyu,10000,f,admin,del
+110,aaaa,60000,f,admin,del
+101,aaaa,70000,m,hr,del
+102,bbbb,90000,f,hr,del
+104,dddd,40000,m,hr,del
+[cloudera@quickstart dvs]$ hadoop fs -cat Sparks/res1/part-00001
+105,cccc,70000,f,finance,hyd
+106,dede,80000,f,finance,hyd
+123,djdj,90000,m,accounts,hyd
+122,asas,10000,m,accounts,hyd
+103,cccc,10000,m,marketing,hyd
+109,popo,30000,m,marketing,hyd
+
+-Next task is to find the average sal for dept wise:
+scala> val ednosal = emp.map{ x=>
+     | val w = x.split(",")
+     | val dno = w(4)
+     | val sal = w(2).toInt
+     | (dno,sal)
+     | }
+ednosal: org.apache.spark.rdd.RDD[(String, Int)] = MapPartitionsRDD[30] at map at <console>:29
+
+scala> ednosal.collect.foreach(println)
+(12,70000)
+(12,90000)
+(11,10000)
+(12,40000)
+(13,70000)
+(13,80000)
+(14,90000)
+(14,10000)
+(11,30000)
+(14,60000)
+(15,90000)
+(15,10000)
+
+-Now for dept data, let's work on city and dno:
+scala> val dnocity = dept.map{x=>
+     | val w = x.split(",")
+     | val dno = w(0)
+     | val city = w(2)
+     | (dno,city)
+     | }
+dnocity: org.apache.spark.rdd.RDD[(String, String)] = MapPartitionsRDD[31] at map at <console>:29
+
+scala> dnocity.collect.foreach(println)
+(11,hyd)
+(12,del)
+(13,hyd)
+(14,del)
+(15,hyd)
+
+-Now both are key-value structures, let's perform aggregations:
+scala> edjoin.collect.foreach(println)
+(15,(90000,hyd))
+(15,(10000,hyd))
+(13,(70000,hyd))
+(13,(80000,hyd))
+(11,(10000,hyd))
+(11,(30000,hyd))
+(14,(90000,del))
+(14,(10000,del))
+(14,(60000,del))
+(12,(70000,del))
+(12,(90000,del))
+(12,(40000,del))
+
+-Let's extract only sal and city now:
+scala> val salcity = edjoin.map{x=>
+     | val city = x._2._2
+     | val sal = x._2._1
+     | (city,sal)
+     | }
+salcity: org.apache.spark.rdd.RDD[(String, Int)] = MapPartitionsRDD[38] at map at <console>:37
+
+scala> salcity.collect.foreach(println)
+(hyd,90000)
+(hyd,10000)
+(hyd,70000)
+(hyd,80000)
+(hyd,10000)
+(hyd,30000)
+(del,90000)
+(del,10000)
+(del,60000)
+(del,70000)
+(del,90000)
+(del,40000)
+
+scala> val res4 = salcity.reduceByKey(_+_)
+res4: org.apache.spark.rdd.RDD[(String, Int)] = ShuffledRDD[39] at reduceByKey at <console>:39
+
+scala> res4.collect.foreach(println)
+(hyd,290000)
+(del,360000)
+
+****Note: In this way we can use joins to perform the task, but what joins can't do is non-equi functionality and for that
+          we need to use cross or cartesian product

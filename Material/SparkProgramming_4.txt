@@ -1,0 +1,336 @@
+-Let's parallelize local objects l1 and l2:
+
+scala> val l1 = List(10,20,30,50,80)
+l1: List[Int] = List(10, 20, 30, 50, 80)
+
+scala> val l2 = List(20,30,10,90,200)
+l2: List[Int] = List(20, 30, 10, 90, 200)
+
+scala> val r1 = sc.parallelize(l1)
+r1: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[48] at parallelize at <console>:29
+
+scala> val r2 = sc.parallelize(l2)
+r1: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[49] at parallelize at <console>:29
+
+****Note: Therefore r1 and r2 are RDD's.
+
+-Let's merge R1 and R2
+
+scala> val r = r1.union(r2)
+r: org.apache.spark.rdd.RDD[Int] = UnionRDD[52] at union at <console>:35
+
+scala> r.count
+res46: Long = 10
+
+scala> r.collect
+res47: Array[Int] = Array(10, 20, 30, 50, 80, 20, 30, 10, 90, 200)
+
+***Note: In SQL we have union and union all. Here union is equal to union all of WQL, that means it allows duplicates.
+	 Here we can use distinct function to remove duplicates if not needed.
+
+-Let's create one RDD r3:
+scala> val r3 = sc.parallelize(List(1,2,3,4,5))
+r3: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[53] at parallelize at <console>:27
+
+scala> val rr = r1.union(r2).union(r3)
+rr: org.apache.spark.rdd.RDD[Int] = UnionRDD[55] at union at <console>:37
+
+scala> rr.count
+res48: Long = 15
+
+-We can also use Scala local operator double '++' as well.
+
+scala> val x = r1 ++ r2
+x: org.apache.spark.rdd.RDD[Int] = UnionRDD[57] at $plus$plus at <console>:35
+
+scala> val x = r1 ++ r2 ++ r3
+x: org.apache.spark.rdd.RDD[Int] = UnionRDD[59] at $plus$plus at <console>:37
+
+scala> x.count
+res51: Long = 15
+
+****Note: Even this also allows duplicates
+
+-Consider the below collection by making it as an list or an array
+scala> val data = sc.parallelize(List(10,20,10,20,30,20,10,10))
+data: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[60] at parallelize at <console>:27
+
+-Let's eliminate the duplicates:
+scala> val data2 = data.distinct
+data2: org.apache.spark.rdd.RDD[Int] = MapPartitionsRDD[67] at distinct at <console>:29
+
+scala> data2.collect.foreach(println)
+30
+10
+20
+
+-Let's work on string values:
+scala> val x = sc.parallelize(List("A","B","C","D"))
+x: org.apache.spark.rdd.RDD[String] = ParallelCollectionRDD[68] at parallelize at <console>:27
+
+scala> val y = sc.parallelize(List("A","C","M","N"))
+y: org.apache.spark.rdd.RDD[String] = ParallelCollectionRDD[69] at parallelize at <console>:27
+
+-Let's merge x & y
+scala> val z = x ++ y
+z: org.apache.spark.rdd.RDD[String] = UnionRDD[71] at $plus$plus at <console>:31
+
+scala> z.distinct.collect
+res55: Array[String] = Array(B, N, C, D, M, A)
+
+-Let's try cross-join: It means each element of left side RDD, will join with each element of right side RDD.
+ Function we use is cartesian
+ Consider below transactions happened.
+
+scala> val pair1 = sc.parallelize(Array(("p1",10000),("p2",1000),("p1",20000),("p2",50000),("p3",60000)))
+pair1: org.apache.spark.rdd.RDD[(String, Int)] = ParallelCollectionRDD[75] at parallelize at <console>:27
+
+scala> val pair2 = sc.parallelize(Array(("p1",20000),("p2",50000),("p1",10000)))
+pair2: org.apache.spark.rdd.RDD[(String, Int)] = ParallelCollectionRDD[78] at parallelize at <console>:27
+
+-Let's apply cartesian, we will get tuples
+
+scala> val cr = pair1.cartesian(pair2)
+cr: org.apache.spark.rdd.RDD[((String, Int), (String, Int))] = CartesianRDD[79] at cartesian at <console>:31
+
+-Output will 15, 5 elements of pair 1 will join with each element of pair2.
+
+scala> cr.collect.foreach(println)
+((p1,10000),(p1,20000))
+((p1,10000),(p2,50000))
+((p1,10000),(p1,10000))
+((p2,1000),(p1,20000))
+((p1,20000),(p1,20000))
+((p2,1000),(p2,50000))
+((p1,20000),(p2,50000))
+((p2,1000),(p1,10000))
+((p1,20000),(p1,10000))
+((p2,50000),(p1,20000))
+((p3,60000),(p1,20000))
+((p2,50000),(p2,50000))
+((p3,60000),(p2,50000))
+((p2,50000),(p1,10000))
+((p3,60000),(p1,10000))
+
+-Let's work on cartesian using normal simple pairs:
+scala> val rdd1 = sc.parallelize(List(10,20,30,40))
+rdd1: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[80] at parallelize at <console>:27
+
+scala> val rdd2 = sc.parallelize(List(100,200))
+rdd2: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[81] at parallelize at <console>:27
+
+scala> val cart = rdd1.cartesian(rdd2)
+cart: org.apache.spark.rdd.RDD[(Int, Int)] = CartesianRDD[82] at cartesian at <console>:31
+
+scala> cart.collect.foreach(println)
+(10,100)
+(10,200)
+(20,100)
+(20,200)
+(30,100)
+(40,100)
+(30,200)
+(40,200)
+
+-Let's see the actual use of this Cartesian
+
+scala> val dpair = data.map{x =>
+     | val w = x.split(",")
+     | val dno = w(4)
+     | val sal = w(2).toInt
+     | (dno,sal)
+     | }
+dpair: org.apache.spark.rdd.RDD[(String, Int)] = MapPartitionsRDD[85] at map at <console>:31
+
+-Therefore key value is created...
+scala> dpair.collect.foreach(println)
+(12,70000)
+(12,90000)
+(11,10000)
+(12,40000)
+(13,70000)
+(13,80000)
+(14,90000)
+(14,10000)
+(11,30000)
+(14,60000)
+(15,90000)
+(15,10000)
+
+-Next task is to calculate for each dpartment what is the total salary?
+scala> val dres = dpair.reduceByKey(_+_)
+dres: org.apache.spark.rdd.RDD[(String, Int)] = ShuffledRDD[86] at reduceByKey at <console>:33
+
+scala> dres.collect.foreach(println)
+[Stage 87:>                                                                                                                             
+(15,100000) 
+(13,150000)
+(11,40000)
+(14,160000)
+(12,200000)
+
+-Let's take the above result for dres2 and do some manipulation:
+scala> val dres2 = dres
+dres2: org.apache.spark.rdd.RDD[(String, Int)] = ShuffledRDD[86] at reduceByKey at <console>:33
+
+scala> dres2.collect.foreach(println)
+(15,100000)
+(13,150000)
+(11,40000)
+(14,160000)
+(12,200000)
+
+-Let's apply cartesian on this
+scala> val cr = dres.cartesian(dres2)
+cr: org.apache.spark.rdd.RDD[((String, Int), (String, Int))] = CartesianRDD[87] at cartesian at <console>:37
+
+scala> cr.collect.foreach(println)
+((15,100000),(15,100000))
+((15,100000),(13,150000))
+((15,100000),(11,40000))
+((13,150000),(15,100000))
+((13,150000),(13,150000))
+((13,150000),(11,40000))
+((11,40000),(15,100000))
+((11,40000),(13,150000))
+((11,40000),(11,40000))
+((15,100000),(14,160000))
+((15,100000),(12,200000))
+((13,150000),(14,160000))
+((13,150000),(12,200000))
+((11,40000),(14,160000))
+((11,40000),(12,200000))
+((14,160000),(15,100000))
+((14,160000),(13,150000))
+((14,160000),(11,40000))
+((12,200000),(15,100000))
+((12,200000),(13,150000))
+((12,200000),(11,40000))
+((14,160000),(14,160000))
+((14,160000),(12,200000))
+((12,200000),(14,160000))
+((12,200000),(12,200000))
+
+-Next task is to remove combination like, 12:12,11:11 etc...and output is two tuples, let's
+ make it as a single tuple and check what would be the output
+
+scala> val cr2 = cr.map{x =>
+     | val t1 = x._1
+     | val t2 = x._2
+     | val dno1 = t1._1
+     | val tot1 = t1._2
+     | val dno2 = t2._1
+     | val tot2 = t2._2
+     | (dno1,dno2,tot1,tot2)
+     | }
+cr2: org.apache.spark.rdd.RDD[(String, String, Int, Int)] = MapPartitionsRDD[88] at map at <console>:39
+
+scala> cr2.collect.foreach(println)
+(15,15,100000,100000)
+(15,13,100000,150000)
+(15,11,100000,40000)
+(13,15,150000,100000)
+(13,13,150000,150000)
+(13,11,150000,40000)
+(11,15,40000,100000)
+(11,13,40000,150000)
+(11,11,40000,40000)
+(15,14,100000,160000)
+(15,12,100000,200000)
+(13,14,150000,160000)
+(13,12,150000,200000)
+(11,14,40000,160000)
+(11,12,40000,200000)
+(14,15,160000,100000)
+(14,13,160000,150000)
+(14,11,160000,40000)
+(12,15,200000,100000)
+(12,13,200000,150000)
+(12,11,200000,40000)
+(14,14,160000,160000)
+(14,12,160000,200000)
+(12,14,200000,160000)
+(12,12,200000,200000)
+
+-Let's eliminate equal departments.
+scala> val cr3 = cr2.filter(x=> x._1 !=x._2)
+cr3: org.apache.spark.rdd.RDD[(String, String, Int, Int)] = MapPartitionsRDD[89] at filter at <console>:41
+
+scala> cr3.collect.foreach(println)
+(15,13,100000,150000)
+(15,11,100000,40000)
+(13,15,150000,100000)
+(13,11,150000,40000)
+(11,15,40000,100000)
+(11,13,40000,150000)
+(15,14,100000,160000)
+(15,12,100000,200000)
+(13,14,150000,160000)
+(13,12,150000,200000)
+(11,14,40000,160000)
+(11,12,40000,200000)
+(14,15,160000,100000)
+(14,13,160000,150000)
+(14,11,160000,40000)
+(12,15,200000,100000)
+(12,13,200000,150000)
+(12,11,200000,40000)
+(14,12,160000,200000)
+(12,14,200000,160000)
+
+-Let's apply one more filter to identify which is tot1 and tot2 and which is greater??
+scala> val cr4 = cr3.filter(x => x._3 >= x._4)
+cr4: org.apache.spark.rdd.RDD[(String, String, Int, Int)] = MapPartitionsRDD[90] at filter at <console>:43
+
+scala> cr4.collect.foreach(println)
+(15,11,100000,40000)
+(13,15,150000,100000)
+(13,11,150000,40000)
+(14,15,160000,100000)
+(14,13,160000,150000)
+(14,11,160000,40000)
+(12,15,200000,100000)
+(12,13,200000,150000)
+(12,11,200000,40000)
+(12,14,200000,160000)
+
+scala> val cr5 = cr4.map(x => (x._1,1))
+cr5: org.apache.spark.rdd.RDD[(String, Int)] = MapPartitionsRDD[91] at map at <console>:45
+
+scala> cr5.collect.foreach(println)
+(15,1)
+(13,1)
+(13,1)
+(14,1)
+(14,1)
+(14,1)
+(12,1)
+(12,1)
+(12,1)
+(12,1)
+
+scala> val fires = cr5.reduceByKey(_+_)
+fires: org.apache.spark.rdd.RDD[(String, Int)] = ShuffledRDD[92] at reduceByKey at <console>:47
+
+scala> fires.collect.foreach(println)
+(15,1)
+(12,4)
+(13,2)
+(14,3)
+
+***Note: The ouput tells dept 15 is greater than 1 dept(i.e. 11), similarly dept
+	 12 is greater than other 4 dept(13,14,15 and 11).
+	 11 is not mentioned since that is the least and nothing is below it. 
+	 Here we're comparing one key with other key...
+	 Hence we created cartesian and brought everything one row and that helped 
+	 us to do the comparison yay!!.
+
+-What will happen if we don't use cartesian and directly try to so comparison.
+ scala> val list = List((11,10000),(12,20000))
+list: List[(Int, Int)] = List((11,10000), (12,20000))
+
+scala> val x = list.map(x._1._2 > x._2._2)....... for 2 key-val pairs this fine, consider if there are
+10 to 15 elements gone case, hence cartesian is the saver for us.
+
+Watch video to look into one more example were we deal with sales for the particular month
+*******Note: We use cartesian for BatchProcess and we for cross joins for live applications

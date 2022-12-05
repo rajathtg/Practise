@@ -1,0 +1,824 @@
+mysql> use sqoopdb;
+Database changed
+
+mysql> create table info(id int primary key,name char(10),sal int,sex char(1),dno int);
+Query OK, 0 rows affected (0.28 sec)
+
+mysql> desc info;
++-------+----------+------+-----+---------+-------+
+| Field | Type     | Null | Key | Default | Extra |
++-------+----------+------+-----+---------+-------+
+| id    | int(11)  | NO   | PRI | NULL    |       |
+| name  | char(10) | YES  |     | NULL    |       |
+| sal   | int(11)  | YES  |     | NULL    |       |
+| sex   | char(1)  | YES  |     | NULL    |       |
+| dno   | int(11)  | YES  |     | NULL    |       |
++-------+----------+------+-----+---------+-------+
+5 rows in set (0.00 sec)
+
+mysql> insert into info values(107,'rrbssva',130000,'f',13);
+Query OK, 1 row affected (0.01 sec)
+
+mysql> update info set sex = 'm' where id=107;
+Query OK, 1 rows affected (0.04 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> select * from info;
++-----+---------+--------+------+------+
+| id  | name    | sal    | sex  | dno  |
++-----+---------+--------+------+------+
+| 101 | aaa     |  10000 | m    |   11 |
+| 102 | bbb     |  20000 | f    |   11 |
+| 103 | bbbv    |  30000 | f    |   12 |
+| 104 | bbbva   |  40000 | m    |   12 |
+| 105 | rrbbva  |  90000 | f    |   13 |
+| 106 | rrbssva | 100000 | f    |   13 |
+| 107 | rrbssva | 130000 | m    |   13 |
++-----+---------+--------+------+------+
+7 rows in set (0.00 sec)
+
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/sqoopdb --username root 
+--password cloudera --table info --target-dir import
+In the above statement mappers are not mentioned by default it is 4, hence 4 part-m file would be created.
+[cloudera@quickstart ~]$ hadoop fs -ls import
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2020-01-15 06:38 import/_SUCCESS
+-rw-r--r--   1 cloudera cloudera         38 2020-01-15 06:38 import/part-m-00000
+-rw-r--r--   1 cloudera cloudera         41 2020-01-15 06:38 import/part-m-00001
+-rw-r--r--   1 cloudera cloudera         22 2020-01-15 06:38 import/part-m-00002
+-rw-r--r--   1 cloudera cloudera         48 2020-01-15 06:38 import/part-m-00003
+
+[cloudera@quickstart ~]$ hadoop fs -cat import/part-m-00000
+101,aaa,10000,m,11
+102,bbb,20000,f,11
+
+Let's specify the number as 2 manually and see the results, we will see 2 part-m files
+
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/sqoopdb --username root 
+--password cloudera --table info --target-dir import2 -m 2
+
+[cloudera@quickstart ~]$ hadoop fs -ls import2Found 3 items
+-rw-r--r--   1 cloudera cloudera          0 2020-01-15 06:42 import2/_SUCCESS
+-rw-r--r--   1 cloudera cloudera         58 2020-01-15 06:42 import2/part-m-00000
+-rw-r--r--   1 cloudera cloudera         91 2020-01-15 06:42 import2/part-m-00001
+
+=========================================================================================
+
+Let's create table with no primary key, then by default the mappers should be 1:
+mysql> create table info2(id int,name char(10),sal int,sex char(1),dno int);
+Query OK, 0 rows affected (0.14 sec)
+
+mysql> insert into info2 select * from info;
+Query OK, 7 rows affected (0.08 sec)
+Records: 7  Duplicates: 0  Warnings: 0
+
+mysql> select * from info2;
++------+---------+--------+------+------+
+| id   | name    | sal    | sex  | dno  |
++------+---------+--------+------+------+
+|  101 | aaa     |  10000 | m    |   11 |
+|  102 | bbb     |  20000 | f    |   11 |
+|  103 | bbbv    |  30000 | f    |   12 |
+|  104 | bbbva   |  40000 | m    |   12 |
+|  105 | rrbbva  |  90000 | f    |   13 |
+|  106 | rrbssva | 100000 | f    |   13 |
+|  107 | rrbssva | 130000 | m    |   13 |
++------+---------+--------+------+------+
+7 rows in set (0.00 sec)
+
+mysql> desc info2;
++-------+----------+------+-----+---------+-------+
+| Field | Type     | Null | Key | Default | Extra |
++-------+----------+------+-----+---------+-------+
+| id    | int(11)  | YES  |     | NULL    |       |
+| name  | char(10) | YES  |     | NULL    |       |
+| sal   | int(11)  | YES  |     | NULL    |       |
+| sex   | char(1)  | YES  |     | NULL    |       |
+| dno   | int(11)  | YES  |     | NULL    |       |
++-------+----------+------+-----+---------+-------+
+5 rows in set (0.01 sec)
+
+*******Just to check we didn't specify the mappers and statement was executed, but it failed as seen below.
+It asks us to specify the number of mappers as 1 explicitly or to use split by.
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/sqoopdb --username root 
+--password cloudera --table info2 --target-dir import03
+20/01/15 06:49:25 ERROR tool.ImportTool: Import failed: No primary key could be found for table 
+info2. Please specify one with --split-by or perform a sequential import with '-m 1'.
+
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/sqoopdb --username root 
+--password cloudera --table info2 --target-dir import03 -m 1
+
+[cloudera@quickstart ~]$ hadoop fs -ls import03
+Found 2 items
+-rw-r--r--   1 cloudera cloudera          0 2020-01-15 06:53 import03/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        149 2020-01-15 06:53 import03/part-m-00000
+
+[cloudera@quickstart ~]$ hadoop fs -cat import03/part-m-00000
+101,aaa,10000,m,11
+102,bbb,20000,f,11
+103,bbbv,30000,f,12
+104,bbbva,40000,m,12
+105,rrbbva,90000,f,13
+106,rrbssva,100000,f,13
+107,rrbssva,130000,m,13
+
+Let's change the delimiter, by default sqoop import is writing comma delimiter, but I need '\t' space or different one.
+
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/sqoopdb --username root --password cloudera --table info --target-dir import04 
+-m 1 --fields-terminated-by '\t'
+[cloudera@quickstart ~]$ hadoop fs -cat import05/part-m-00000
+101	aaa	10000	m	11
+102	bbb	20000	f	11
+103	bbbv	30000	f	12
+104	bbbva	40000	m	12
+105	rrbbva	90000	f	13
+106	rrbssva	100000	f	13
+107	rrbssva	130000	m	13
+
+==============================================================================================================
+Applying Filters:
+
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/sqoopdb --username root --password cloudera --table info2 -m 1
+ --where 'sal>=50000' --target-dir import06
+
+[cloudera@quickstart ~]$ hadoop fs -cat import06/part-m-00000
+105,rrbbva,90000,f,13
+106,rrbssva,100000,f,13
+107,rrbssva,130000,m,13
+
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/sqoopdb --username root --password cloudera --table info2 -m 1
+ --where 'sal>30000 and sex="m"' --target-dir import07
+
+[cloudera@quickstart ~]$ hadoop fs -cat import07/part-m-00000
+104,bbbva,40000,m,12
+107,rrbssva,130000,m,13
+
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/sqoopdb --username root --password cloudera --table info2 -m 1
+ --columns name,sal,dno  --target-dir import08
+[cloudera@quickstart ~]$ hadoop fs -cat import08/part-m-00000
+aaa,10000,11
+bbb,20000,11
+bbbv,30000,12
+bbbva,40000,12
+rrbbva,90000,13
+rrbssva,100000,13
+rrbssva,130000,13
+
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/sqoopdb --username root --password cloudera --table info2 -m 1 --columns name,sal,dno
+  --where 'sal>30000' --target-dir import09
+[cloudera@quickstart ~]$ hadoop fs -cat import09/part-m-00000
+bbbva,40000,12
+rrbbva,90000,13
+rrbssva,100000,13
+rrbssva,130000,13
+
+Below is the ETL process, because RDBMS is performing the transformation like sal*10 etc.... and generally not recommended for huge volumes of data, because we hive and pig to do that:
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/sqoopdb --username root --password cloudera --query 'select id,name,sal,sal*0.1,sal*0.2
+,sal+(sal*0.2)-(sal*0.1),sex,dno from info2 where$CONDITIONS' -m 1  --target-dir import10 --fields-terminated-by '\t'
+
+[cloudera@quickstart ~]$ hadoop fs -cat import10/part-m-00000
+101	aaa	10000	1000.0	2000.0	11000.0		m	11
+102	bbb	20000	2000.0	4000.0	22000.0		f	11
+103	bbbv	30000	3000.0	6000.0	33000.0		f	12
+104	bbbva	40000	4000.0	8000.0	44000.0		m	12
+105	rrbbva	90000	9000.0	18000.0	99000.0		f	13
+106	rrbssva	100000	10000.0	20000.0	110000.0	f	13
+107	rrbssva	130000	13000.0	26000.0	143000.0	m	13
+
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/sqoopdb --username root --password cloudera --query 'select * from info2 where dno in (11,13) and sex="m"
+ and $CONDITIONS' -m 1  --target-dir import11
+[cloudera@quickstart ~]$ hadoop fs -cat import11/part-m-00000
+101,aaa,10000,m,11
+107,rrbssva,130000,m,13
+
+==========================================================================================================================================================
+Union: To merge below two tables;
+
+mysql> select * from info;
++-----+---------+--------+------+------+
+| id  | name    | sal    | sex  | dno  |
++-----+---------+--------+------+------+
+| 101 | aaa     |  10000 | m    |   11 |
+| 102 | bbb     |  20000 | f    |   11 |
+| 103 | bbbv    |  30000 | f    |   12 |
+| 104 | bbbva   |  40000 | m    |   12 |
+| 105 | rrbbva  |  90000 | f    |   13 |
+| 106 | rrbssva | 100000 | f    |   13 |
+| 107 | rrbssva | 130000 | m    |   13 |
++-----+---------+--------+------+------+
+7 rows in set (0.00 sec)
+
+mysql> select * from info2;
++------+---------+--------+------+------+
+| id   | name    | sal    | sex  | dno  |
++------+---------+--------+------+------+
+|  101 | aaa     |  10000 | m    |   11 |
+|  102 | bbb     |  20000 | f    |   11 |
+|  103 | bbbv    |  30000 | f    |   12 |
+|  104 | bbbva   |  40000 | m    |   12 |
+|  105 | rrbbva  |  90000 | f    |   13 |
+|  106 | rrbssva | 100000 | f    |   13 |
+|  107 | rrbssva | 130000 | m    |   13 |
++------+---------+--------+------+------+
+
+similar to sql merging let's do it while importing via sqoop
+mysql> select * from info union all select * from info2;
+*****Note: If we want duplicates we could've used union all in place of union
++------+---------+--------+------+------+
+| id   | name    | sal    | sex  | dno  |
++------+---------+--------+------+------+
+|  101 | aaa     |  10000 | m    |   11 |
+|  102 | bbb     |  20000 | f    |   11 |
+|  103 | bbbv    |  30000 | f    |   12 |
+|  104 | bbbva   |  40000 | m    |   12 |
+|  105 | rrbbva  |  90000 | f    |   13 |
+|  106 | rrbssva | 100000 | f    |   13 |
+|  107 | rrbssva | 130000 | m    |   13 |
+|  101 | aaa     |  10000 | m    |   11 |
+|  102 | bbb     |  20000 | f    |   11 |
+|  103 | bbbv    |  30000 | f    |   12 |
+|  104 | bbbva   |  40000 | m    |   12 |
+|  105 | rrbbva  |  90000 | f    |   13 |
+|  106 | rrbssva | 100000 | f    |   13 |
+|  107 | rrbssva | 130000 | m    |   13 |
++------+---------+--------+------+------+
+
+*****Note: Again the merging is carried out by RDBMS 
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/sqoopdb --username root --password cloudera --query 'select * from info where  $CONDITIONS 
+union all select * from info2 where $CONDITIONS' -m 1  --target-dir import12
+14 rows in set (0.08 sec)
+
+[cloudera@quickstart ~]$ hadoop fs -cat import12/part-m-00000
+101,aaa,10000,m,11
+102,bbb,20000,f,11
+103,bbbv,30000,f,12
+104,bbbva,40000,m,12
+105,rrbbva,90000,f,13
+106,rrbssva,100000,f,13
+107,rrbssva,130000,m,13
+101,aaa,10000,m,11
+102,bbb,20000,f,11
+103,bbbv,30000,f,12
+104,bbbva,40000,m,12
+105,rrbbva,90000,f,13
+106,rrbssva,100000,f,13
+107,rrbssva,130000,m,13
+
+*****Note: If the order of two tables is different then???
+Let's create table
+
+mysql> create table tab1(name char(10),city char(10));
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> insert into tab1 values('Akash','Hyd');
+Query OK, 1 row affected (0.00 sec)
+
+mysql> insert into tab1 values('Akasha','Del');
+Query OK, 1 row affected (0.00 sec)
+
+mysql> create table tab2(city char(10),name char(10));
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> insert into tab2 values('Del','Ravi');
+Query OK, 1 row affected (0.00 sec)
+
+mysql> insert into tab2 values('Del','Rani');
+Query OK, 1 row affected (0.01 sec)
+
+mysql> select * from tab1;
++--------+------+
+| name   | city |
++--------+------+
+| Akash  | Hyd  |
+| Akasha | Del  |
++--------+------+
+2 rows in set (0.00 sec)
+
+mysql> select * from tab2;
++------+------+
+| city | name |
++------+------+
+| Del  | Ravi |
+| Del  | Rani |
++------+------+
+2 rows in set (0.00 sec)
+
+*****Note: Let's merge above two things which have different order.
+If the task is carried out in sql it performs wrong manipulation as seen below.
+mysql> select * from tab1 union all select * from tab2;
++--------+------+
+| name   | city |
++--------+------+
+| Akash  | Hyd  |
+| Akasha | Del  |
+| Del    | Ravi |
+| Del    | Rani |
++--------+------+
+4 rows in set (0.00 sec)
+
+Let's tweak the query a bit,
+
+mysql> select * from tab1 union all select name,city from tab2;
++--------+------+
+| name   | city |
++--------+------+
+| Akash  | Hyd  |
+| Akasha | Del  |
+| Ravi   | Del  |
+| Rani   | Del  |
++--------+------+
+4 rows in set (0.00 sec)
+
+Same operations but using Sqoop:
+
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/sqoopdb --username root --password cloudera --query 'select name,city 
+from tab1 where $CONDITIONS union all select name,city from tab2 where $CONDITIONS' -m 1 --target-dir import013
+
+[cloudera@quickstart ~]$ hadoop fs -cat import013/part-m-00000
+Akash,Hyd
+Akasha,Del
+Ravi,Del
+Rani,Del
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Consider when the situation occurs if columns are different:
+
+sql> create table samp1(id int,name char(10),age int);
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> insert into samp1 values(101,'aaa',25);
+Query OK, 1 row affected (0.00 sec)
+
+mysql> insert into samp1 values(102,'bbb',26);
+Query OK, 1 row affected (0.00 sec)
+
+ql> create table samp2(id int, name char(10),city char(10));
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> insert into samp2 values(201,'xxxxxx','hyd');
+Query OK, 1 row affected (0.00 sec)
+
+mysql> insert into samp2 values(202,'yyyyy','pune');
+Query OK, 1 row affected (0.00 sec)
+
+mysql> select * from samp1;
++------+------+------+
+| id   | name | age  |
++------+------+------+
+|  101 | aaa  |   25 |
+|  102 | bbb  |   26 |
++------+------+------+
+2 rows in set (0.00 sec)
+
+mysql> select * from samp2;
++------+--------+------+
+| id   | name   | city |
++------+--------+------+
+|  201 | xxxxxx | hyd  |
+|  202 | yyyyy  | pune |
++------+--------+------+
+2 rows in set (0.00 sec)
+
+Then we have to balance the schema as below before executing the sqoop command
+
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/sqoopdb --username root --password cloudera --query 'select id,name,age,
+"NoCity" as city from samp1 where $CONDITIONS union all select id,name,0 as age,city from samp2 where $CONDITIONS' -m 1 --target-dir import014
+
+[cloudera@quickstart ~]$ hadoop fs -cat import015/part-m-00000
+101,aaa,25,NoCity
+102,bbb,26,NoCity
+201,xxxxxx,0,hyd
+202,yyyyy,0,pune
+
+=========================================================================================================================================================
+
+Let's perform join operations:
+
+mysql> select * from info;
++-----+---------+--------+------+------+
+| id  | name    | sal    | sex  | dno  |
++-----+---------+--------+------+------+
+| 101 | aaa     |  10000 | m    |   11 |
+| 102 | bbb     |  20000 | f    |   11 |
+| 103 | bbbv    |  30000 | f    |   12 |
+| 104 | bbbva   |  40000 | m    |   12 |
+| 105 | rrbbva  |  90000 | f    |   13 |
+| 106 | rrbssva | 100000 | f    |   13 |
+| 107 | rrbssva | 130000 | m    |   13 |
++-----+---------+--------+------+------+
+7 rows in set (0.00 sec)
+
+mysql> create table dept(dno int,dname char(10),loc char(10));
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> insert into dept values(11,'marketing','hyd');
+Query OK, 1 row affected (0.00 sec)
+
+mysql> insert into dept values(12,'hr','pune');
+Query OK, 1 row affected (0.01 sec)
+
+mysql> insert into dept values(12,'finance','del');
+Query OK, 1 row affected (0.00 sec)
+
+Let's do the joining in Sqoop:
+
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/sqoopdb --username root 
+--password cloudera --query 'select id,name,sal,sex,dname,loc from info l join dept r where $CONDITIONS and l.dno = r.dno' -m 1 --target-dir import017
+
+[cloudera@quickstart ~]$ hadoop fs -cat import017/part-m-00000
+101,aaa,10000,m,marketing,hyd
+102,bbb,20000,f,marketing,hyd
+103,bbbv,30000,f,hr,pune
+103,bbbv,30000,f,finance,del
+104,bbbva,40000,m,hr,pune
+104,bbbva,40000,m,finance,del
+
+=========================================================================================================================================================
+To apply groupby and having filter:
+Always apply groupby and having filter after Where
+Always apply having filter after group by
+
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/sqoopdb --username root --password cloudera --query 'select sex,sum(sal) from info  
+where $CONDITIONS group by sex having sex="m"' -m 1 --target-dir import018
+
+[cloudera@quickstart ~]$ hadoop fs -cat import018/part-m-00000
+m,180000
+
+**************Note: 
+1. The above query is executed by RDBMS and sqoop is just taking result set of RDBMS,hence even though we use group by the
+output displayed will be part-m file and there is no reducer action happening(if this was executed by hadoop then reducer would've come into picture because of group by).
+2. We can keep character value into double quotes("m") or 'm', this is accepted by oracle and mysql databases, but in some databases we can't keep character value into 
+double quotes and they strictly expect it to be in single quotes
+3. If query is started and ended with double quote there is a small problem because in Java has special meaning and therefore whenever we use double quotes for query it's
+a good practise to mask the $ by using backslash \$, if not masked then it will throw an error.
+
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/sqoopdb --username root --password cloudera --query "select * from info 
+where sex='m' and \$CONDITIONS" -m 1 --target-dir import020
+
+[cloudera@quickstart ~]$ hadoop fs -cat import020/part-m-00000
+101,aaa,10000,m,11
+104,bbbva,40000,m,12
+107,rrbssva,130000,m,13
+
+*****Note to write into the existing directory we can use  --append
+
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/sqoopdb --username root --password cloudera --query "select * from info 
+where sex='m' and \$CONDITIONS" -m 1 --target-dir import020 --append
+
+[cloudera@quickstart ~]$ hadoop fs -cat import020/part-m-00001
+102,bbb,20000,f,11
+103,bbbv,30000,f,12
+105,rrbbva,90000,f,13
+106,rrbssva,100000,f,13
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++==
+
+Importing data directly into Hive tables:
+
+hive> create database sqoop;
+OK
+Time taken: 11.683 seconds
+
+hive> use sqoop;
+OK
+Time taken: 0.1 seconds
+
+hive> set hive.cli.print.current.db=true;
+
+hive (sqoop)> create table test1(id int,name string,sal int,sex string,dno int);
+OK
+Time taken: 0.533 seconds
+
+***Note: Since no delimiter is specified then '/001' would delimiter by default
+
+mysql> select * from info;
++-----+---------+--------+------+------+
+| id  | name    | sal    | sex  | dno  |
++-----+---------+--------+------+------+
+| 101 | aaa     |  10000 | m    |   11 |
+| 102 | bbb     |  20000 | f    |   11 |
+| 103 | bbbv    |  30000 | f    |   12 |
+| 104 | bbbva   |  40000 | m    |   12 |
+| 105 | rrbbva  |  90000 | f    |   13 |
+| 106 | rrbssva | 100000 | f    |   13 |
+| 107 | rrbssva | 130000 | m    |   13 |
++-----+---------+--------+------+------+
+7 rows in set (0.00 sec)
+
+Above info needs to be transferred to Hive
+
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/sqoopdb --username root --password cloudera
+ --table info  -m 1 --hive-import --hive-table sqoop.test1
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/hive/warehouse/sqoop.db/test1/part-m-00000
+101aaa10000m11
+102bbb20000f11
+103bbbv30000f12
+104bbbva40000m12
+105rrbbva90000f13
+106rrbssva100000f13
+107rrbssva130000m13
+
+****Note: 
+1. if we notice the delimiter is '/001'...
+2. Sqoop while writing into hdfs it uses ',' as delimeter, but while writing into Hive it uses '/001'.
+
+=======================================================================================================
+Let's use a different delimiter:
+
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/sqoopdb --username root --password cloudera --table info  
+-m 1 --hive-import --hive-table sqoop.test2
+
+If we notice the result, here the hive is expecting ',' but sqoop will write '/001'
+[cloudera@quickstart ~]$ hadoop fs -cat /user/hive/warehouse/sqoop.db/test2/part-m-00000
+101aaa10000m11
+102bbb20000f11
+103bbbv30000f12
+104bbbva40000m12
+105rrbbva90000f13
+106rrbssva100000f13
+107rrbssva130000m13
+
+But when we try to access same data from hive table it shows as 'Null', because table is expecting ',' but file is having zero ','
+since zero ',' then entire line is treated as string then it will not fit into id column which is int, datatype won't match then id will null 
+and for remaining name,sal,sex and dno there are no columns available then everything will turn out to be null.
+hive (sqoop)> select * from test2;
+OK
+NULL	NULL	NULL	NULL	NULL
+NULL	NULL	NULL	NULL	NULL
+NULL	NULL	NULL	NULL	NULL
+NULL	NULL	NULL	NULL	NULL
+NULL	NULL	NULL	NULL	NULL
+NULL	NULL	NULL	NULL	NULL
+NULL	NULL	NULL	NULL	NULL
+
+Let's overcome the above problem,
+
+hive (sqoop)> create table test3 like test2;
+OK
+Time taken: 0.178 seconds
+
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/sqoopdb --username root
+ --password cloudera --table info  -m 1 --hive-import --hive-table sqoop.test3 --fields-terminated-by ','
+
+Here the hive table expecting comma and sqoop is also writing comma yay:)
+
+hive (sqoop)> select * from test3;
+OK
+101	aaa	10000	m	11
+102	bbb	20000	f	11
+103	bbbv	30000	f	12
+104	bbbva	40000	m	12
+105	rrbbva	90000	f	13
+106	rrbssva	100000	f	13
+107	rrbssva	130000	m	13
+Time taken: 0.13 seconds, Fetched: 7 row(s)
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/hive/warehouse/sqoop.db/test3/part-m-00000
+101,aaa,10000,m,11
+102,bbb,20000,f,11
+103,bbbv,30000,f,12
+104,bbbva,40000,m,12
+105,rrbbva,90000,f,13
+106,rrbssva,100000,f,13
+107,rrbssva,130000,m,13
+
+****Note: Append can also be used for hive import as well
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/sqoopdb --username root
+ --password cloudera --table info  -m 1 --hive-import --hive-table sqoop.test3 --fields-terminated-by ',' --append
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Sqoop Export:
+=============
+
+[cloudera@quickstart dvs]$ cat export
+100,200,300
+200,300,400
+1,2,3
+10,20,30
+10000,20000,30000
+[cloudera@quickstart dvs]$ hadoop fs -mkdir lab
+[cloudera@quickstart dvs]$ hadoop fs -copyFromLocal export lab
+[cloudera@quickstart dvs]$ hadoop fs -cat lab/export
+100,200,300
+200,300,400
+1,2,3
+10,20,30
+10000,20000,30000
+
+mysql> create table lab1(a int,b int,c int);
+Query OK, 0 rows affected (0.08 sec)
+
+[cloudera@quickstart ~]$ sqoop export --connect jdbc:mysql://localhost/sqoopdb --username root 
+--password cloudera --table lab1 --export-dir lab/file1
+No need to specify mappers, it will consider by default and since delimiter is ',' there is no headache of that as well.
+
+mysql> select * from lab1;
++-------+-------+-------+
+| a     | b     | c     |
++-------+-------+-------+
+|   100 |   200 |   300 |
+|   200 |   300 |   400 |
+|    10 |    20 |    30 |
+| 10000 | 20000 | 30000 |
+|     1 |     2 |     3 |
++-------+-------+-------+
+5 rows in set (0.00 sec)
+
+===================================================================================================================
+Let's try to export a file with tab space:
+
+[cloudera@quickstart dvs]$ cat export2
+10	20	30
+1	2	2
+100	200	300
+10000	2000	3
+
+1. Above file is tab separated hence for sqoop export we're mentioning input file is tab separated.
+2. Here we're using same table, we're appending the table data, we're not authorised to overwrite the data because it's not our
+database, we're here to only append the data.
+
+[cloudera@quickstart dvs]$ hadoop fs -copyFromLocal export2 lab
+[cloudera@quickstart dvs]$ hadoop fs -ls lab
+Found 2 items
+-rw-r--r--   1 cloudera cloudera         57 2020-01-17 19:27 lab/export
+-rw-r--r--   1 cloudera cloudera         40 2020-01-18 08:50 lab/export2
+
+[cloudera@quickstart dvs]$ sqoop export --connect jdbc:mysql://localhost/sqoopdb -username root -password cloudera --table lab1 
+--export-dir lab/export2 --input-fields-terminated-by '\t'
+
+mysql> select * from lab1;
++-------+-------+-------+
+| a     | b     | c     |
++-------+-------+-------+
+|   100 |   200 |   300 |
+|   200 |   300 |   400 |
+|    10 |    20 |    30 |
+| 10000 | 20000 | 30000 |
+|     1 |     2 |     3 |
+|    10 |    20 |    30 |
+|     1 |     2 |     2 |
+|   100 |   200 |   300 |
+| 10000 |  2000 |     3 |
++-------+-------+-------+
+9 rows in set (0.00 sec)
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+When there are duplicates:
+
+Let's use the info table and id is the primary key in that and it won't allow duplicates:
+mysql> desc info;
++-------+----------+------+-----+---------+-------+
+| Field | Type     | Null | Key | Default | Extra |
++-------+----------+------+-----+---------+-------+
+| id    | int(11)  | NO   | PRI | NULL    |       |
+| name  | char(10) | YES  |     | NULL    |       |
+| sal   | int(11)  | YES  |     | NULL    |       |
+| sex   | char(1)  | YES  |     | NULL    |       |
+| dno   | int(11)  | YES  |     | NULL    |       |
++-------+----------+------+-----+---------+-------+
+5 rows in set (0.00 sec)
+
+Consider in our HDFS file there are duplicates, what is gonna happen? let's see.
+
+[cloudera@quickstart dvs]$ cat export3
+301,aaa,80000,m,11
+302,bbb,90000,f,12
+302,ccc,30000,f,11
+303,ddd,60000,m,12
+
+[cloudera@quickstart dvs]$ hadoop fs -ls lab
+Found 3 items
+-rw-r--r--   1 cloudera cloudera         57 2020-01-17 19:27 lab/export
+-rw-r--r--   1 cloudera cloudera         40 2020-01-18 08:50 lab/export2
+-rw-r--r--   1 cloudera cloudera         76 2020-01-18 08:58 lab/export3
+
+[cloudera@quickstart dvs]$ sqoop export --connect jdbc:mysql://localhost/sqoopdb -username root 
+-password cloudera --table info --export-dir lab/export3
+The ouput will fail :( only partial data got loaded when that dup;icate 302 row didn't get loaded
+mysql> select * from info;
++-----+---------+--------+------+------+
+| id  | name    | sal    | sex  | dno  |
++-----+---------+--------+------+------+
+| 101 | aaa     |  10000 | m    |   11 |
+| 102 | bbb     |  20000 | f    |   11 |
+| 103 | bbbv    |  30000 | f    |   12 |
+| 104 | bbbva   |  40000 | m    |   12 |
+| 105 | rrbbva  |  90000 | f    |   13 |
+| 106 | rrbssva | 100000 | f    |   13 |
+| 107 | rrbssva | 130000 | m    |   13 |
+| 301 | aaa     |  80000 | m    |   11 |
+| 302 | bbb     |  90000 | f    |   12 |
+| 303 | ddd     |  60000 | m    |   12 |
++-----+---------+--------+------+------+
+
+******Note: The best practise is if the RDBMS table has any primary key make sure to remove the duplicate data prior to 
+exporting from HDFS.
+==============================================================================================================================
+To load data from Hive to RDBMS:
+-------------------------------
+
+[cloudera@quickstart dvs]$ cat export4
+101,vino,26000,m,11
+102,Sri,25000,f,11
+103,mohan,13000,m,13
+104,lokitha,8000,f,12
+105,naga,6000,m,13
+101,janaki,10000,f,12
+
+hive (sqoop)> create table emp(id int,name string,sal int,sex string,dno int) row format delimited fields terminated by ',';
+OK
+Time taken: 11.872 seconds
+
+hive (sqoop)> load data local inpath '/home/cloudera/dvs/export4' into table emp;
+Loading data to table sqoop.emp
+Table sqoop.emp stats: [numFiles=1, totalSize=123]
+OK
+Time taken: 1.182 seconds
+
+hive (sqoop)> select * from emp;
+OK
+101	vino	26000	m	11
+102	Sri	25000	f	11
+103	mohan	13000	m	13
+104	lokitha	8000	f	12
+105	naga	6000	m	13
+101	janaki	10000	f	12
+Time taken: 0.476 seconds, Fetched: 6 row(s)
+
+hive (sqoop)> create table summary(dno int,sex string,tot int,avg int,cnt int,max int,min int);
+OK
+Time taken: 0.135 seconds
+****Note: For above table summary since no delimiter is mentioned by default it will be '\001'
+
+hive (sqoop)> insert into table summary select dno,sex,sum(sal),avg(sal),count(*),max(sal),min(sal) 
+from emp group by dno,sex;
+***Note: sex is a subgrouping of group by.
+
+hive (sqoop)> select * from summary;
+OK
+11	f	25000	25000	1	25000	25000
+11	m	26000	26000	1	26000	26000
+12	f	18000	9000	2	10000	8000
+13	m	19000	9500	2	13000	6000
+Time taken: 0.118 seconds, Fetched: 4 row(s)
+
+[cloudera@quickstart dvs]$ hadoop fs -cat /user/hive/warehouse/sqoop.db/summary/000000_0
+11f250002500012500025000
+11m260002600012600026000
+12f1800090002100008000
+13m1900095002130006000
+****Note: delimiter in the HDFS will be '\001'
+
+mysql> create table eresults(dno int,sex char,tot int,avg int,cnt int,max int,min int);
+Query OK, 0 rows affected (0.06 sec)
+
+[cloudera@quickstart dvs]$ sqoop export --connect jdbc:mysql://localhost/sqoopdb -username root -password cloudera --table eresults --export-dir /user/hive/warehouse/sqoop.db/summary/000000_0 
+--input-fields-terminated-by '\001'
+
+mysql> select * from eresults;
++------+------+-------+-------+------+-------+-------+
+| dno  | sex  | tot   | avg   | cnt  | max   | min   |
++------+------+-------+-------+------+-------+-------+
+|   12 | f    | 18000 |  9000 |    2 | 10000 |  8000 |
+|   11 | f    | 25000 | 25000 |    1 | 25000 | 25000 |
+|   11 | m    | 26000 | 26000 |    1 | 26000 | 26000 |
+|   13 | m    | 19000 |  9500 |    2 | 13000 |  6000 |
++------+------+-------+-------+------+-------+-------+
+4 rows in set (0.00 sec)
+======================================================================================================================================================
+Miscellaneous Sqoop Concepts:
+----------------------------
+1. Splitting concepts > When the table doesn't have the primary key then we also can't specify the mappers, then what to do??
+	We have two choices:
+		1. Make entire data as single split, this is possible when if number of mappers = 1, this wouldn't be feasible if data is huge.
+		2. We can specify the multiple mappers with the splitting column ex: --split-by dataofjoining or timestamp etc...
+sqoop import --connect...username...password....--table info -m 5 --split-by id --target-dir import200 (5 part-m files will be generated)
+
+2. To Prepare sqoop job: Consider on daily basis there are few set of files which needs to be imported then we can create sqoop job as below.
+sqoop job --create myjob --import --connect jdbc:mysql://localhost/sqoopdb --username root --password cloudera --query 'select * from info2 where dno in (11,13) and sex="m"
+ and $CONDITIONS' -m 1  --target-dir import11 --append
+
+sqoop job --list > To view all the jobs available
+
+sqoop job --exec myjob > To execute the job easy-peezy no need to write the entire statement.
+
+3. For new insertions:
+sqoop import
+ --connect.....--table info --username...--password... --check-column id --incremental lastmodified --last-value 100 --target-dir import400 --append
+
+4. Want to import new changes only:
+ sqoop import
+ --connect.....--table info -m 1 --username...--password... --check-column id --incremental append --last-value 100 --target-dir import400 --append
+*****Note: for new insertions use incremental append in above statement and new changes it is incremental lastmodified 
+
+
+
+
+
+
+
+
+

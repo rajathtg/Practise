@@ -1,0 +1,264 @@
+[cloudera@quickstart dvs]$ cat emp
+101,aaaa,70000,m,12
+102,bbbb,90000,f,12
+103,cccc,10000,m,11
+104,dddd,40000,m,12
+105,cccc,70000,f,13
+106,dede,80000,f,13
+107,ioio,90000,m,14
+108,yuyu,10000,f,14
+109,popo,30000,m,11
+110,aaaa,60000,f,14
+123,djdj,90000,m,15
+122,asas,10000,m,15
+
+scala> val data = sc.textFile("Sparks/emp")
+data: org.apache.spark.rdd.RDD[String] = Sparks/emp MapPartitionsRDD[15] at textFile at <console>:27
+
+collect is an action, hence we get to see staging happening
+
+scala> data.collect
+[Stage 3:>                                                                                                                              
+res3: Array[String] = Array(101,aaaa,70000,m,12, 102,bbbb,90000,f,12, 103,cccc,10000,m,11, 104,dddd,40000,m,12, 
+105,cccc,70000,f,13, 106,dede,80000,f,13, 107,ioio,90000,m,14, 108,yuyu,10000,f,14, 109,popo,30000,m,11, 
+110,aaaa,60000,f,14, 123,djdj,90000,m,15, 122,asas,10000,m,15)
+
+-Main grouping is dno column and sub grouping is sex and aggregation is needed sum(sal)
+In general > select dno,sex,sum(sal) from emp group by sex; 
+
+-First we need to come up with key value pairs
+-Even we can't say multiple keys, let's take combination of dno and sex, make them as tuple and keep the tuple as key and sal as value in pair RDD.
+scala> val pair = data.map{x =>
+     | val w = x.split(",")
+     | val dno = w(4)
+     | val sex = w(3)
+     | val sal = w(2).toInt
+     | val mykey = (dno,sex)
+     | (mykey,sal)
+     | } 
+pair: org.apache.spark.rdd.RDD[((String, String), Int)] = MapPartitionsRDD[2] at map at <console>:29
+
+scala> pair.collect.foreach(println)
+((12,m),70000)
+((12,f),90000)
+((11,m),10000)
+((12,m),40000)
+((13,f),70000)
+((13,f),80000)
+((14,m),90000)
+((14,f),10000)
+((11,m),30000)
+((14,f),60000)
+((15,m),90000)
+((15,m),10000)
+
+****Note: It's is good practise to keep multi tuples as key.
+scala> val res = pair.reduceByKey(_+_).collect.foreach(println)
+((14,m),90000)
+((14,f),70000)
+((12,f),90000)
+((15,m),100000)
+((13,f),150000)
+((12,m),110000)
+((11,m),40000)
+
+-If I want to know or do multiple aggregations such as sum,avg...it can't be done by reducebyKey then we need 
+ to rely on other techniques.
+scala> data.partitions.size
+res1: Int = 1
+
+scala> val data2 = sc.textFile("Sparks/emp",4) //The 4 mentioned is the number of partitions for each file block
+data2: org.apache.spark.rdd.RDD[String] = Sparks/emp MapPartitionsRDD[5] at textFile at <console>:27
+
+scala> data2.partitions.size
+res2: Int = 4
+
+*****Note: The size = 4 is not equal to the 4 mentioned in the val data2 code statement.
+	   The hierarchy is like this file broken to Blocks broken to Partitions
+	   Block is for File and Partitions is for RAM(Other words partitions are loaded into RAM)
+Theory1:
+-Consider there is a file F1 and it is divided into 3 unique blocks B1,B2 & B3, later inclusing replicas it is 9
+-And we're reading it into Spark using the val data = sc.text...statement.
+-Later when we check the partition size in spark it is shown as 3(it only considers unique block values)
+-Comnsider we mention an argument 4 in the statement val data = sc.text..., the 4 is not for entire file, it is for each block.
+-Therefore if we check the partition size it will show 3*4 = 12 (each partitions are divided into additional 4 partitions each)
+-Hence both are different.
+-This is the behaviour of text file.
+
+Theory2:
+-Whenever we execute xxx.collect on client machine the data is taken from the partitions of RDD
+-Consider the size of the RDD partitions is 40GB and RAM of client machine is 20GB
+-Obviously the process will fail, to overcome this we can just pull samples of data to check the taste of the result
+-The data pulled into client machine using xxx.collect is called local object
+-To pull sample of data we can use xxx.take()
+
+scala> data.take(5).foreach(println)
+101,aaaa,70000,m,12
+102,bbbb,90000,f,12
+103,cccc,10000,m,11
+104,dddd,40000,m,12
+105,cccc,70000,f,13
+
+****Note: We can't use skip here;
+scala> data.skip(3)
+<console>:30: error: value skip is not a member of org.apache.spark.rdd.RDD[String]
+              data.skip(3)
+		   ^
+scala> val res = pair.reduceByKey(Math.max(_,_)).collect.foreach(println)
+((14,m),90000)
+((14,f),60000)
+((12,f),90000)
+((15,m),90000)
+((13,f),80000)
+((12,m),70000)
+((11,m),30000)
+
+scala> val res = pair.reduceByKey(Math.min(_,_)).collect.foreach(println)
+((14,m),90000)
+((14,f),10000)
+((12,f),90000)
+((15,m),10000)
+((13,f),70000)
+((12,m),40000)
+((11,m),10000)
+
+*****Note: If we notice result from pair statement is used commonly by us.
+	   Therefore we can persists the result of pair RDD in RAM by using either .persists or .cache
+	   ****Output from pair will be persisted in RAM not when we declare it but when action is called and data is computed
+	   Therefore this will avoid execution of code from beginning
+
+scala> data.collect
+res7: Array[String] = Array(101,aaaa,70000,m,12, 102,bbbb,90000,f,12, 103,cccc,10000,m,11, 104,dddd,40000,m,12, 105,cccc,70000,f,13, 106,dede,80000,f,13, 107,ioio,90000,m,14, 108,yuyu,10000,f,14, 109,popo,30000,m,11, 110,aaaa,60000,f,14, 123,djdj,90000,m,15, 122,asas,10000,m,15)
+
+scala> val arr = data.map(x => x.split(","))
+arr: org.apache.spark.rdd.RDD[Array[String]] = MapPartitionsRDD[8] at map at <console>:29
+
+scala> val pair = arr.map(x => (x(3),x(2).toInt))
+pair: org.apache.spark.rdd.RDD[(String, Int)] = MapPartitionsRDD[9] at map at <console>:31
+
+scala> pair.persist
+res8: pair.type = MapPartitionsRDD[9] at map at <console>:31
+
+scala> val res1 = pair.reduceByKey(_+_)
+res1: org.apache.spark.rdd.RDD[(String, Int)] = ShuffledRDD[10] at reduceByKey at <console>:33
+
+scala> val res2 = pair.reduceByKey(Math.max(_,_)).collect.foreach(println)
+(f,90000)
+(m,90000)
+
+scala> val res3 = pair.reduceByKey(Math.min(_,_)).collect.foreach(println)
+(f,10000)
+(m,10000)
+
+****Note:
+	-The persist will be deleted when we come out of the session
+	-The main advantage of persist is code reusability
+
+===================================================================================================
+How to save results into the HDFS:
+
+-Let's save the results:
+scala> res1.saveAsTextFile("Sparks/persist_res1")
+[Stage 17:>                                                                                                     
+scala> res2.saveAsTextFile("Sparks/persist_res2")
+[Stage 19:>
+scala> res3.saveAsTextFile("Sparks/persist_res3")
+[Stage 19:>
+
+[cloudera@quickstart dvs]$ hadoop fs -cat Sparks/persist_res1/part-00000
+(f,310000)
+
+*****Note: If we notice the result is in the form of tuple and it will not be feasible
+	   to export into the RDBMS through sqoop which generally prefers value in the form comma delimited etc
+	   ****The number of part files generated depends upon the number of partitions.
+
+Hence, let's convert the results from Tuples into Strings in Spark itself:
+
+scala> val tres1 = res1.map(x => x._1+"\t"+x._2)
+tres1: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[18] at map at <console>:35
+
+scala> tres1.collect.foreach(println)
+f	310000
+m	340000
+
+scala> tres1.collect
+res16: Array[String] = Array(f	310000, m	340000)
+
+scala> tres1.saveAsTextFile("Sparks/tres1")
+[Stage 25:>
+
+[cloudera@quickstart dvs]$ hadoop fs -cat Sparks/tres1/part-00001
+m	340000
+
+-If the number of fields are huge then what to do???, we got separate each element and later concatenate them
+-To convert tuple into list we need to use mkString in scala  
+
+Let's see if there are multi grouping fields then how to convert them??
+-scala> val pair2 = arr.map(x => ((x(4),x(3)),x(2).toInt))
+pair2: org.apache.spark.rdd.RDD[((String, String), Int)] = MapPartitionsRDD[20] at map at <console>:31
+
+scala> val res4 = pair2.reduceByKey(_+_)
+res4: org.apache.spark.rdd.RDD[((String, String), Int)] = ShuffledRDD[21] at reduceByKey at <console>:33
+
+scala> res4.collect.foreach(println)
+((14,m),90000)
+((14,f),70000)
+((12,f),90000)
+((15,m),100000)
+((13,f),150000)
+((12,m),110000)
+((11,m),40000)
+
+ala> res4.saveAsTextFile("Sparks/res4")
+[Stage 29:> 
+
+[cloudera@quickstart dvs]$ hadoop fs -cat Sparks/res4/part-00001
+((12,f),90000)
+((15,m),100000)
+((13,f),150000)
+((12,m),110000)
+((11,m),40000)
+
+-Let's transform the result
+scala> val r4 = res4.map(x => x._1._1+"\t"+x._1._2+"\t"+x._2)
+r4: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[23] at map at <console>:35
+
+scala> r4.collect.foreach(println)
+14	m	90000
+14	f	70000
+12	f	90000
+15	m	100000
+13	f	150000
+12	m	110000
+11	m	40000
+
+[cloudera@quickstart dvs]$ hadoop fs -cat Sparks/r4/part-00001
+12	f	90000
+15	m	100000
+13	f	150000
+12	m	110000
+11	m	40000
+=================================================================
+Note:
+Generally during most of the instances the Key is string and value happens to be int, hence let's
+prepare a function which will turn out to be helpful in future.
+-We're preparing keeping in mind key is string and value is int
+-Works for most of the delimiter
+
+scala> def pairToString(x:(String,Int),delim:String)={
+     | val a = x._1
+     | val b = x._2
+     | a+delim+b
+     | }
+pairToString: (x: (String, Int), delim: String)String
+
+scala> val x1 = res1.map(x => pairToString(x,","))
+x1: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[25] at map at <console>:37
+
+scala> x1.collect.foreach(println)
+f,310000
+m,340000
+
+
+
+                                              

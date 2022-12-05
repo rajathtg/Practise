@@ -1,0 +1,406 @@
+Z1. create a Relation emp_bag with emp data given below: 
+	a) with schema
+	b) without schema
+	c) semi schema
+
+7369,SMITH,CLERK,800.00,null,20
+7499,ALLEN,SALESMAN,1600.00,300.00,30
+7521,WARD,SALESMAN,1250.00,500.00,30
+7566,JONES,MANAGER,2975.00,null,20
+7654,MARTIN,SALESMAN,1250.00,1400.00,30
+7698,BLAKE,MANAGER,2850.00,null,30
+7782,CLARK,MANAGER,2450.00,null,10
+7788,SCOTT,ANALYST,3000.00,null,20
+7839,KING,PRESIDENT,5000.00,null,10
+7844,TURNER,SALESMAN,1500.00,0.00,30
+7876,ADAMS,CLERK,1100.00,null,20
+7900,JAMES,CLERK,950.00,null,30
+7902,FORD,ANALYST,3000.00,null,20
+7934,MILLER,CLERK,1300.00,null,10
+
+2. create a relation dept_bag with dept data given below:
+
+10,ACCOUNTING,NEW YORK
+20,RESEARCH,DALLAS
+30,SALES,CHICAGO
+40,OPERATIONS,BOSTON
+
+3. display the emp data & dept data using dump
+
+4. Get all the records of employees whose salary is greater than 2000 in emp_bag into a new bag : filter_emp_bag
+
+5. Store the output of filter_emp_bag into '/home/training/dvs/pigout' directory
+
+6. Display 5 tuples in bag : emp_bag
+
+7. Display all the tuples by dept wise
+
+8. Display & store the employee data grouping deptno & eno
+
+9. Group all the records in emp_bag
+
+10. Display ename, sal & deptno from emp_bag
+
+11. Display 1st, 3rd & 5th column in emp_bag
+
+12. Display all the tuples in emp_bag & sort by ename ascending
+
+13. Display all the tuples in emp_bag & sort by sal descending
+
+14. Display the jobs of all employees only & display unique(distinct) jobs in emp_bag
+
+15. Bag A      Bag B
+       1,2        A,B
+       2,3        B,C
+       3,4        C,D
+   Create a bag C with cross product A & B bags & display the output
+
+16. Split Relation emp_bag into 2 relations. bag A if sal<2000 & bag B if sal>2000
+
+17. Perform union operation with the above 2 relations A & B
+
+18. Get all the tuples in emp_bag with the corresponding dname & dloc from dept relation
+    Perform Left outer join
+    Perform Right Outer Join
+    Perform Full Outer Join
+
+19. Perform co-group on the below data sets.
+
+cat>owners.csv
+adam,cat
+adam,dog
+alex,fish
+alice,cat
+steve,dog
+
+cat>pets.csv
+nemo,fish
+fido,dog
+rex,dog
+paws,cat
+wiskers,cat
+
+
+19. Write pig script for finding the occurence of each word in the given file
+
+This is DVS Training Institute offering various courses 
+like Hadoop, Hana, Java etc
+DVS is located in Marathalli
+This is hadoop class
+
+20.  Write pig script for finding the most occured word in the above file.
+
+21.  Write pig script for fInding the least occured word in the above file using 
+
+22.  Write pig script for finding the top 5 words occured highest no:of times
+
+23.  Write pig script for finding 3 words occured least no:of times
+
+24. How many times the word hadoop occured in the above file.
+
+25. How many words occured 8 times in the above file.
+
+26. How many words in the given file starts with "A" - Nice thing to try this;
+
+27. Write a pig script to count the total no:of words in the given file.
+
+26. Write pig script for counting the no:of words in a 
+
+file containing the below text
+
+	What|is|Hadoop
+	History|of|Hadoop
+	How|Hadoop|name|was|given
+	Problems|with|Traditional|Large-Scale|Systems|and|Need|for|Hadoop
+	Understanding|Hadoop|Architecture
+	Fundamental|of|HDFS|(Blocks,|Name|Node,|Data|Node,|Secondary|Name|Node)
+	Rack|Awareness
+	Read/Write|from|HDFS
+	HDFS|Federation|and|High|Availability
+
+27. Process the below json file format & get the csv format to store in hive table permanently.
+
+
+{"eno":7369,"ename":"SMITH","job":"CLERK","sal":800,"comm":null,"deptno":20}
+{"eno":7499,"ename":"ALLEN","job":"SALESMAN","sal":1600,"comm":300,"deptno":30}
+{"eno":7521,"ename":"WARD","job":"SALESMAN","sal":1250,"comm":500,"deptno":30}
+{"eno":7566,"ename":"JONES","job":"MANAGER","sal":2975,"comm":null,"deptno":20}
+{"eno":7654,"ename":"MARTIN","job":"SALESMAN","sal":1250,"comm":1400,"deptno":30}
+{"eno":7698,"ename":"BLAKE","job":"MANAGER","sal":2850,"comm":null,"deptno":30}
+{"eno":7782,"ename":"CLARK","job":"MANAGER","sal":2450,"comm":null,"deptno":10}
+{"eno":7788,"ename":"SCOTT","job":"ANALYST","sal":3000,"comm":null,"deptno":20}
+{"eno":7839,"ename":"KING","job":"PRESIDENT","sal":5000,"comm":null,"deptno":10}
+{"eno":7844,"ename":"TURNER","job":"SALESMAN","sal":1500,"comm":0,"deptno":30}
+{"eno":7876,"ename":"ADAMS","job":"CLERK","sal":1100,"comm":null,"deptno":20}
+{"eno":7900,"ename":"JAMES","job":"CLERK","sal":950,"comm":null,"deptno":30}
+{"eno":7902,"ename":"FORD","job":"ANALYST","sal":3000,"comm":null,"deptno":20}
+{"eno":7934,"ename":"MILLER","job":"CLERK","sal":1300,"comm":null,"deptno":10}
+
+{"food":"Tacos", "person":"Alice", "amount":3}
+{"food":"Tomato Soup", "person":"Sarah", "amount":2}
+{"food":"Grilled Cheese", "person":"Alex", "amount":5}
+
+28. Process the below xml file & get the csv format to store in hive table permanently.
+
+<BOOK>
+<TITLE>Hadoop Defnitive Guide</TITLE>
+<AUTHOR>Tom White</AUTHOR>
+<COUNTRY>US</COUNTRY>
+<COMPANY>CLOUDERA</COMPANY>
+<PRICE>24.90</PRICE>
+<YEAR>2012</YEAR>
+</BOOK>
+<BOOK>
+<TITLE>Programming Pig</TITLE>
+<AUTHOR>Alan Gates</AUTHOR>
+<COUNTRY>USA</COUNTRY>
+<COMPANY>Horton Works</COMPANY>
+<PRICE>30.90</PRICE>
+<YEAR>2013</YEAR>
+</BOOK>
+
+29. process hive-site.xml & store into a hive table permanently.
+
+30. FInd the sum, max, min, avg salaries in each department of all the employees in emp bag.
+
+31. For the below bag,
+	(1,2,3)
+	(4,2,1)
+	(8,3,4)
+	(4,3,3)
+	(7,2,5)
+	(8,4,3)
+		
+    Please print the output like below :
+
+	(a:1,b:2,c:3)
+	(a:4,b:2,c:1)
+	(a:8,b:3,c:4)
+	(a:4,b:3,c:3)
+	(a:7,b:2,c:5)
+	(a:8,b:4,c:3)
+
+32. Find the top 3 occured words which are occuring with A as starting letter.
+
+33. Get the emp table data in hive to bag A in PIG and store the filter records by deptno==30 in to the 
+table in hive using hcatalog
+
++++++++++++++++++++++++++++++KEYS++++++++++++++++++++++++++
+
+1. emp_bag = LOAD '/home/training/dvs/emp.csv' using PigStorage(',') AS (eno:int, ename:chararray, job:chararray, sal:int, comm:int, deptno:int);
+
+2. dept_bag = LOAD '/root/dvs/dept.csv' using PigStorage(',') as (deptno:int, dname:chararray, dloc:chararray);        
+
+3. dump emp_bag & dump dept_bag;
+
+4. filter_emp_bag = filter emp_bag by sal>2000;
+
+5. store filter_emp_bag into '/home/training/dvs/pigout';
+
+6. limit_emp_bag = limit emp_bag 5;
+
+7. group_emp_bag = group emp_bag by deptno;
+
+8. group_emp_bag = group emp_bag by (deptno, eno);
+   store group_emp_bag into '/home/training/dvs/pigout';
+
+9. group_emp_bag = group emp_bag all;
+
+10. A = FOREACH emp_bag generate ename, sal, deptno;
+
+11. C = FOREACH emp_bag generate $0, $2, $4;
+
+12. sort_emp_bag = order emp_bag by ename asc;
+ 
+13. sort_emp_bag = order emp_bag by eno desc;
+
+14. jobs = foreach emp_bag generate job;
+    distinct_jobs = distinct jobs;
+
+15. A = LOAD '/home/training/dvs/A' using PigStorage(',') as (A1:int, A2:int);
+    B = LOAD '/home/training/dvs/B' using PigStorage(',') as (B1:chararray, B2:chararray);
+    C = cross A, B;
+
+16. split emp_bag into A if sal<2000, B if sal>2000;
+
+17. C = union A, B;
+
+18. C = JOIN A by deptno, B by deptno;
+    ABC = foreach C generate $1, $0, $7;
+    D = JOIN A by deptno LEFT OUTER, B by deptno; #Returns all the rows from the left relation even though there are no matching records from the right side relation
+    E = JOIN A by deptno RIGHT OUTER, B by deptno; 
+
+#Returns all the rows from the right relation even though there are no matching records from the left side relation
+
+19. owners = load 'owners.csv' using PigStorage(',') as (owner:chararray, animal:chararray);
+    pets = load 'pets.csv' using PigStorage(',') as (name:chararray, animal:chararray);
+    A = cogroup owners by animal, pets by animal;
+      
+
+19. lines = load '/home/training/dvs/file1.txt' as (line:chararray);
+    tokens = foreach lines generate FLATTEN(TOKENIZE(line)) AS token:chararray;
+    letterGroup = GROUP tokens BY token;
+    countPerLetter = FOREACH letterGroup GENERATE $0, COUNT($1);
+    store countPerLetter into '/home/training/dvs/piggout';
+    dump letterGroup;
+
+20. lines = LOAD '/home/training/pig/test1' as (line:chararray);
+    tokens = FOREACH lines GENERATE FLATTEN(TOKENIZE(line)) AS token:chararray;
+    letterGroup = GROUP tokens BY token;
+    countPerLetter = FOREACH letterGroup GENERATE group, COUNT(tokens);
+    sortA = order countPerLetter by $1 desc;
+    limitA = limit sortA 1;
+    
+
+lines = load '/home/training/dvs/file1.txt' as (line:chararray);
+tokens_bag = foreach lines generate TOKENIZE(line);
+flatten_bag = foreach tokens_bag generate FLATTEN($0);
+group1 = group flatten_bag by $0;
+count1 = foreach group1 generate group, COUNT($1);
+
+
+27. A = LOAD '/home/training/first_table.json' USING JsonLoader( 'empno:int,ename:chararray, job:chararray,sal:double,comm:float,deptno:int');
+store A into 'emp' using HCatStorer();
+
+grunt> store emp_Table into 'emp_data.json' using JsonStorage();
+
+28. REGISTER  /home/training/piggybank.jar
+	A = LOAD '/home/training/dvs/sample.xml' using org.apache.pig.piggybank.storage.XMLLoader('BOOK') AS (x:chararray);  
+	B = foreach A GENERATE FLATTEN(REGEX_EXTRACT_ALL(x,'<BOOK>\\s*<TITLE>(.*)</TITLE>\\s*<AUTHOR>(.*)</AUTHOR>\\s*<COUNTRY>(.*)</COUNTRY>\\s*<COMPANY>(.*)</COMPANY>\\s*<PRICE>(.*)</PRICE>\\s*<YEAR>(.*)</YEAR>\\s*</BOOK>'));
+
+
+B = foreach A GENERATE REGEX_EXTRACT_ALL(x,'<BOOK>\\s*<TITLE>(.*)</TITLE>\\s*<AUTHOR>(.*)</AUTHOR>\\s*<COUNTRY>(.*)</COUNTRY>\\s*<COMPANY>(.*)</COMPANY>\\s*<PRICE>(.*)</PRICE>\\s*<YEAR>(.*)</YEAR>\\s*</BOOK>');
+
+
+29.  A = load '/home/training/dvs/hive-site.xml' using org.apache.pig.piggybank.storage.XMLLoader('property') as (x:chararray);
+     B = foreach A generate FLATTEN(REGEX_EXTRACT_ALL(x,'<property>\\s*<name>(.*)</name>\\s*<value>(.*)</value>\\s*<description>(.*)</description>\\s*</property>'));
+     C = filter B by $0 is not null;
+     store D into '/home/training/dvs/pigout' using PigStorage('|');	
+
+30.  A = load '/home/training/dvs/emp' using PigStorage(',') as (empno:int, ename:chararray, job:chararray, sal:double, comm:double, deptno:int);
+     B = group A by deptno;
+     C = foreach B generate $0, SUM(A.sal) as sum_sal, MAX(A.sal) as max_sal, MIN(A.sal) as min_sal, AVG(A.sal) as avg_sal, COUNT(A.sal) as count_emp;
+
+31.  A = LOAD '/home/cloudera/dvs/Pignum.csv' using PigStorage (',')  AS (a1:int,a2:int,a3:int);
+ 
+	DUMP A;
+	(1,2,3)
+	(4,2,1)
+	(8,3,4)
+	(4,3,3)
+	(7,2,5)
+	(8,4,3)
+ 
+     B = FOREACH A GENERATE CONCAT('a:',(chararray)a1), CONCAT('b:',(chararray)a2), CONCAT('c:',(chararray)a3);
+ 
+	DUMP B;
+	(a:1,b:2,c:3)
+	(a:4,b:2,c:1)
+	(a:8,b:3,c:4)
+	(a:4,b:3,c:3)
+	(a:7,b:2,c:5)
+	(a:8,b:4,c:3)
+
+32. hint : apply substr to capture starting letter words
+
+33. use hcatalog
+
+grunt>A = load 'emp' using org.apache.hcatalog.pig.HCatLoader();
+grunt>B filter A by deptno==10;
+grunt>store B into 'emp' using org.apache.hcatalog.pig.HCatStorer();
+
+
+
+Other commands :
+
+*****************PARAMETERS in PIG *******************************
+
+pig -x local -param empdata=/home/training/dvs/emp -param deptdata=/home/training/dvs/dept sample.pig
+or
+pig -x local -p empdata=/home/training/dvs/emp -p deptdata=/home/training/dvs/dept sample.pig
+
+
+cat>sample.pig
+A = load '$empdata' using PigStorage(',') as (eno:int, ename:chararray, job:chararray, sal:int, comm:int, 
+deptno:int);
+B = load '$deptdata' using PigStorage(',') as (deptno:int, dname:chararray, dloc:chararray);
+ABC = join A by deptno, B by deptno;
+store ABC into '$out';
+
+*************************THRU PARAM FILE**************************
+
+cat>sampleparam
+empdata=/root/dvs/emp.csv
+deptdata=/root/dvs/dept.csv
+out=/root/dvs/pggg
+
+pig -x local -param_file sampleparam sample.pig
+				f(or)           
+pig -x local -m sampleparam sample.pig
+
+COUNT will ignore NULL Values
+COUNT_STAR counts NULL Values
+
+Compression:
+A = load ‘emp.gz’ as (eno:int, ename:chararray, job:chararray, sal:int, comm:int, deptno:int);
+store A into ‘empoutput.gz’; 
+
+Note : .gz files are not splittable 
+
+A = load ‘emp.bz’ as (eno:int, ename:chararray, job:chararray, sal:int, comm:int, deptno:int);
+store A into ‘empoutput.bz’; 
+
+These are splittable & blocks will be processed in parallel.
+
+TextLoader():
+TextLoader works with unstructured data. Each resulting tuple contains a single field with one line of input text.
+
+******************************Tweets exercise Keys**********************
+
+user = load '/home/training/user' using PigStorage (',') as(login:chararray,name:chararray,state:chararray);
+
+tweets = load '/home/training/tweet' using PigStorage (',')as(tweetid:long,content:chararray,reference:chararray);
+
+join_user_tweets_bag  = join user by login full,tweets by reference;
+
+new_user_tweets_bag = foreach join_user_tweets_bag generate login,name,tweetid,content;
+
+group_bag = group new_user_tweets_bag  by  name;
+
+count_tweets_bag = FOREACH group_bag GENERATE group,COUNT(new_user_tweets_bag);
+
+NYstate = filter user by state =='NY';
+
+store NYstate into '/home/training/NYstate';
+
+favotite_tweets = FILTER tweets BY (content matches '.*favorite.*');
+
+store favotite_tweets into '/home/training/favotite_tweets';
+
+filter_notlogin = filter count_tweets_bag by group is null;
+
+store filter_notlogin into '/home/training/filter_notlogin';
+
+filter_0 = filter count_tweets_bag by $1==0;
+
+store filter_0 into '/home/training/filter_0';
+
+filter_2 = filter count_tweets_bag by $1>=2;
+
+store filter_2 into '/home/training/filter_2';
+
+***************************Demonetization-tweets excercise Keys******************
+
+demo = load '/home/cloudera/dvs/demonetization-tweets.csv' using PigStorage (',') as (Sl:int,text:chararray,favorited:boolean,favoriteCount:int,replyToSN:bytearray,
+created:bytearray,truncated:boolean,replyToSID:bytearray,id:long,replyToUID:bytearray,statusSource:chararray,screenName:chararray,retweetCount:int,
+isRetweet:boolean,retweeted:boolean);
+ratings = load '/home/cloudera/dvs/AFINN.txt' using PigStorage ('\t') as (word:chararray,rating:int);
+extract_details = FOREACH demo GENERATE $0 as id,$1 as text;
+tokens = foreach extract_details generate id,text,FLATTEN(TOKENIZE(text))AS word;
+word_rating = join tokens by word left outer,ratings by word using 'replicated';
+rating = foreach word_rating generate tokens::id as id,tokens::text as text,ratings::rating as rate;
+word_group = group rating by(id,text);
+avg_rate = foreach word_group generate group,AVG(rating.rate) as tweet_rating;
+all_tweets = filter avg_rate by tweet_rating>-5 and tweet_rating<5;
+
+

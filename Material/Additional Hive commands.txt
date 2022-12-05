@@ -1,0 +1,743 @@
+Additional Hive Commands:
+
+1.hive (hivedb)> desc employee;
+OK
+eid                     int
+ename                   string
+esal                    double
+loc                     string
+Time taken: 0.111 seconds, Fetched: 4 row(s)
+
+2.hive (hivedb)> describe formatted employee;
+OK
+# col_name              data_type               comment
+
+eid                     int
+ename                   string
+esal                    double
+loc                     string
+
+# Detailed Table Information
+Database:               hivedb
+Owner:                  cloudera
+CreateTime:             Wed Jun 05 00:52:57 PDT 2019
+LastAccessTime:         UNKNOWN
+Protect Mode:           None
+Retention:              0
+Location:               hdfs://quickstart.cloudera:8020/user/hive/warehouse/hivedb.db/employee
+Table Type:             MANAGED_TABLE
+Table Parameters:
+        COLUMN_STATS_ACCURATE   false
+        last_modified_by        cloudera
+        last_modified_time      1559738128
+        numFiles                1
+        numRows                 -1
+        rawDataSize             -1
+        totalSize               42
+        transient_lastDdlTime   1559738128
+
+# Storage Information
+SerDe Library:          org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
+InputFormat:            org.apache.hadoop.mapred.TextInputFormat
+OutputFormat:           org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
+Compressed:             No
+Num Buckets:            -1
+Bucket Columns:         []
+Sort Columns:           []
+Storage Desc Params:
+        field.delim             ,
+        line.delim              \n
+        serialization.format    ,
+Time taken: 0.107 seconds, Fetched: 38 row(s)
+
+--------------------------------------------------------------------------------------------------------------------------------------
+
+Sample data processing using Hive:
+
+sample json data:
+{
+"name":"Ravi",
+"age":25
+}
+{
+"name":"Rani",
+"city":"Hyd"
+}
+
+If we load above data directly it will generate 8 rows, we got to use MapReduce or spark to transform it
+to horizontal lines.
+
+{"name":"Ravi","age":25}
+{"name":"Rani","city":"Hyd"}
+
+create database jsons;
+use jsons;
+create table raw (line string);
+load data local inpath 'json1' into table raw;
+ 
+To extract the fields we have two functions:
+1. get_json_object() ----> UDF
+2. json_tuple() ----> UDTF(we need to use with laterals, UDTF can return multiple rows/multiple columns/multiple rows and columns)
+
+**************Note:
+1. json_tuple() -----> to get continuous sequence of fields.
+2. get_json_object() ------> to get particular field.
+3. If any field missed it will return nulls and later we need to remove the nulls.
+
+hive (jsons)> create table raw(line string);
+OK
+Time taken: 0.082 seconds
+
+hive (jsons)> load data local inpath "/home/cloudera/dvs/json1" into table raw;
+Loading data to table jsons.raw
+Table jsons.raw stats: [numFiles=1, totalSize=93]
+OK
+Time taken: 0.504 seconds
+
+hive (jsons)> select * from raw;
+OK
+{"name":"Ravi","age":20}
+{"name":"Savi","city":"hyd"}
+{"name":"Mani","age":24,"city":"Del"} 
+Time taken: 0.148 seconds, Fetched: 3 row(s)
+
+hive (jsons)> select get_json_object(line,'$.name') from raw;
+OK
+Ravi
+Savi
+Mani
+Time taken: 0.145 seconds, Fetched: 3 row(s)
+
+hive (jsons)> select get_json_object(line,'$.age') from raw;
+OK
+20
+NULL
+24
+Time taken: 0.089 seconds, Fetched: 3 row(s)
+
+hive (jsons)> select get_json_object(line,'$.age'),
+            > get_json_object(line,'$.city'),
+            > get_json_object(line,'$.name') from raw;
+OK
+20	NULL	Ravi
+NULL	hyd	Savi
+24	Del	Mani
+Time taken: 0.091 seconds, Fetched: 3 row(s)
+
+**********The pain in above get_json_object is it is limited to less fields consider there are 100 fields then it's gonna
+be difficult task.
+Let's go with json_tuple() applied with lateral view
+
+hive (jsons)> select x.* from raw lateral view json_tuple(line,'name','age','city') x as n,a,c;
+OK
+Ravi	20	NULL
+Savi	NULL	hyd
+Mani	24	Del
+Time taken: 0.188 seconds, Fetched: 3 row(s)
+****Note:
+1. The x used in x.* and after the bracket ) x both are same*******
+2. In the above query x.* indicates all the multiple columns(in this example name,city and age), x is alias of lateral view 
+and n,a & c is alias for name,age and city.
+3. Lateral view will generate multiple columns
+
+hive (jsons)> create table info(name string,age int,city string);
+OK
+Time taken: 0.193 seconds
+
+*****Note:
+Insert into > This will append the record already if table has data.
+Insert overwrite > This delete the previous data if any and fresh data will be loaded.
+
+hive (jsons)> insert overwrite table info select x.* from raw lateral view json_tuple
+(line,'name','age','city') x as n,a,c;
+
+hive (jsons)> select * from info;
+OK
+Ravi	20	NULL
+Savi	NULL	hyd
+Mani	24	Del
+Time taken: 0.112 seconds, Fetched: 3 row(s)
+
+Let's go with nested json records:
+{
+  "name":"Ravi",
+  "age":25,
+  "wife": {
+            "name":"Rani",
+            "age":24,
+            "city":"hyd"
+          }
+  "city":"del"
+}
+We need to convert the above nested into horizontal and we need to use mapred or spark code:
+{"name":"Ravi","age":25,"wife":{"name":"Rani","age":24,"city":"hyd"},"city":"del"}
+
+
+[cloudera@quickstart dvs]$ cat nested_json
+{"name":"Ravi","age":25,"wife":{"name":"Rani","age":24,"city":"hyd"},"city":"del"}
+{"name":"Kiran","age":30,"wife":{"name":"Veni","qual":"btech","city":"hyd"},"city":"hyd"}
+
+hive (jsons)> create table jraw(line string);
+OK
+Time taken: 0.198 seconds
+
+hive (jsons)> load data local inpath "/home/cloudera/dvs/nested_json"into table jraw;
+Loading data to table jsons.jraw
+Table jsons.jraw stats: [numFiles=1, totalSize=173]
+OK
+Time taken: 0.437 seconds
+
+hive (jsons)> select * from jraw;
+OK
+{"name":"Ravi","age":25,"wife":{"name":"Rani","age":24,"city":"hyd"},"city":"del"}
+{"name":"Kiran","age":30,"wife":{"name":"Veni","qual":"btech","city":"hyd"},"city":"hyd"}
+Time taken: 0.106 seconds, Fetched: 2 row(s)
+
+hive (jsons)> create table raw2(name string,age int,wife string,city string);
+OK
+Time taken: 0.117 seconds
+
+hive (jsons)> insert into table raw2 select x.* from jraw lateral view json_tuple(line,'name','age','wife','city') x as n,a,w,c;
+
+hive (jsons)> select * from raw2;
+OK
+Ravi	25	{"name":"Rani","age":24,"city":"hyd"}	del
+Kiran	30	{"name":"Veni","qual":"btech","city":"hyd"}	hyd
+Time taken: 0.115 seconds, Fetched: 2 row(s)
+
+Still we have not got the needed output, we need to filter more
+
+hive (jsons)> create table jinfo(hname string,wname string,hage int,wage int,hcity string,wcity string,wqual string)row format delimited fields terminated by ',';
+OK
+Time taken: 0.109 seconds
+
+hive (jsons)> insert into table jinfo select name,get_json_object(wife,'$.name'),age,get_json_object(wife,'$.age'),city,get_json_object(wife,'$.city'),get_
+json_object(wife,'$.qual') from raw2;
+
+hive (jsons)> select * from jinfo;
+OK
+Ravi	Rani	25	24	del	hyd	NULL
+Kiran	Veni	30	NULL	hyd	hyd	btech
+Time taken: 0.07 seconds, Fetched: 2 row(s)
+
+-------------------------------------------------------------------------------------------
+Let's work on Json arrays:
+
+[cloudera@quickstart dvs]$ cat json3
+{"name":"Ravi","qual":["btech","mtech","phd"]}
+{"name":"mani","qual":["bsc","mba"]}
+{"name":"Rani","qual":["bsc","msc","mtech"]}
+
+hive (jsons)> create table jsraw(line string);
+OK
+Time taken: 1.829 seconds
+
+hive (jsons)> load data local inpath "/home/cloudera/dvs/json3" into table jsraw;
+Loading data to table jsons.jsraw
+Table jsons.jsraw stats: [numFiles=1, totalSize=129]
+OK
+Time taken: 3.074 seconds
+
+hive (jsons)> select * from jsraw;
+OK
+{"name":"Ravi","qual":["btech","mtech","phd"]}
+{"name":"mani","qual":["bsc","mba"]}
+{"name":"Rani","qual":["bsc","msc","mtech"]}
+Time taken: 1.101 seconds, Fetched: 3 row(s)
+
+hive (jsons)> create table jsraw2(name string,qual string);
+OK
+Time taken: 0.515 seconds
+
+*****Note: In above table we're suppose to use datatype for qual as array but hive always treat that as
+string only
+
+hive (jsons)> insert into table jsraw2 select x.* from jsraw lateral view json_tuple(line,'name','qual') x as n,q;
+
+hive (jsons)> select * from jsraw2;
+OK
+Ravi	["btech","mtech","phd"]
+mani	["bsc","mba"]
+Rani	["bsc","msc","mtech"]
+Time taken: 0.213 seconds, Fetched: 3 row(s)
+
+Next step is to split the string using the delimiter, here it is comma(,)
+Then wherever there is double quotes it is getting masked with backslashed.
+
+hive (jsons)> select split(qual,',') from jsraw2;
+OK
+["[\"btech\"","\"mtech\"","\"phd\"]"]
+["[\"bsc\"","\"mba\"]"]
+["[\"bsc\"","\"msc\"","\"mtech\"]"]
+Time taken: 0.451 seconds, Fetched: 3 row(s)
+
+hive (jsons)> create table raw3(name string,qual array<string>);
+OK
+Time taken: 0.377 seconds
+
+hive (jsons)> insert into table raw3 select name,split(qual,',')from jsraw2;
+
+ive (jsons)> select * from raw3;
+OK
+Ravi	["[\"btech\"","\"mtech\"","\"phd\"]"]
+mani	["[\"bsc\"","\"mba\"]"]
+Rani	["[\"bsc\"","\"msc\"","\"mtech\"]"]
+Time taken: 0.103 seconds, Fetched: 3 row(s)
+
+Next we need to explode the array then array elements will be flattened to different rows.
+hive (jsons)> select explode(qual) as q from raw3;
+OK
+["btech"
+"mtech"
+"phd"]
+["bsc"
+"mba"]
+["bsc"
+"msc"
+"mtech"]
+Time taken: 0.234 seconds, Fetched: 8 row(s)
+
+If we see the above result, qualification is separated but still the dust is there (Like brackets," etc)
+
+hive (jsons)> create table raw4 (name string, qual string);
+OK
+Time taken: 0.243 seconds
+
+hive (jsons)> select name,myq from raw3 lateral view explode(qual) q as myq;
+OK
+Ravi	["btech"
+Ravi	"mtech"
+Ravi	"phd"]
+mani	["bsc"
+mani	"mba"]
+Rani	["bsc"
+Rani	"msc"
+Rani	"mtech"]
+Time taken: 0.199 seconds, Fetched: 8 row(s)
+
+hive (jsons)> insert overwrite table raw4 select name,myq from raw3 lateral view explode(qual) q as myq;
+
+hive (jsons)> select * from raw4;
+OK
+Ravi	["btech"
+Ravi	"mtech"
+Ravi	"phd"]
+mani	["bsc"
+mani	"mba"]
+Rani	["bsc"
+Rani	"msc"
+Rani	"mtech"]
+Time taken: 0.078 seconds, Fetched: 8 row(s)
+
+hive (jsons)> select split(qual,'"')from raw4;
+OK
+["[","btech",""]
+["","mtech",""]
+["","phd","]"]
+["[","bsc",""]
+["","mba","]"]
+["[","bsc",""]
+["","msc",""]
+["","mtech","]"]
+Time taken: 0.231 seconds, Fetched: 8 row(s)
+
+If we notice in the above result the second element is the qualification, therefore
+perform the below action
+
+hive (jsons)> select split(qual,'"')[1] from raw4;
+OK
+btech
+mtech
+phd
+bsc
+mba
+bsc
+msc
+mtech
+Time taken: 0.216 seconds, Fetched: 8 row(s)
+
+hive (jsons)> create table jsinfo like raw4;
+OK
+Time taken: 0.67 seconds
+
+Here the like indicates that jsinfo table contents all the properties of raw4 table,
+it is just the replica of raw4.
+
+hive (jsons)> insert into table jsinfo select name,split(qual,'"')[1]from raw4;
+Here 1 indicates the position of the qualification elememt, qual element is in second position as mentioned earlier.
+
+hive (jsons)> select * from jsinfo;
+OK
+Ravi	btech
+Ravi	mtech
+Ravi	phd
+mani	bsc
+mani	mba
+Rani	bsc
+Rani	msc
+Rani	mtech
+Time taken: 0.213 seconds, Fetched: 8 row(s)
+
+******Note: In actual work just save the jsinfo table as external table and remaining all as internal table to save the space.
+
+===================================================================================================================
+
+URL data processing using hive: This is useful when we play around web logs.
+As user navigates to different links and pages web log records will be generated
+within that web logs majority of the content is URLs
+
+The URLs are of two types > Source and Target URLs:
+1. If I know the website link then I'll directly type and navigate to that website then the source is null.
+2. If we don't know the link then type some keyword in google search then later navigate to website from the 
+   the available link then the source for me here is Google.
+
+Consider some 100 people viewed my website and I collect the sources then result would be,
+google
+yahoo
+DuckduckGo
+xcxx
+google
+yahoo
+DuckduckGo
+google
+google
+.
+.
+.
+.
+Then if I search or look into, the majority of the source is from google, then I can use google to advertise my data.
+If it is 60:30:10 ratio then accordingly split my advertising data.
+
+Tagert URLs: Generally user submits the query the below url is generated, consider a user is submitting a page and query string is generated
+<host>/<path>?id=101&name=ravi&age=32&sex=m.....
+Finally there are 10k requests forms submitted to my website and I realised, out of which
+9k are males and remaining are females.
+Therefore I can come to conclusion that on my product or my segment most of the requests are from males, then accordingly I need to plan stuffs
+Again I've age info, accordingly I get more info
+
+Consider there is a scenario, Horlicks approached and asked I need to advertise on your page suggest which one is good
+Then we can analyse the url and come to conclusion:
+General URL format will be like > host,path and query
+<host>/<path>?<query string>
+ 
+http://training.com/bigdata/hadoop?id=101&name=Giri&age=23&city=hyd
+Host > training.com
+Path > /bigdata/hadoop
+Query string > id=101&name=Giri&age=23&city=hyd
+
+http://training.com/bigdata/spark?id=102&name=Rani&sex=f&city=del
+http://training.com/bigdata/spark?id=103&name=xani&age=33&sex=f
+http://training.com/bigdata/spark?id=104&name=Rani&age=23&sex=m
+
+Then we can plan to advertise more investment on Spark, city=Hyd and Del etc....Awesome Alva
+
+How to extract this becuase it seems bit difficult, but Hive is there help us
+
+[cloudera@quickstart dvs]$ cat urls
+http://training.com/bigdata/hadoop?id=101&name=Giri&age=23&city=hyd
+http://training.com/bigdata/spark?id=102&name=Rani&sex=f&city=del
+http://training.com/bigdata/spark?id=103&name=xani&age=33&sex=f
+http://training.com/bigdata/spark?id=104&name=xiaomi&age=23&sex=m
+
+hive (jsons)> create database urls;
+OK
+Time taken: 0.462 seconds
+
+hive (jsons)> use urls;
+OK
+Time taken: 0.114 seconds
+
+hive (urls)> show tables;
+OK
+Time taken: 0.125 seconds
+
+hive (urls)> create table raw(line string);
+OK
+Time taken: 0.306 seconds
+
+hive (urls)> load data local inpath"/home/cloudera/dvs/urls" into table raw;
+Loading data to table urls.raw
+Table urls.raw stats: [numFiles=1, totalSize=264]
+OK
+Time taken: 3.506 seconds
+
+hive (urls)> select * from raw;
+OK
+http://training.com/bigdata/hadoop?id=101&name=Giri&age=23&city=hyd
+http://training.com/bigdata/spark?id=102&name=Rani&sex=f&city=del
+http://training.com/bigdata/spark?id=103&name=xani&age=33&sex=f
+http://training.com/bigdata/spark?id=104&name=xiaomi&age=23&sex=m
+Time taken: 0.193 seconds, Fetched: 4 row(s)
+
+Let's extract only the host name, thanks to hive we have pre-defined parses or else we had to use regular 
+expressions for everything and makes query complicated. 
+
+hive (urls)> select parse_url(line,'HOST') from raw;
+OK
+training.com
+training.com
+training.com
+training.com
+Time taken: 0.137 seconds, Fetched: 4 row(s)
+
+hive (urls)> select parse_url(line,'PATH') from raw;
+OK
+/bigdata/hadoop
+/bigdata/spark
+/bigdata/spark
+/bigdata/spark
+Time taken: 0.098 seconds, Fetched: 4 row(s)
+
+hive (urls)> select parse_url(line,'QUERY') from raw;
+OK
+id=101&name=Giri&age=23&city=hyd
+id=102&name=Rani&sex=f&city=del
+id=103&name=xani&age=33&sex=f
+id=104&name=xiaomi&age=23&sex=m
+Time taken: 0.231 seconds, Fetched: 4 row(s)
+
+hive (urls)> select parse_url(line,'HOST')
+           >       ,parse_url(line,'PATH'),
+           >        parse_url(line,'QUERY') from raw;
+OK
+training.com	/bigdata/hadoop	id=101&name=Giri&age=23&city=hyd
+training.com	/bigdata/spark	id=102&name=Rani&sex=f&city=del
+training.com	/bigdata/spark	id=103&name=xani&age=33&sex=f
+training.com	/bigdata/spark	id=104&name=xiaomi&age=23&sex=m
+Time taken: 0.117 seconds, Fetched: 4 row(s)
+
+******Note: How we have get_json_object we use parse_url here, similar to json_tuple
+we have parse_url_tuple is there which is udtf and can be applied with lateral view .
+
+hive (urls)> select x.* from raw lateral view parse_url_tuple(line,'HOST','PATH','QUERY') x as h,p,q;
+OK
+training.com	/bigdata/hadoop	id=101&name=Giri&age=23&city=hyd
+training.com	/bigdata/spark	id=102&name=Rani&sex=f&city=del
+training.com	/bigdata/spark	id=103&name=xani&age=33&sex=f
+training.com	/bigdata/spark	id=104&name=xiaomi&age=23&sex=m
+
+hive (urls)> create table raw2(host string,path string,query string);select
+OK
+Time taken: 0.235 seconds
+
+hive (urls)> insert into table raw2 select x.* from raw lateral view parse_url_tuple(line,'HOST','PATH','QUERY') x as h,p,q;
+
+hive (urls)> select * from raw2;
+OK
+training.com	/bigdata/hadoop	id=101&name=Giri&age=23&city=hyd
+training.com	/bigdata/spark	id=102&name=Rani&sex=f&city=del
+training.com	/bigdata/spark	id=103&name=xani&age=33&sex=f
+training.com	/bigdata/spark	id=104&name=xiaomi&age=23&sex=m
+Time taken: 0.17 seconds, Fetched: 4 row(s)
+
+**Let's split /bigdata/hadoop as category and product, here clue is '/'
+**if we observe query link we have so much info available id,name,sex,age,city and their location is not same
+i.e. city is there for one and not present in other,similarly age and sex, here the clue is '&' and next clue
+is key and value pair i.e. id=101,city=hyd...
+
+hive (urls)> create table raw3(host string,path array<string>,qmap map<string,string>);
+OK
+Time taken: 0.522 seconds
+
+hive (urls)> select * from raw2 limit 1;
+OK
+training.com	/bigdata/hadoop	id=101&name=Giri&age=23&city=hyd
+Time taken: 0.188 seconds, Fetched: 1 row(s)
+
+Let's convert string to map for analysing we use str_to_map(query,'&','=')
+String(i.e. query) > The entire query link
+& > pair to pair delimiter
+= > key and value delimiter
+
+hive (urls)> insert into table raw3 select host,split(path,'/'),str_to_map(query,'&','=')from raw2;
+
+hive (urls)> select * from raw3;
+OK
+training.com	["","bigdata","hadoop"]	{"id":"101","name":"Giri","age":"23","city":"hyd"}
+training.com	["","bigdata","spark"]	{"id":"102","name":"Rani","sex":"f","city":"del"}
+training.com	["","bigdata","spark"]	{"id":"103","name":"xani","age":"33","sex":"f"}
+training.com	["","bigdata","spark"]	{"id":"104","name":"xiaomi","age":"23","sex":"m"}
+Time taken: 0.072 seconds, Fetched: 4 row(s)
+
+In the above result 2nd element is array and 3rd element is map
+How to access array elements? Index numbers
+How to access map elements? KeyValue.
+
+hive (urls)> create table info1(host string,category string,course string,id int,name string,age int,sex string,city string);
+OK
+Time taken: 0.372 seconds
+
+hive (urls)> describe info1;
+OK
+host                	string              	                    
+category            	string              	                    
+course              	string              	                    
+id                  	int                 	                    
+name                	string              	                    
+age                 	int                 	                    
+sex                 	string              	                    
+city                	string              	                    
+Time taken: 0.354 seconds, Fetched: 8 row(s)
+
+hive (urls)> insert into table info1 select host,path[1],path[2],qmap['id'],qmap['name'],qmap['age'],qmap['sex'],qmap['city'] from raw3;
+
+hive (urls)> select * from info1;
+OK
+training.com	bigdata	hadoop	101	Giri	23	NULL	hyd
+training.com	bigdata	spark	102	Rani	NULL	f	del
+training.com	bigdata	spark	103	xani	33	f	NULL
+training.com	bigdata	spark	104	xiaomi	23	m	NULL
+Time taken: 0.245 seconds, Fetched: 4 row(s)
+
+hive (urls)> select sex,count(*) as cnt from info1 group by sex order by cnt desc limit 1;
+f	2
+Note: Above query won't justify if there are 2 females and 2 males that time it's good to go with joins
+
+==============================================================================================================
+
+Hive Cartesian Product:
+1. Each row of left side table, will join with each row of right side table.
+2. Advantage > Hive joins don't support non-equi joins(functionalities)
+	dno=r.dno this will work in Hive
+	dno>r.dno this won't work in Hive hence we prefer cartesian for non-equi functionalities.
+
+Consider there is a table emp and has a column salary
+	emp
+----------------
+	sal
+----------------
+	1000
+	2000
+	3000
+	4000
+----------------
+In the above column the avg salary is 2500 and two employees are below the avg sal, then how to make the 
+system to do that 
+
+consider there is column avg in another table Temp1:
+	avg
+      -------
+	2500
+when we use this joining query/condition in hive l.sal=r.avg then zero records will be joined.
+But I want to make that 2500 to be available for each and every row using cartesian product because joins can't do that.
+****Note: Whenever we're executing any query and we end up not giving any joining condition, automatically cartesian product will happen.
+
+create table temp(sal int,avg int);
+insert into table temp select sal,avg from emp l join (select avg(sal) as avg from emp) r;
+select * from temp;
+1000 2500
+2000 2500
+3000 2500
+4000 2500
+
+alter table temp add columns(stat string); New column is added and it's null as of now
+insert overwrite table temp select sal,avg, if(sal>=avg,'Above','Below')from temp;
+select * from temp;
+1000 2500 Below
+2000 2500 Below
+3000 2500 Above
+4000 2500 Above
+
+select stat,count(*) from temp group by stat;
+Above 2
+Below 2
+Therefore to make the avg be available for each and every row we took help of cartesian product.
+----------------------------------------------------------------------------------------------
+Let's take sales data:
+sales
+----------
+2016-01-01,10000
+ :
+ :
+ :
+2016-12-31,70000
+
+I want quarterly sales report, but here it is year,month and date
+But I need data like Jan,Feb,March
+		     Apr,May,June
+		     July,Aug,Sept
+		     Oct,Nov,Dec therefore totally 4 quarters
+Let's use the conditional transformation by using if statements.
+
+create table sales(dt string,amt int) row format delimited fields terminated by ',';
+load data local inpath 'sales.txt' into table sales;
+create table qsales(q int,amt int);
+insert into table qsales select if(month(dt)<4,1,if(month(dt)<7,2,if(month(dt)<10,3,4))),amt from sales;
+create table qreport(q int,tot int);
+insert into table qreport select q,sum (amt) from qsales group by q;
+1 10
+2 15
+3 7.5
+4 30
+We have not applied cartesian yet, let's do it now.
+create table compare (q1 int,q2 int, tot1 int,tot2 int,pgrowth int);
+consider 1,2,3,4 are in one table and 10,15,7.5,30 is in another table.If we apply cartesian product we get total 16 rows as output 
+But our requirement is 1 need not to be compared with anything,2 needs to be 1,later 3 with 2 and 4 with 3.
+
+insert overwrite table compares select 1.q,r.q,l.tot,r.tot,((l.q-r.q)*100)/r.q from qreport l join qreport r > if query is till here then output is 16 rows which is not needed.
+
+insert overwrite table compares select 1.q,r.q,l.tot,r.tot,((l.q-r.q)*100)/r.q from qreport l join qreport r where (l.q-r.q=1);
+------------
+Practicals:
+hive> create database cartesian;
+OK
+Time taken: 0.442 seconds
+
+hive> create table emp(id int,name string,sal int,sex string,dno int)row format delimited fields terminated by ',';
+OK
+Time taken: 0.681 seconds
+
+hive> load data local inpath '/home/cloudera/dvs/spark' into table emp;
+Loading data to table default.emp
+Table default.emp stats: [numFiles=1, totalSize=96]
+OK
+Time taken: 1.61 seconds
+
+hive> select * from emp;
+OK
+101	aaa	40000	m	11
+102	bbb	50000	f	12
+103	ccc	90000	m	13
+104	ddd	100000	f	11
+105	eee	20000	m	12
+Time taken: 0.763 seconds, Fetched: 5 row(s)
+
+hive> insert into table temp select sal,avg from emp l join(select avg(sal) as avg from emp)r;
+
+hive> select * from temp;
+OK
+40000	60000
+50000	60000
+90000	60000
+100000	60000
+20000	60000
+Time taken: 0.178 seconds, Fetched: 5 row(s)
+
+hive> alter table temp add columns(stat string);
+OK
+Time taken: 0.412 seconds
+hive> select * from temp;
+OK
+40000	60000	NULL
+50000	60000	NULL
+90000	60000	NULL
+100000	60000	NULL
+20000	60000	NULL
+Time taken: 0.31 seconds, Fetched: 5 row(s)
+
+hive> insert overwrite table temp select sal,avg,if (sal>=avg,'Above','Below')from temp;
+
+hive> select * from temp;
+OK
+40000	60000	Below
+50000	60000	Below
+90000	60000	Above
+100000	60000	Above
+20000	60000	Below
+Time taken: 0.189 seconds, Fetched: 5 row(s)
+
+hive> select stat,count(*) from temp group by stat;
+Above	2
+Below	3
+
+

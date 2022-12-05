@@ -1,0 +1,214 @@
+Scala:
+-Supports both Functional and Object Oriented Programming Language.
+-Statically Typed : 
+x=10, compile will take it as int no need to mention it
+x="xyz" for x it can't take string next moment, it will store x as int,
+which was consider at the beginning.
+we can enter x=11 or x=12 it will take.
+
+scala> var m=12
+m: Int = 12
+
+scala> m=90
+m: Int = 90
+
+scala> m="Hadoop"
+<console>:12: error: type mismatch;
+ found   : String("Hadoop")
+ required: Int
+       m="Hadoop"
+
+-Python is dynamically typed language, it can accept static and dynamic
+-Scala is fast compare to other languages.
+
+**************************************************************************************
+
+Executing Scala scripts in shell:
+-RELP > read Eval Print Loop
+-Prepare the scala script and save it with extension .scala ex: Program.scala
+-In root path / local mode enter "scala Prgram.scala" 
+-When executing mention -i to view result in scala shell ex: "scala -i hi.scala"
+
+****************************************************************************************
+
+scala> val a = 10
+a: Int = 10
+
+scala> val b = 20
+b: Int = 20
+
+scala> println("The sum is:"+(a+b))
+The sum is:30
+
+*************************************************
+
+scala> val sum = {val a=15;val b=15
+     | a+b}
+sum: Int = 30
+
+***************************************************
+
+scala> val a=10;val b=20
+a: Int = 10
+b: Int = 20
+
+scala> val c=a+b
+c: Int = 30
+
+********************************************************
+
+scala> val comparison = {val a=15;val b=20
+     | if(a>b) a else b}
+comparison: Int = 20
+
+****Note: Look into different types of batch execution.
+
+*********************************************************
+
+Loops concept:
+
+scala> for(x<- 1 to 5){print(x)}
+12345
+scala> for(x<- 1 until 5){print(x)}
+1234
+
+*************************************************************
+
+Foreach usuage:
+
+scala> x.foreach(println)
+S
+c
+a
+l
+a
+
+scala> x.foreach(print)
+Scala
+scala> print(x)
+Scala
+scala> println(x) > Point to note************************
+Scala
+
+****************************************************************
+
+**Note: Scala doesn't support increment and decrement function.
+
+While loop:
+
+scala> var i=4
+i: Int = 4
+
+scala> while (i<5){
+     | println("Hello")
+     | i=i+1//i+=1
+     | }
+Hello
+
+scala> var i = 2
+i: Int = 2
+
+scala> while(i<6){
+     | println("Boy")
+     | i+=2
+     | }
+Boy
+Boy
+
+***Note: If i=i+1 is not mentioned stuffs enters into infinity loop
+
+*******************************************************************************
+
+scala> var i = 10
+i: Int = 10
+
+scala> do{
+     | println("Bye")
+     | ;i+=1}while(i<20)
+Bye
+Bye
+Bye
+Bye
+Bye
+Bye
+Bye
+Bye
+Bye
+Bye
+
+******************************************************************************
+
+Functional Types:
+
+def FunctionName(param list):[returntype]
+{
+//body
+return res;
+}
+
+**Note: 
+Return type is optional.
+The functions which don't have return type are called as procedures.
+The functions which has return type is called as
+There is no method concept type here like Java 
+
+*********************************************************************************
+
+Procedures(without return type)
+
+To do sum of a & b
+
+def Sum(a: Int,b: String)
+{
+println(a+b)
+}
+
+With return type:
+
+def sum(a:Int,b:String):Int
+{
+return (a+b);
+}
+
+val t1=Sum(10,20)
+
+**************************************************************************************
+
+Collections:
+
+	       Set > Sorted and Bit Set
+		|
+Traversable > Iterable > Sorted Map
+		|
+	      Sequential > Linear and Indexed Seq
+
+***************************************************************************************
+
+Maps: 
+To store the key value pairs <k,v>
+Here keys are Unique and no need to maintain value as unique we can pass duplicate to it
+I.e Keys -> Unique
+    Values -> Duplicate
+
+Ex: val S1=map("101">"abc","102"->"bbc","103"->"abc")
+    println(S1(102)); > To get value of in between value
+    S1+="104"->"xyz" > To add new value
+    S1-="102" -> To delete 102 value
+    val S1+="103"->"xyz" > To update the values
+****S1("abc") > No value is fetched when we try something using values to get key, otherwise is possible.
+****S1(104).getOrElse("mnp"); > When we don't know whether the value is present or not, if not present
+                            we can replace it with new value like "mnp" here.
+
+*****************************************************************************************
+
+Tuples:
+val id = (101,"abc",103)
+Tuple accepts both int and string
+Tuple index starts from 1 unlike array which starts from 0
+println(id._2) > "abc"
+println(id._3) > "103"
+
+Ex: We have a word like ScaLA and task is fetvh the number of letters with uppercase
+    we use partition(_.isUpper()) > (SLA,ca)
+	   partitio(_.isLower()) > (ca,SLA)
+Note: It displays results in the form of 2 results as seen above, like (res1,res2)

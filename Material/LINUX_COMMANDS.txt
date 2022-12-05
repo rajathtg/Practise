@@ -1,0 +1,448 @@
+1. To know files in present working directory    
+
+    ls          (list of files with ascending order)
+    ls --help	(List help page of ls command with their option)
+
+    ls -a     (hidden files also displayed-those starting with a ".")
+	
+    ls -F	  (will add the ‘/’ Character at the end each directory)
+
+    ls -l     (long list with owner, group, bytes..etc. information)
+
+    ls -lh     (to know sizes in human readable format)
+
+    ls -m     (file names with coma separated)
+ 
+    ls -r     (list of filenames with Desc order)
+	
+    ls -R     ( Recursive list from all directories)
+
+    ls -s     (files with block size,  asc with filename) 
+
+    ls -S     (sort by file size desc )
+
+    ls -lt    (-t modification time, desc order)
+
+    ls -lrt   (latest modification file or directory date as last)
+	ls -1
+	ls */  (lists only directories)
+	ls -d */  (lists directories and subdirectories)
+
+    
+2. To know present/parent working directory.
+
+    pwd (Print Working Directory)
+
+    Ex: /home/training
+
+3. change/move  directory location
+    
+     cd  /user/training/rama     (change to rama)
+     cd ..        (Change Current directory to parent directory.)
+     cd - 	  (Move one directory back from where you are now)	 
+     cd           (Move to users home directory from anywhere)
+     cd  ~         (Move to users home directory from anywhere)
+     cd /	  (move to the root directory)
+     cd ../../	  (Move two directory up from where you are now.)
+    
+4. Creation of directory (folder)
+
+  mkdir movies			 	(creates a directory movies)
+  mkdir movies songs	 	(creates a directories movies,songs)
+  mkdir -v movies songs  	(print a message for each created directory)
+  mkdir -p movies/English 	(creates movies(parent) if doesn't exist)
+  mkdir -p movies/{English, Hindi}
+
+
+5. remove/delete file or dir
+
+    rm filename		(remove file)(case sensitive)
+    rm -v filename	(verbose-explain what is being done)
+    rm -i filename	(prompt before every removal)
+    rm -f filename	(Ignore nonexistant files, and never prompt 
+					  before removing)
+    rm dir			(rm: cannot remove `dir1': Is a directory)
+    rm -r dir_name	(removes directory)
+    rm -rf dir_name     (Ignore nonexistant folders, and never prompt 
+					  before removing)
+    rm -vr dir		(verbose-explain what is being done)
+    rmdir dir
+
+6. Copying file or dir	
+
+   cp origfile newfile  (Creates a copy of the file)
+   
+   If the destination file newfile already exists, it will be overwritten without a confirmation prompt. 
+   This is the default behavior for all cp operations
+   
+   cp -i origfile newfile      (prompt before overwrite)
+   
+   cp origfile /directory/subdirectory  (The copy of orgfile will be located in the 	subdirectory)
+   
+   cp origfile /directory/subdirectory/newfile
+   
+   cp file*.jpg /directory/subdirectory
+   
+   cp -r dir1 dir2   (Copy an entire directory structure into another location)
+   
+   cp -R /one/two /three/four  
+   
+   Copy the directory two (located in the directory /one), and everything two contains, into the destination directory /three/four. The result will be called /three/four/two. The directory /three must already exist for the command to succeed. If the directory four does not already exist in the directory /three, it will be created.
+
+   
+7 move/rename file
+
+  mv  file1 file2      (rename file1 to file2)
+  mv -i  file1 file2   (prompt before overwriting)
+  mv -f file1 file2    (do not prompt before overwriting)
+  mv  file1  ABC     (ABC is dir here.  so it moves file1 into ABC dir)
+  mv test1 test2 test3 dir1	( Move more than on file to directory)
+  
+
+8  touch is used to create, change and modify timestamps of a file
+
+  touch file1    			(creates an empty (zero byte) new file )
+  touch file1 file2 file3   (multiple files can be created once)
+  touch -a file1			(Change File Access and Modification Time. if file is not there it will create)
+  touch -c file1			(will not create a file called file1 if it does not exists)
+  touch -t 201212101830.55 file2		(creates file2 with a time stamp of 18:30:55 p.m. on December 10, 2012)
+
+  
+9. CAT command (to create/append file or display the content of the file)
+
+    cat file1	(Display Contents of File1)
+    cat file1 file2 (Display Contents of File1 and file2)
+    cat >file3   (creates a file called file3. Awaits input from user, type desired text and press CTRL+D )
+    cat -n file1.txt  (displays line number)
+    cat -e file1.txt	( ‘$‘ is shown at the end of everyline)
+    cat file1.txt > file2.txt	(a source text file to another. if file exits it overwrites ---redirection operator)
+    cat file1.txt file2.txt > file3.txt	(read  contents of file1.txt file2.txt and write the combined text to the file file3.txt)
+    cat file1.txt >> file2.txt	( append a source text file to another )
+	
+    
+
+10 MORE is a filter for paging through text one screen at a time   
+
+     more file1                 (check for big file only /var/log/Xorg.0.log)  (backward is not possible)
+     more -d file.txt		(prompt-Press space to continue, 'q' to quit.)
+     more +5 file1.txt		(Display the contents of file myfile.txt, beginning at line 5)
+     more -5 file1.txt		(Specify how many lines to print in the screen for a given file)	
+	 
+	 
+
+11. Less  same as more only   but forward and backward both possible
+
+    more /var/log/Xorg.0.log             (press enter/down arrow and up arrow)
+	less -5 file.txt
+	
+	
+
+12. head ==> used to display top 10 lines by default
+  
+    head      /var/log/Xorg.0.log		(Display the first 10 lines)
+    head -15 /var/log/Xorg.0.log		(Display the first 15 lines )
+    head -n 15 /var/log/Xorg.0.log		(Display the first 15 lines)
+    head myfile.txt myfile2.txt			(Display the first 10 lines of both myfile.txt and myfile2.txt, with a header before each that indicates the file name)
+    head -n 5 myfile.txt myfile2.txt		(Display the first 5 lines of both myfile.txt and myfile2.txt)
+
+13. tail ==> used to display bottom 10 lines by default
+
+    tail      /var/log/Xorg.0.log
+    tail -15 /var/log/Xorg.0.log  	(Display the last 15 lines)
+
+14. tail -f ==> Output the contents of the file as it grows. Useful to monitor log  
+  
+15. Ctrl+C – Cancels the currently running command.
+	Ctrl+D – log out of current session, similar to exit
+	Ctrl+W – erases one word in the current line(useful in editors)
+	Ctrl+U – erases the whole line(useful in editors)
+	
+	CTRL+F – forward one window
+	CTRL+B – backward one window
+	CTRL+D – forward half window
+	CTRL+U – backward half window
+	
+	j – navigate forward by one line
+	k – navigate backward by one line
+
+19. exit – log out of current session
+
+
+20. Ctrl+Z – stops the current command, resume with fg in the foreground or bg in the background
+    
+        jobs	Lists all jobs (bg & fg)
+	bg % n	Places the current or specified job in the background, where n is the job ID
+	fg % n	Brings the current or specified job into the foreground, where n is the job ID
+	Control-Z	Stops the foreground job and places it in the background as a stopped job
+
+	sleep 100 &   (To run a job in the background-&) 
+	fg % 1
+	sleep 100
+	ctrl+z
+	bg%1
+	jobs
+   
+
+21. history -list the last 1000 successful commands with unique id.
+    history 20 	( list the last 20 commands)
+    history | less
+    history | head
+    history | tail
+    history -c  (to clear the history)
+    !21 	(To run 21st command from history)   
+  
+    
+20. DATE  (display date and time)
+
+	date
+	date -d today		
+	yesterday,tomorrow,sunday,last-sunday,last-week,next-week,last-month,next-month,last-year,next-year)
+	date --date="next mon"
+	date --date="yesterday"
+	date --date="1 month ago"
+	date --date="1 year ago"
+	
+	date +%D		(To display Current Date in MM/DD/YY format)
+	date +%F		(To display date in YYYY-MM-DD format)
+	
+	date +%T		(To display time as HH:MM:SS, Note: Hours in 24 Format)
+	date +"%r"		(To display  12-hour clock time)
+
+	date +"%m-%d-%y"		(display date in dd-mm-yy format)
+	date +"%d-%m-%Y"		(display date in dd-mm-yyyy format)
+
+
+21. cal   (calendar)
+
+	cal
+	cal 2015
+	cal 2 2015	
+	cal -3		(the previous, current and next month)
+	cal -y		(calendar for whole year)
+	cal -m		(monday as first day)
+	cal -s		(sunday as first day)
+
+22. uptime – current system time, 
+		number of logged in users and 
+		current CPU load
+	     multiple sessions running	     
+
+23. w      – Show who is logged on and what they are doing.
+	     tty1 is desktop login, pts/0 is a pseudo terminal ..
+	     every terminal window is counted as a login
+
+24. who — Report which users are logged in to the system.
+    whoami – who you are logged in as
+
+25. uname -a – Print information about the current system
+
+26. cat /proc/cpuinfo – cpu information
+
+27. cat /proc/meminfo – memory information
+
+28. man command – show the manual for command
+
+29. df – The “df” command displays the information of device name, 
+	total blocks, total disk space, used disk space, available disk space
+   
+    df -h  (disk usage in human readable format)
+    df -m  (disk usage in MB)
+
+
+30. du –  show directory space usage
+    du -a both directories and files
+    du -h  – show directory space in human readable format
+
+31. free – Display RAM details in Linux machine
+    free-k (KB)
+    free-m (MB)
+    free-g (GB)
+
+Grep 
+grep stands for "global regular expression print
+grep 'word' filename
+grep 'word' file1 file2 file3
+
+grep -c "word" file.txt (Display the count of number of matches)
+grep -l "unix" *  (display all file names which has the matched word)
+grep -w 'dvs' file1.txt (Checks for the whole words in a file)
+grep --color -n "am" test1.txt  (line number)
+
+grep --color "am" test1.txt
+grep --color "..s" test1.txt     (REGEX)
+grep --color -i "am" test1.txt  (No Case Sensitive)
+grep --color -w "..s" test1.txt  (only dvs)
+We can specify the -i option to perform a case-insensitive match
+egrep 
+
+egrep 'apple|banana|orange' *
+egrep -i 'apple|banana|orange' *
+
+    
+32. Compressing file:
+	Command : gzip emp.csv
+	Output : emp.csv.gz
+33. Un-compressing file:
+	COmmand : gunzip emp.csv.gz
+	Output : emp.csv
+34. Compressing multiple files into 1 compressed file:
+	Command : tar cf file.tar file1 file2 file3 file4 ("tar" stands for tape archive)
+	Output : Creates 1 single file named file.tar 
+35. Uncompressing tar file :
+	Command : tar xf file.tar
+	Output : Extracts all the files from file.tar
+
+36. vi <filename_NEW> or <filename_EXISTING>
+    If you specify an existing file, then the editor would open it for you to edit.
+    Else, you can create a new file.
+    
+    ~ shows unused lines
+    The vi editor opens in command mode
+    To enter text we should be in insert mode,
+    To enter insert mode press i
+    
+    esc is used to enter command mode
+    :q! exit vi without saving any of the changes
+    :w save the file but keep it open
+    :Q save your changes and exit vi
+    :wq save and quit
+    
+    shift+zz save the file and quit
+    vi -R filename (open an existing file in the readonly mode)
+
+    k moves the cursor up 1 line
+    J moves the cursor down 1 line
+    H moves the cursor to the left 1 char position
+    i moves the cursor to the right 1 char position
+
+37. shell scripting
+    shell scripting is used to write a series of command for the shell
+    Shell is a program which interprets user commands through CLI like Terminal
+    
+    Create a file using a vi editor(or any other editor).  Name  script file with extension .sh
+    Start the script with #! /bin/sh  (meaning that the script should always be run with bash)
+    Write some code.
+    Save the script file as filename.sh
+    For executing the script type bash/sh filename.sh
+
+
+    step1: vi script1.sh
+    step2: #!/bin/sh
+	   ls
+    step3: sh scriptsample.sh
+
+   The first line tells Unix that the file is to be executed by /bin/sh
+   The only exception is when the very first line of the file starts with #!
+
+    #  for comment
+    
+    x="hello"
+    echo $x
+    
+    #!/bin/sh
+    echo "what is your name?"
+    read name
+    echo "How do you do, $name?"
+    read remark
+    echo "I am $remark too!"
+
+
+chmod: chmod is used to change the permissions of files or directories
+ls -l file1.txt
+chmod 764 file1.txt
+chmod o=RWX file1.txt (adding permission to other user)
+chmod g+x file1.txt (adding execute permission to the group)
+chmod u-r file1.txt (removing read access from user)
+
+chown: changing ownership of a file/directory
+ls -l  (to check ownership)
+sudo chown training file1.txt
+
+    
+
+38. CRON
+    The basic usage of cron is to execute a job in a specific time
+
+     The following is a list of cron directories:
+	 /etc/cron.hourly
+     /etc/cron.daily
+	 /etc/cron.weekly
+	 /etc/cron.monthly 
+
+Copy your shell script ‘script.sh` or ‘script’ into one of the directories above.
+If you need to run the script hourly
+
+    crontab -l  (To see the runnign cron jobs)
+
+
+ Give the shell script the correct permission. For example, if script is called
+“script.sh”, set permission as follows:
+cd /etc/cron.daily/
+chmod 755 script.sh 
+
+Add new cron job to crontab:
+crontab –e 
+
+    crontab -e  (To edit the list of cronjobs)
+
+1. The number of minutes after the hour (0 to 59)
+2. The hour in military time (24 hour) format (0 to 23)
+3. The day of the month (1 to 31)
+4. The month (1 to 12)
+5. The day of the week(0 or 7 is Sun, or use name)
+6. The command to run 
+
+	# Delete the current cron jobs #
+	crontab -r
+
+
+    ps aux | grep cron  (to see cron-crond process running)
+    vi /etc/crontab
+   
+   su to go to root user
+     
+   * * * * * root /usr/bin/uptime >> /home/training/linux/testcron.txt
+    
+
+    Cronjobs are written in the following format
+    
+    * * * * * /bin/execute/this/script.sh  (run every minute)
+    
+	The stars represent different date parts in the following order:
+	minute (from 0 to 59),
+      hour (from 0 to 23),
+      day of month (from 1 to 31)
+	month (from 1 to 12),
+     day of week (from 0 to 6) (0=Sunday)
+   
+   * means every
+
+   0 1 * * 5 /bin/execute/this/script.sh	(Execute every Friday 1AM)
+
+   0 1 * * 1-5 /bin/execute/this/script.sh	(Execute on workdays 1AM)
+   
+	@reboot     Run once, at startup
+	@yearly     Run once  a year     "0 0 1 1 *"
+	@annually   (same as  @yearly)
+	@monthly    Run once  a month    "0 0 1 * *"
+	@weekly     Run once  a week     "0 0 * * 0"
+	@daily      Run once  a day      "0 0 * * *"
+	@midnight   (same as  @daily)
+	@hourly     Run once  an hour    "0 * * * *"
+   
+   Storing the crontab output
+
+   */10 * * * * /bin/execute/this/script.sh >> /var/log/script_output.log 2>&1
+STDOUT is marked 1, STDERR is marked 2. So the following statement tells
+ Linux to store STDERR in STDOUT as well, 
+creating one datastream for messages & errors:
+   
+   mailing the crontab output	
+   
+   MAILTO="yourname@yourdomain.com"
+
+   Trashing the crontab output
+
+   */10 * * * * /bin/execute/this/script.sh > /dev/null 2>&1
+
+   /dev/null is a special file that discards all data written to it.

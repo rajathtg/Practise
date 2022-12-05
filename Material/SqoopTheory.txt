@@ -1,0 +1,222 @@
+Issues with RDBMS:
+> Data Importing was tedious task
+> Difficult to handle large datasets
+> Can't store unstructured data
+> Time consuming task
+
+Sqoop:
+> Tool used to transfer bulk data between HDFS and RDBMS(Relational Database Management Systems) or Relational database servers.
+>It has two tools
+	Sqoop Import > To import data from RDBMS to Hadoop(HDFS).
+	Sqoop Export > To export data from Hadoop to RDBMS.
+>OLTP - Online Transaction Processing.All these end user transaction (OLTP) data is stored into RDBMS.
+>Above OLTP can be stored into any one of the RDBMS Oracle,DB2,SQL Server etc database.
+>Data from RDBMS is put into DataWarehouse(We use Hadoop, it was RDBMS earlier).
+>After processing in Hadoop it is exported to RDBMS and later any system connected to RDBMS can make use of it.
+>Export is not required if we're generating a report of the data using Tableau or something through any plugin
+ from Hadoop directly.
+*****>Sqoop import can do Data import from:
+	RDBMS > HDFS
+	RDBMS > Hive
+	RDBMS > HBase
+*****>Sqoop export can do Data export from:
+	HDFS > RDBMS
+	Hive > RDBMS
+	It can't export data from HBase > RDBMS
+******Note: To export data from HBase to RDBMS we have two solutions,
+	Hive and HBase integartion
+	HBase is having it's own API(JAVA,Python,Scala..) thorugh this it is possible
+
+Sqoop Features:
+> It can perform full load
+> Incremental load
+> Parallel import/export
+> Compression
+> Kerberos security integration
+> Data loading directly in Hive
+
+Different options available with respect sqoop import:
+Note:
+1.Few things start with double hyphen '--' > This is main option
+2.Few things start with single hyphen '-' > This is sub option
+
+--connect	--username	--password
+--table		--where		--columns
+--query		--target-dir	--hive-import
+--hive-table	--hbase-table	--hbase-row-key
+--hbase-create-table........
+
+1. --connect > Used to specify connection URI (Unified Resource Interface) of database.
+Note: In general if it is webserver like web application the target host is URL
+      Server point of view samething is called URI
+The shape is <driver>:<DBMS>://<hostname>:<portnumber>/<dbname>
+Driver > DB driver and rest is nothing but what the name depicts.
+Based on above shape let's see one example:
+	jdbc:oracle://IBM.salesdb:3065/salesdb > This is connection URI
+Consider if in our system client server, database server and hadoop server all are on same machine
+	jdbc:mysql://localhost/mydb > The way I'm practising till date. (If there is no port number that's fine)
+
+2. To make connection to above server we need to specify the usename and password of database(here it is mysql):
+	--username cloudera --password cloudera
+********The username and password is the credential of RDBMS and should be assigned by RDBMS owner, without his permission we can't touch single character.
+	To import the data hadoop user should have read permission and while exporting user should have write permission.
+	All this will be granted by DBA (RDBMS Data base admin) and not our hadoop admin
+
+3. After connection is done from which table should I import the data mention that table.
+	--table emp
+Above table emp has a sub option -m and this '-m' is used to control the number of mappers.
+******In sqoop if we don't specify -m option then the default number of mappers are 4.
+What is adv of multiple mappers?
+-Consider a table has 1000 records.
+-If 1 mapper has imported this in 1hr time then think just for easy calculation I'm taking 1hr time.
+-Then 4 mappers parallely did this work then it would be completed in 15minutes.
+-It generally helps in increasing the importing speed.
+-If data is less then we can decrease the number of mappers used to import the data.
+	--table emp -m 2
+-If there is terabyte data the > --table emp -m 10
+*********-If table does not have primary key then the number of mappers must be 1.
+	 -If table does not have primary key then multiple mappers are not allowed.
+	 -Consider table emp with 1000 records with no primary key and I don't specify the mappers then by default 4 mappers are initiated
+	  i.e. m1 m2 m3 and m4 therefore the data will be splitted into 4 parts each of 250 data.
+	 -The m1 jumps to first row and start importing data.
+	 -The m2 can't start the importing as it don't know from where to start since table doesn't have primary key, therefore no random start possible.
+	 -Same prblem with m3 and m4
+	 -Only m1 can start and finish it throughh sequential reading therefore for table without primary key only sequential reading is possible.
+		--table emp -m 1
+	 -We do have alternative techniques like splitting using this we trigger multiple mappers for table without primary key let's see it in future.
+*****Note: The "table" shouldn't be mentioned explicitly if at all we plan to write a "query" because within the query table will be mentioned by default.
+	   --table and --query both are mutaully exclusive. 
+
+
+4. Next where are we importing in Hadoop > HDFS > to which directory??
+	--target-dir import1
+-import1 should be new directory, inside this data files will be generated
+-when we insert data from one directory to another the file name will be 000000_0
+-when we write some data using PIG or MR to HDFS the file name will be part-r or part-m
+	part-m > The output is written by mapper
+	part-r > The output is written by reducer
+********In entire sqoop import scenario there is no role of reducer therefore all the files will be part-m
+********The number of files generated under the target directory depends on the number of mappers used, consider no mappers mentioned by default hadoop 
+	will consider it as 4 then,
+	part-m-00000
+	part-m-00001
+	part-m-00002
+	part-m-00003 
+****Note: Consider yesterday you had mentioned mydir as target directory, today again you need to specify new directory, if you use again the same(mydir) one then
+	  the statement will fail, if you really want to add data to same dir then use append in your statment as seen below.
+			--target-dir mydir --append
+
+5. --where used to filter the """"rows"""" and not columns and this a conditional filter.
+   Based on the condition mentioned or specified only those rows will be imported i.e. matching rows with the criteria will be imported.
+   Consider we need to import only males data from table emp and I want only 1 output file then number of mappers should be 1
+		--table emp -m1 --where "sex='m'"
+		****The sex='m' should be inside the quotes or else it will fetch enitre data
+		**** "sex='m'" or 'sex="m"'
+		--table emp -m1 --where "sex>=50000"
+		--table emp -m1 --where "sal>=50000 and sex='f'"
+
+6. --columns > we can control the number of columns imported and can be clubbed with --where
+	--table emp -m1 --where "sex='m'" --columns name,sal
+-consider table emp has follqwing columns id name sal sex dno but I need name sal tax hra net i.e. at the time of importing itself I want to generate new fields.
+	--columns name,sal,sal*0.1(for tax) > Sqoop throws error as invalid column name because sqoop doesn't take any substring,expression etc and input will fail.
+-We can use query to overcome above problem and to generate new columns fields while importing.
+
+7.--query > To generate new fields while importing.
+*****It's always mandatory to have 'where' along with the query
+	i.e. --query 'select c1,c2,c1+c2 from emp' where '$CONDITIONS'
+-$CONDITIONS must be in uppercase and it's a boolean variable and by default it is always false.
+-$CONDITIONS validates(indirectly done by sqoop at sqoop level) the query if everything is correct then the output of $CONDITIONs will be True, when it is 
+ true the sqoop will submit query to RDBMS, until it is true sqoop will not disturb the RDBMS.
+-Later after submission to RDBMS, the query will be executed by RDBMS, sqoop only validates whether the meta data is correct(column names,expressions etc).
+-Later the result set generated after query execution in RDBMS, then that result set will be imported by Sqoop mappers.
+-If it is false the importing will not happen
+************Whenever we're using query and keeping some condition then the number of mappers should be 1 even though table has primary key.
+	    Because we're importing result set(it does not have primary query) generated after execution of query by RDBMS and not importing the table directly from RDBMS.
+	    we can overcome above problem using splitting condition let's see it in future.
+-Sqoop submits, given as select statement to RDBMS, statement is executed by RDBMS. Result set is imported by sqoop(mapper tasks).
+****Note: For select statement, where clause with $CONDITIONS is mandatory. $CONDITIONS is a boolean variable and default value is 'false.It validates all given expressions,
+if all are correct, then $CONDITIONS will turn to TRUE.
+Whenever, this is true, sqoop submits select statement to RDBMS.
+*****Note: The "table" shouldn't be mentioned explicitly if at all we plan to write a "query" because within the query table will be mentioned by default.
+	   --table and --query both are mutaully exclusive.
+
+8. Hive > To import data directly into hive table.
+		--hive-import
+		--hive-table > used to import to the specified table emp, if no DB is mentioned then it will consider that emp is in default DB.
+		Suppose the above mentioned table is available in other DataBase then mention it explicitly.
+				--hive-table urdb.emp 
+				urdb > DataBase and emp > Table name
+
+===============================================================================================================================================================================
+Practical Scenario:
+
+(i)There is a ORACLE RDBMS > SalesDB > Sales table; Host IP > 192.300.400.53 and Port No > 1563.
+Import data in above location to Hive > SalesTransDB > Sales table.
+
+$sqoop import --connect jdbc:oracle://192.300.400.53:1563/salesdb --username cloudera --password cloudera --table sales -m 2 --hive-import --hive-table salestrans.sales
+-In the above statement if query was needed to be icluded then it would be in place of "--table sales"
+-The schema of RDBMS and Hive table should be same.
+
+(ii)There is a ORACLE RDBMS > SalesDB > Sales table > cid pid amt; Host IP > 192.300.400.53 and Port No > 1563.
+Import data in above location to Hive > SalesTransDB > Sales table > pid cid amt net_bill > net bill of 10%
+If we notice the pid and cid columns are swapped in hive and we can't import it's a problem:
+Solution:
+$sqoop import --connect jdbc:oracle://192.300.400.53:1563/salesdb --username cloudera --password cloudera --query 'select pid,cid,amt,amt-(amt*10/100) from sales where $CONDITIONS'
+-m 1 --hive-import --hive-table salestrans.sales
+Note: Above approach is generally not recommended, RDBMS is executing the query and not Hadoop what if table is having 1TB data it's a burden on source system RDBMS.
+Because as part of ETL we have two approach 
+	ETL > Extract Transform and Loading > Above is the best example > Not best when data volume is too high > Smaller volume prefer ELT
+	ELT > Extract Load and Transform > This is best when data is too high > This means at time of importing don't perform any tarnsformations.
+	As it is import to Hive or HDFS later perform whatever jigna work you want to do.
+
+===================================================================================================================================================================================
+
+Import into HBase:
+-If table has no primary key:
+	--hbase-table hbtab1
+-By default RDBMS primary key will become hbase rowkey hence no need to specify it.
+-Column family needs to be specified --column-family e
+-If table not available then use --hbase-create-table.
+-Consider einfo is the table, id is the primary key name sal city dno name dmanager are the remaining columns.
+-I want name sal city to be as column family e and dno dname dmanager to be my column family d in HBase.
+
+-I'm doing two sqoop imports
+
+$sqoop import --connect .........--table einfo --hbase-table HBTabX --columns name,sal,city --column-family e --hbase-create-table
+Note: -If table not available then use --hbase-create-table.
+Above statement will fail because there is primary key since hbase needs a row key therefore do mention ID as below
+$sqoop import --connect .........--table einfo --hbase-table HBTabX --columns id,name,sal,city --column-family e --hbase-create-table
+By default hbase will consider id for row key and remaining columns will be used to create column family
+
+$sqoop import --connect .........--table einfo --hbase-table HBTabX --columns id,dno,dname,dmanager --column-family d --hbase-create-table
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Exporting the data from Hadoop to RDBMS:
+Because lot of hadoop data can't be accessed out of hadoop environment, if there is plugin not an issue or else it needs to be exported.
+
+(i)HDFS to RDBMS:
+--connect	--username	--password
+--table		--export-dir	
+****Note: The table in sqoop import is for source and the table in export is for target, export-dir will be the source hope you got it.
+
+$sqoop export --connect jdbc:mysql://localhost/mydb --username cloudera --password cloudera --table mytab --export-dir 'HDFS1' 
+****Note: The number of mappers will be number of input file nodes.
+	  Consider the HDFS file has 10 blocks with 3 replicas then number of mappers depend upon the number of unique blocks i.e. 10.
+	  We no need to mention the no of mappers, by default it will be considered.
+
+$sqoop export --connect jdbc:mysql://localhost/mydb --username cloudera --password cloudera --table mytab --export-dir 'HDFS2' --input-fields-terminated-by '\t'
+*****Note: When input is having delimiter other than the export file 
+
+(ii) Hive to RDBMS:
+Hive > DefaultDB > MyTabTable > \001 as delimiter > 1000 rows
+MySQL > mydb > Tab1 > , as delimiter
+Task is to export from MyTantable to Tab1
+Default Database location of hive is nothing but /user/hive/warehouse/mytab 
+
+$sqoop export --connect jdbc:mysql://localhost/mydb --username cloudera --password cloudera --table tab1 --export-dir '/user/hive/warehoiuse/mytab' --input-fields-terminated-by '\001'
+
+(iii) HBASE to RDBMS ?? No provision to export directly from HBASE to RDBMS.
+*******Note: Schema can fit into schema less because NoSQL are schemaless so it's easy to push freom RDBMS to HBase.
+	     Other way round is not possible.
+	     We got to use API or Hive-HBASE integration.

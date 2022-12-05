@@ -1,0 +1,503 @@
+Architecture:
+1.We have a tight couple or integration with MR hence easy to retrieve the data
+2.Also called as versional DB, because it maintaince earlier version as HBASE version or contents
+Ex:
+Sam 90Kg
+    85Kg (Later sam lost weight)
+    95Kg(Again gained more weight)
+HBASE maintains all the three records of Sam's weight. Used for tracking user behaviour or for using it has reference
+3.RDBMS doesn't maintains earlier versions of value.
+4.Not suitable for small records like Hadoop
+5.We can directly integrate with PIG,HIVE and MR as mentioned and pull data from it
+6.Also maintains servers like Thrift,AVRO and REST
+7.We can perform Batch/Iterative work flow using HBASE shell and we also apply HUE on this
+8.Also write JAVA prgtams or still we can use HBASE shell scripts
+9.We don't have concept of database here in HBASE similar to RDBMS*****
+ 
+Implementation of HBASE:
+HBASE has>
+HMaster
+HRegional servers > Maintains data in the form of memory stores and H files (columnar format)
+and we integrate with any type of client requirement
+zookeeper is a service provider and has direct contact with Hmaster, any request from client will go to zk and from there to HMaster
+
+Commands in HBASE:
+1.Tables are main thing to create,update etc. and also main place where data is stored
+2.Syntax:
+	Create 'table_name','columnar family'
+
+Table name is Student:
+ID	101 102 103
+Name	a   b	c
+Marks	90  91	92
+
+Address	DoorNo - 13
+	Street - Ameerpet
+	City -	Hyd
+	Country
+
+Therfore command is > Create 'Student','sid';
+
+or for better understanding let's use address > Address will be columnar family, (Doorno,street,city and country 
+will be column qualifier name or column name)
+
+Command > Create 'Student','Address';
+	  Put 'Student','row-key','Address:Doorno'; (Put is used to insert or update existing data & Row-key is used to identify 
+	  each row used to locate for insertion or updation)
+
+Command to delete> delete 'student','row-key','Address:DoorNo';
+
+Note: Drop table name to remove or delete any table.
+
+Command to retrieve any data get or scan
+complete information use scan
+partial information is needed use get
+
+Command > hbase shell (to enter into hbase shell)
+Command > list (To view all the tables under it)
+Command > create 'emp','e1'
+Command > put 'emp','r1','e1:eid','101'
+Command > put 'emp','r1','e1:ename','abc'
+Command > put 'emp','r1','e1:salary','25000'
+Command > scan 'emp'(gives all detail)
+Command > get 'emp','r1' (gives particular row data)
+Command > get 'emp','r1','e1:salaray' (gives o/p as 25000)
+Command > alter 'emp','e2' (To create new column family)
+Command > desc 'emp' (to view the scehma, version etc)
+Command > alter emp ,{Name=>'e1',VERSIONS=>'3'} (to change the version, by default it will be one always)
+Command > desc 'emp' (we can view the the updated version here) 
+
+------------------------------------------------------------------------------
+================================================================================
+
+Here we don't have database concept, it's directly the table concept, because table has the all required details in it.
+
+==========================================================================================================================
+Bharath Sreeram Notes:
+1. Columnar store:
+	data model > map of map of map (In general it is called nested level of map)
+	M1
+	-------
+	K1	Map2
+		-----
+		Kx	Map3
+			-----
+			Ky	value
+
+*******************Internally it is arranged in ascending order by default, since I don't access to HBASE I've not created results in ascending
+		   Hence watch out.
+*******************
+And it can be the same model for other value.
+*****Columns stored as rows,
+	Each column is associated with one column family.
+	Column family is associated with one row key.
+	In one table, we can keep multiple column families.
+	Each column family can have multiple columns.
+	These column families are used to categories table(record) information.
+Ex: Profile Resume.
+	Resume
+	--------------
+101 ---> Row Key (Below is the details of the person 101 called as "attributes". The attributes are nothing but the columns
+		  and the columns need to have the column family).
+-----------------
+	Personal_Details ----> column family
+		name
+		age
+		city
+		:
+		:
+	Education_Summary ----> column family
+		BDS
+		MD
+		Dip
+	Experience_Summary ----> column family
+		FirstCompany
+		SecondCompany
+Note: 1. NoSQL is schema less, consider there can be second person who has changed 5 companies and other person 1 experience...
+      2. In this way person to person different fields can be maintained, different columns can be maintained.
+      3. In RDBMS personal details is in one table and exp summary in other, each other is linked with foriegn/primary key, but 
+         here in NoSQL it is One single table.
+      4. The adv of the above model is at the time accessing the data no need to apply joins or sub queries.
+      5. In general joins are good compared to sub queries, but when data is in huge volume like big data join will take more time to process it.
+      6. Hence, denormalisation is recommended for batch process, if denormalisation is within the OLTP.
+
+Places to use HBASE:
+	1. To access rows and specifc columns of a Big table(Table which contains large quantity of columns and it is different from Big Data
+	   , because big data talks about the volume) in faster way.
+	Ex: Google's Big table has 4M columns(or 40Lakhs) from that 4M to access data HBASE model is helpful.
+
+Logical Model in RDBMS:
+-----------------
+
+Consider RDBMS table:
+------------------------
+	emp
+--------------------------
+id(pk)	name	sal	sex	dno(fk)
+------------------------------------
+101	Amar	10000	m	11
+102	Giri	20000	m	12
+103	Amala	30000	f	11
+-----------------------------------
+	dept
+---------------------------------
+dno(pk)	dname		loc
+----------------------------
+11	marketing	hyd
+12	HR		Del
+--------------------------------
+
+-Let emp.id and dept.dno be primary key, emp.dno be foreign key and dept.dno and emp.dno both are linked.
+-In the above tables dept is parent table and emp is child because emp entry depends on dept entry.
+-To collect info from both the tables using SQL then I've to apply joins, but Big Data joins not preferrable.
+-To know the city of Amala,
+	select loc from emp l join dept r on (l.dno=r.dno and l.id=103);
+	-So each time it needs to compare, it will take lot of time when it comes to OLTP, because here we don't prefer
+	sequential access, we're interested about specific data.
+	-To make above process quicker columnar storage came it picture where the data is stored in denormalised way.
+	-The same two tables in RDBMS will be stored as two separate column families in HBASE, how eaxctly it works see below.
+
+===================================================================================================================================
+Logical Model in HBASE:
+---------------------------
+	einfo
+-------------------------
+Key		Cell
+-----------------------------
+101		e:name=Amar
+101		e:sal=10000
+101		e:sex=m
+101		e:dno=11
+101		d:dno=11
+101		d:dname=marketing
+101		d:loc=hyd
+102		e:name=Giri
+102		e:sal=20000
+102		e:sex=m
+102		e:qual=Btech
+102		e:dno=12
+102		d:dno=12
+102		d:dname=hr
+102		d:loc=del
+103		e:name=Amala
+103		e:sal=f0000
+103		e:sex=f
+103		e:mstat=married
+103		e:dno=12
+103		d:dno=12
+103		d:dname=marketing
+103		d:loc=hyd
+
+-If you notice 102 has qualification but not 101, it can be added easily not like RDBMS where one entire column of Null needs to 
+ be added if other set of records doesn't have that qual. These is because of HBASE's schema less behaviour.
+-In above HBASe table it is easy to fetch data and no need to comparison yay :).
+-Always use the child table primary key as Key in HBASE and not parent's table because chances are more to get overwritten.
+-Child table id is unique, but dept table dno may not be unique.
+-When we use scan command in HBASE shell, the data model will be like how it is seen above.
+-How the data is actually stored internally let's see, in general it is map of map of map:
+
+
+1. <101, <M1>> = 101 is key, <M1> is map object 
+For the map <M1> = column family e: is the key and value is one more map object <M2>
+2. <M1> = M1 has two pairs <<e:<M2>>,<d:<M3>>>
+3. <M2> = It has many pairs.
+4. <M2> = <<name:Amar>, (name is the key and Amar is the value)
+	  <sal:10000>,
+	  <sex:m>,
+	  <dno:11>>
+
+<101, <>>
+	<<e:<>>
+	  <<name:Amar>,
+	  <sal:10000>,
+	  <sex:m>,
+	  <dno:11>>
+
+	<d:<>>
+	  <<dno:11>,
+	  <dname:marketting>,
+	  <loc:hyd>>>
+
+<
+<
+ 101, 
+   <
+      <
+	 e:<
+	  <name:Amar>,
+	  <sal:10000>,
+	  <sex:m>,
+	  <dno:11>
+	> 
+     >
+	,
+	<
+	 d:<
+	  <dno:11>,
+	  <dname:marketting>,
+	  <loc:hyd>
+	 > 
+       >
+   >
+>
+,
+<
+102, 
+   <
+      <
+	 e:<
+	  <name:Giri>,
+	  <sal:20000>,
+	  <sex:m>,
+	  <qual:Btech>
+	  <dno:12>
+	> 
+     >
+	,
+	<
+	 d:<
+	  <dno:12>,
+	  <dname:hr>,
+	  <loc:del>
+	 > 
+       >
+   >
+>	  
+,
+<
+ 103, 
+   <
+      <
+	 e:<
+	  <name:Amala>,
+	  <sal:30000>,
+	  <sex:f>,
+	  <mstat:married>
+	  <dno:11>
+	> 
+     >
+	,
+	<
+	 d:<
+	  <dno:11>,
+	  <dname:marketting>,
+	  <loc:hyd>
+	 > 
+       >
+   >
+>
+>
+-Above we have:
+	3 Rowkeys
+	2 Column families under each row keys.
+	Max to max 3 to 5 columns under each column families
+-For time being let's use the normal SQL commands:
+-Select e:qual from einfo where id=102;
+ Therefore first it will locate 102(row key) > then e: (Column family) > qual = Btech
+-It doesn't require to do any tons of comaprison everything will be fetched within few random picks
+-Just imagine if the there are millions of rowkeys, millions of column families and 100's of columns under them, how quick the 
+ location of data could be made using this HBASE.
+
+==================================================================================================================================
+
+To create table name:
+1. create 'tab1','cf1' = tab1 is table name and cf1 is family name.
+2. create 'tab2','cf1','cf2' = tab2 is table name, cf1 and cf2 is column family name.
+3. list = Used to list all the tables in the HBASE
+4. describe 'tab2'
+5. put 'tab2','101','cf1:a',1000 = Put is used to insert values, while inserting value it's mandatory to have row key
+   put 'tab2','101','cf1:b',2000
+   put 'tab2','101','cf2:c',4000
+   put 'tab2','101','cf2:d',5000
+*******Note: Till now we have just inserted only "one row" which has 2 column families with 2 columns each.
+6. scan 'tab2' = this is similar to select * from tab2;
+ROW		COLUMN+CELL
+101		column=cf1:a, timestamp=....., value=1000
+101		column=cf1:b, timestamp=....., value=2000
+101		column=cf2:c, timestamp=....., value=4000
+101		column=cf2:d, timestamp=....., value=5000
+7. put 'tab2','102','cf1:a',100
+   put 'tab2','102','cf1:x',200
+   put 'tab2','102','cf2:c',50
+   put 'tab2','102','cf2:d',70
+   put 'tab2','102','cf2:z',10
+8. sacn 'tab2'
+ROW		COLUMN+CELL
+101		column=cf1:a, timestamp=....., value=1000
+101		column=cf1:b, timestamp=....., value=2000
+101		column=cf2:c, timestamp=....., value=4000
+101		column=cf2:d, timestamp=....., value=5000
+102		column=cf1:a, timestamp=....., value=100
+102		column=cf1:x, timestamp=....., value=200
+102		column=cf2:c, timestamp=....., value=50
+102		column=cf2:d, timestamp=....., value=70
+102		column=cf2:z, timestamp=....., value=10
+==============================================================================================================================
+
+1. create 'hemp','e','d' = hemp is the table name and e,d are two column families. In RDBMS employee and dept will be in two diff table and both will
+			  be connected through primary and foreign key, but in HBASE both are in same table.
+2. put 'hemp',101,'e:name','Ravi'= If we notice 101 is not kept within quotes, it means that it is an int, if it was 101.02 it would've been double
+   put 'hemp',101,'e:age','30'
+   put 'hemp',101,'e:sal','30000'
+   put 'hemp',101,'e:sex','m'
+   put 'hemp',101,'d:dno','11'
+   put 'hemp',101,'d:name','marketing'
+   put 'hemp',101,'d:loc','hyd'
+3. scan 'hemp'
+ROW		COLUMN+CELL
+101		column=e:name, timestamp=....., value=Ravi
+101		column=e:age, timestamp=....., value=30
+101		column=e:sal, timestamp=....., value=30000
+101		column=e:sex, timestamp=....., value=m
+101		column=d:dno, timestamp=....., value=11
+101		column=d:name, timestamp=....., value=marketing
+101		column=d:loc, timestamp=....., value=hyd
+4. put 'hemp',102,'e:name','Manisha'
+   put 'hemp',102,'e:sal','40000'
+   put 'hemp',102,'e:qula','Btech'
+   put 'hemp',102,'e:sex','f'
+   put 'hemp',102,'d:name','hr'
+   put 'hemp',102,'d:loc','del'
+   put 'hemp',102,'d:dno','11'
+5. scan 'hemp'
+ROW		COLUMN+CELL
+101		column=e:name, timestamp=....., value=Ravi
+101		column=e:age, timestamp=....., value=30
+101		column=e:sal, timestamp=....., value=30000
+101		column=e:sex, timestamp=....., value=m
+101		column=d:dno, timestamp=....., value=11
+101		column=d:name, timestamp=....., value=marketing
+101		column=d:loc, timestamp=....., value=hyd
+102		column=e:name, timestamp=....., value=Manisha
+102		column=e:sal, timestamp=....., value=40000
+102		column=e:qual, timestamp=....., value=Btech
+102		column=e:sex, timestamp=....., value=f
+102		column=d:name, timestamp=....., value=hr
+102		column=d:loc, timestamp=....., value=del
+102		column=d:dno, timestamp=....., value=12
+6. scan = Just scan and hit enter we will get basic help information.
+7. scan 'hemp',{COLUMNS=>'e:name'}
+ROW		COLUMN+CELL
+101		column=e:name, timestamp=....., value=Ravi
+102		column=e:name, timestamp=....., value=Manisha
+8.  scan 'hemp',{COLUMNS=>['e:name','e:sal']}
+ROW		COLUMN+CELL
+101		column=e:name, timestamp=....., value=Ravi
+101		column=e:sal, timestamp=....., value=30000
+102		column=e:name, timestamp=....., value=Manisha
+102		column=e:sal, timestamp=....., value=40000
+9. scan 'hemp',{COLUMNS=> 'e'}
+ROW		COLUMN+CELL
+101		column=e:name, timestamp=....., value=Ravi
+101		column=e:age, timestamp=....., value=30
+101		column=e:sal, timestamp=....., value=30000
+101		column=e:sex, timestamp=....., value=m
+102		column=e:name, timestamp=....., value=Manisha
+102		column=e:sal, timestamp=....., value=40000
+102		column=e:qual, timestamp=....., value=Btech
+102		column=e:sex, timestamp=....., value=f
+10. scan 'hemp',{COLUMNS => ['e','d:loc']}
+ROW		COLUMN+CELL
+101		column=e:name, timestamp=....., value=Ravi
+101		column=e:age, timestamp=....., value=30
+101		column=e:sal, timestamp=....., value=30000
+101		column=e:sex, timestamp=....., value=m
+101		column=d:loc, timestamp=....., value=hyd
+102		column=e:name, timestamp=....., value=Manisha
+102		column=e:sal, timestamp=....., value=40000
+102		column=e:qual, timestamp=....., value=Btech
+102		column=e:sex, timestamp=....., value=f
+102		column=d:loc, timestamp=....., value=del
+11. get 'hemp',102
+ROW		CELL
+e:name		timestamp=....., value=Manisha
+e:sal		timestamp=....., value=40000
+e:qual		timestamp=....., value=Btech
+e:sex		timestamp=....., value=f
+d:name		timestamp=....., value=hr
+d:loc		timestamp=....., value=del
+d:dno		timestamp=....., value=12
+12. get 'hemp',102,'e:name'
+ROW		CELL
+e:name		timestamp=....., value=Manisha
+13. get 'hemp',102,['e:name','d:loc']
+ROW		CELL
+e:name		timestamp=....., value=Manisha
+d:loc		timestamp=....., value=del
+***********Note: Therefore what's the differenec between get and scan is,
+			get > Reads specific row, that to randomly.
+			scan > Reads all the rows.
+14. get 'hemp',102,['e','d:name']
+ROW		CELL
+e:name		timestamp=....., value=Manisha
+e:sal		timestamp=....., value=40000
+e:qual		timestamp=....., value=Btech
+e:sex		timestamp=....., value=f
+d:name		timestamp=....., value=hr
+=========================================================================================================
+Till now we where busy doing only Create and Read form CRUD, let's work on updating details:
+
+1. put'hemp',102,'e:sal',60000
+ROW		CELL
+e:name		timestamp=....., value=Manisha
+e:sal		timestamp=....., value=60000
+e:qual		timestamp=....., value=Btech
+e:sex		timestamp=....., value=f
+d:name		timestamp=....., value=hr
+d:loc		timestamp=....., value=del
+d:dno		timestamp=....., value=12
+
+2. put'hemp',101,'e:name','Ravi Kumar'
+ROW		COLUMN+CELL
+101		column=e:name, timestamp=....., value=Ravi Kumar
+101		column=e:age, timestamp=....., value=30
+101		column=e:sal, timestamp=....., value=30000
+101		column=e:sex, timestamp=....., value=m
+101		column=d:dno, timestamp=....., value=11
+101		column=d:name, timestamp=....., value=marketing
+101		column=d:loc, timestamp=....., value=hyd
+
+**********Note: -We can't do mass updation like 10% salary increment directly we can't do.
+		-If API is one solution then Hive and HBASE integration is another solution.
+		-While updating values put will look for the column mentioned in the command, if column is available
+		 it will update the column, if not availble then it will create a insert a new column withe mentioned data.
+3. delete 'hemp',102,'d:dno'
+4. scan 'hemp'
+ROW		COLUMN+CELL
+101		column=e:name, timestamp=....., value=Ravi
+101		column=e:age, timestamp=....., value=30
+101		column=e:sal, timestamp=....., value=30000
+101		column=e:sex, timestamp=....., value=m
+101		column=d:dno, timestamp=....., value=11
+101		column=d:name, timestamp=....., value=marketing
+101		column=d:loc, timestamp=....., value=hyd
+102		column=e:name, timestamp=....., value=Manisha
+102		column=e:sal, timestamp=....., value=40000
+102		column=e:qual, timestamp=....., value=Btech
+102		column=e:sex, timestamp=....., value=f
+102		column=d:name, timestamp=....., value=hr
+102		column=d:loc, timestamp=....., value=del
+5. delete 'hemp',102,'d'
+6. scan 'hemp'
+ROW		COLUMN+CELL
+101		column=e:name, timestamp=....., value=Ravi
+101		column=e:age, timestamp=....., value=30
+101		column=e:sal, timestamp=....., value=30000
+101		column=e:sex, timestamp=....., value=m
+101		column=d:dno, timestamp=....., value=11
+101		column=d:name, timestamp=....., value=marketing
+101		column=d:loc, timestamp=....., value=hyd
+102		column=e:name, timestamp=....., value=Manisha
+102		column=e:sal, timestamp=....., value=40000
+102		column=e:qual, timestamp=....., value=Btech
+102		column=e:sex, timestamp=....., value=f
+102		column=d:name, timestamp=....., value=hr
+102		column=d:loc, timestamp=....., value=del
+******Note:-If we notice even though we requested to delete the entire column family 'd' it's details are still present
+	    because until the columns under the column family are deleted the column family will not get deleted. 
+	   -If we delete the columns under column family by default the column family will get deleted, we don't need to explicitly delete the column family.
+
+Disadvantages of HBASE Shell:
+-It can't do aggregations.
+-Row level filter I want, like filter only Hyd data, nope not possible.
+-Hence we need to perform Hive-HBASE integration

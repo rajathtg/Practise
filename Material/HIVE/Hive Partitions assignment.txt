@@ -1,0 +1,37 @@
+This is olympics games data containing name, country & year.
+
+Year column contains year and season of olympics
+
+like 
+
+1972 Summer Olympics
+2008 Summer Olympics
+2008 Summer Olympics
+
+Split this column in to 2 columns like year & type of olympics. Derive the new column from the existing ones using some functions.
+
+The new data should look like this.
+
+Name, country, year, type
+Ravi,India,2011,Summer
+
+
+
+Final Output :
+
+1. Partition the data by type, year.
+
+2. Partition by year, type
+
+3. Partition by type, year & country
+
+
+
+
+
+
+
+
+
+
+

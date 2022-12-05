@@ -1,0 +1,451 @@
+scala> val emp = Array("101,aaaa,3000,m,11",
+     | "102,bbbb,50000,f,12",
+     | "103,hhhh,60000,m,11",
+     | "104,qqqq,80000,f,11")
+emp: Array[String] = Array(101,aaaa,3000,m,11, 102,bbbb,50000,f,12, 
+103,hhhh,60000,m,11, 104,qqqq,80000,f,11)
+
+Task> //SQL -> select sex,sum(sal) from emp group by sex;
+When I submit above query I'm expecting grouping aggregations, but to do such aggregations we got to transform
+the data because the spark rule is to perform grouping aggregations input shoud be a pair RDD.
+In our case pair is a tuple and tuple contains two things here key and value (sex and sal).
+To acheive the key and value pair we got to transform the data as below.
+
+-Let's transform the records into key value pairs (tuples).
+
+scala> val pair1 = emp.map{x =>
+     | val w = x.split(",") //Here I'm dividing everything into an array and delimiter is ,
+     | val sex = w(3)
+     | val sal = w(2).toInt
+     | val t = (sex,sal)
+     | t
+     | }
+pair1: Array[(String, Int)] = Array((m,3000), (f,50000), (m,60000), (f,80000))
+
+-Similar task i.e select dno,sex from emp group by sex;
+
+scala> val pair2 = emp.map{x =>
+     | val w = x.split(",")
+     | val dno = w(4).toInt
+     | val sal = w(3)
+     | val t = (dno,sex)
+     | t
+     | }
+pair2: Array[(Int, String)] = Array((11,m), (12,f), (11,m), (11,f))
+
+-Now select dno,sex,sum(sal) from emp group by dno,sex;
+ Array (((11,m),20000),((12,f),(30000).....)w()
+
+scala> val pair3 = emp.map{x=>
+     | val w = x.split(",")
+     | val dno = w(4).toInt
+     | val sex = w(3)
+     | val sal = w(2).toInt
+     | val t = ((dno,sex),sal)
+     | t
+     | }
+pair3: Array[((Int, String), Int)] = Array(((11,m),3000), 
+((12,f),50000), ((11,m),60000), ((11,f),80000))
+--------------------------------------------------------------------------------------------------
+
+-To make records into Structured, we have two techniques:
+	Tuple
+	Case Classes
+(i)As we know or awrae that tuple is a collection of heterogenous elements:
+   Let's try with that now,
+
+scala> emp
+res10: Array[String] = Array(101,aaaa,3000,m,11, 
+			     102,bbbb,50000,f,12, 
+			     103,hhhh,60000,m,11, 
+			     104,qqqq,80000,f,11)
+
+-Let's transfer everything into a tuple from string
+
+scala>  val recs = emp.map{x =>
+      val w = x.split(",")
+      val id = w(0).toInt
+      val name = w(1)
+      val sal = w(2).toInt
+      val sex = w(3)
+      val dno = w(4).toInt
+      (id,name,sal,sex,dno)
+      }
+recs: Array[(Int, String, Int, String, Int)] = Array((101,aaaa,3000,m,11), 
+						    (102,bbbb,50000,f,12), 
+						    (103,hhhh,60000,m,11), 
+						    (104,qqqq,80000,f,11))
+
+-Let's see an example when input is tuple how to transform it to Key-Value pair:
+scala> val pair4 = recs.map{x=> (x._4,x._3)}
+pair4: Array[(String, Int)] = Array((m,3000), (f,50000), (m,60000), (f,80000))
+
+-select sum(sal) from recs;
+scala> val sals = recs.map(x => x._3)
+sals: Array[Int] = Array(3000, 50000, 60000, 80000)
+
+scala> val sals = recs.map(x => x._3).sum
+sals: Int = 193000
+
+-Let's apply filters:
+
+scala> val textdata = "  I  Love  Spark  "
+textdata: String = "  I  Love  Spark  "
+
+First task is to remove some spaces on left and right side.
+
+scala> val text = textdata.trim()
+text: String = I  Love  Spark
+
+-The left & right spaces are removed, next is to remove the spaces between the words.
+scala> val w = text.split(" ")
+w: Array[String] = Array(I, "", Love, "", Spark)
+
+-Let's apply filter to remove unnecessary blank spaces between words:
+scala> w.filter(x => x!="")
+res13: Array[String] = Array(I, Love, Spark)
+
+-Next thing is to convert this into expected output in the form of string from collection
+ We can use mkString to convert them into String and auto concatenation will happen.
+ scala> val newLine = w.mkString("")
+newLine: String = ILoveSpark
+
+-To have some space between the objects:
+scala> val newLine = w.mkString(" ")
+newLine: String = I  Love  Spark
+
+This is how we convert unstructured data into structured data.
+
+Example2:
+scala> val comment = List(" I Love              Spark        ",
+     | "you     Love         Hadoop       ",
+     | "Hadoop and spark great big           data      systems")
+comment: List[String] = List(" I Love              Spark        ",
+			     "you     Love         Hadoop       ", 
+			     Hadoop and spark great big           data      systems)
+
+
+scala> val newComment = comment.map{line =>
+     | val w = line.trim().split(" ").filter(line => line!="")
+     | val string = w.mkString(" ")
+     | string
+     | }
+newComment: List[String] = List(I Love Spark, you Love Hadoop, Hadoop and spark great big data systems)
+
+scala> newComment.foreach(println)
+I Love Spark
+you Love Hadoop
+Hadoop and spark great big data systems
+-----------------------------------------------------------------------------------------------------------
+(ii)Case Class:
+-Why we're using case class when we already have the tuples?
+-Consider the below data (101,aaaa,3000,m,11), here we only have 5 records we can easily remember the element's positions
+ If there are 100's of elements then we can't remember field positions each time.
+ Using Tuples we can make the data into structured, but problem is this tuple doesn't have the schema.
+ Similar to SQL tables even here I need to provide schemas to my data objects. This can be done using case class.
+
+scala> case class Samp(a: Int,b: Int, c: Int)
+defined class Samp
+
+scala> val s1 = Samp(10,20,30)
+s1: Samp = Samp(10,20,30)
+
+scala> val s2 = Samp(1,2,3)
+s2: Samp = Samp(1,2,3)
+
+scala> val s3 = Samp(100,200,300)
+s3: Samp = Samp(100,200,300)
+
+scala> s2.c
+res15: Int = 3
+
+scala> s1.b
+res16: Int = 20
+
+scala> s3.b
+res17: Int = 200
+
+In this way column names or attributes name we can access the elements.
+let's make above data into a collection.
+
+scala> val s = List(s1,s2,s3)
+s: List[Samp] = List(Samp(10,20,30), Samp(1,2,3), Samp(100,200,300))
+
+scala> s.foreach(println)
+Samp(10,20,30)
+Samp(1,2,3)
+Samp(100,200,300)
+
+-Above each object is a Samp object with proper schema.
+-Task> Sum of each samp object
+
+
+scala> val r = s.map(x => x.a + x.b + x.c)
+r: List[Int] = List(60, 6, 600)
+
+Example 2: Emp record.
+
+scala> emp
+res19: Array[String] = Array(101,aaaa,3000,m,11, 102,bbbb,50000,f,12, 103,hhhh,60000,m,11, 104,qqqq,80000,f,11)
+
+scala> emp.foreach(println)
+101,aaaa,3000,m,11
+102,bbbb,50000,f,12
+103,hhhh,60000,m,11
+104,qqqq,80000,f,11
+
+scala> case class Emp(id: Int, name: String, sal: Int, sex: String, dname: String)
+defined class Emp
+
+scala> val e = emp.map{x =>
+     | val w = x.trim().split(",")
+     | val id = w(0).toInt
+     | val name = w(1)
+     | val sal = w(2).toInt
+     | val sex = w(3)
+     | val dno = w(4).toInt
+     | val dname = dno match{
+     | case 11 => "Marketing"
+     | case 12 => "Hr"
+     | case 13 => "Finance"
+     | case other => "Others"
+     | }
+     | val rec = Emp(id,name,sal,sex,dname)
+     | rec
+     | }
+e: Array[Emp] = Array(Emp(101,aaaa,3000,m,Marketing), Emp(102,bbbb,50000,f,Hr), Emp(103,hhhh,60000,m,Marketing), Emp(104,qqqq,80000,f,Marketing))
+
+scala> e.foreach(println)
+Emp(101,aaaa,3000,m,Marketing)
+Emp(102,bbbb,50000,f,Hr)
+Emp(103,hhhh,60000,m,Marketing)
+Emp(104,qqqq,80000,f,Marketing)
+
+-I want to construct key value pairs like dname as key and sal as value.
+
+scala> val pair5 = e.map{x =>
+     | (x.dname,x.sal)}
+pair5: Array[(String, Int)] = Array((Marketing,3000), (Hr,50000), (Marketing,60000), (Marketing,80000))
+
+-yay so simple.
+-Main imp of case class is it provides schema.
+-This plays major role in SparkSql.
+-To convert a RDD into table we got to provide schema for that.
+=====================================================================================================================================
+Functions:
+----------
+-Till now we worked using pre-defined functions, let's create our own custom functions.
+scala> def f : String = "Hello" //Here f is defined as function, it's return type is String and it's value is Hello.
+f: String
+
+scala> f
+res22: String = Hello
+
+scala> def f = "Hello" //here I'm mentioning return type, it's automatically being constructed
+f: String
+
+scala> f
+res23: String = Hello
+ 
+scala> def f  = {
+     | val x = "hello"
+     | val y = x.toUpperCase
+     | y
+     | }
+f: String
+
+scala> f
+res24: String = HELLO
+
+Note: If we see in the above examples we haven't passed any arguments.
+
+-Let's look into one function which accepts the user arguments.
+
+scala> def fx(a: Int): Int = a+100 //fx is the function, a is the argument, return type is Int(not mandatory)
+fx: (a: Int)Int
+
+scala> fx(100)
+res25: Int = 200
+------------------------------
+-Example2:
+scala> emp
+res26: Array[String] = Array(101,aaaa,3000,m,11, 102,bbbb,50000,f,12, 103,hhhh,60000,m,11, 104,qqqq,80000,f,11)
+
+Let's create a function now and we can call it whenever it is required, indirectly it is nothing but code re-usability.
+
+-Create a case class:
+scala> case class Emp(id: Int, name: String, sal: Int, sex: String, dno: Int, dname: String, grade: String)
+defined class Emp
+
+I need a function here which defines first character as upper and remaining as lower.
+scala> def FirstUpper(x: String): String = { //Function's argument is string, by default return type is also string(return type is not mandatory to mention)
+     | val w = x.trim()
+     | val fc = w.slice(0,1).toUpperCase //First Character UpperCase
+     | val rc = w.slice(1,w.size).toLowerCase //Remaining Character LowerCase
+     | val name = fc + rc
+     | name
+     | }
+FirstUpper: (x: String)String
+
+scala> FirstUpper("hELLO")
+res28: String = Hello
+
+scala> def gender(x: String): String = {
+     | val w = x.trim()
+     | val lw = w.toLowerCase
+     | val tr = lw match{
+     | case "m" => "Male"
+     | case "f" => "Female"
+     | }
+     | tr
+     | }
+gender: (x: String)String
+
+scala> gender("M")
+res29: String = Male
+
+scala> gender("m")
+res30: String = Male
+
+scala> gender("   m    ")
+res31: String = Male
+
+scala> gender("   F    ")
+res32: String = Female
+
+or 
+
+scala> def gend(x:String):String = {
+     | if(x.toUpperCase=="M") "male" else "female"
+     | }
+gend: (x: String)String
+
+scala> gend("M")
+res33: String = male
+
+scala> gend("   M   ") 
+res34: String = female //Be conscious
+
+scala> def grade(x:Int): String = {
+     | if (x>=70000) "A" else (if(x>=50000) "B" else (if(x>=30000)"C" else "D"))  
+     | }
+grade: (x: Int)String
+
+Here, I 've used nested if, even we can go with Match as well.
+
+scala> grade (65000)
+res35: String = B
+
+scala> grade (30000)
+res36: String = C
+
+scala> grade (22000)
+res37: String = D
+
+scala> def dept(x: Int):String = {
+     | val dname = x match{
+     | case 11 => "Marketing"
+     | case 12 => "Hr"
+     | case 13 => "Fin"
+     | case other => "Others"
+     | }
+     | dname
+     | }
+dept: (x: Int)String
+
+scala> dept(45)
+res38: String = Others
+
+scala> dept(13)
+res39: String = Fin
+
+-Let's write a function to call one more function:
+
+scala> case class Emp(id:Int,name:String,sal:Int,sex:String,dno:Int,dname:String,grade:String)
+defined class Emp
+
+def toEmp(line:String):Empl = {
+      val w = line.split(",")
+      val id = w(0).toInt
+      val name = FirstUpper(w(1))
+      val sal = w(2).toInt
+      val sex = gend(w(3))
+      val dno = w(4).toInt
+      val dname = dept(dno)
+      val grd = grade(sal)
+      val e = Empl(id,name,sal,sex,dno,dname,garde)
+      e
+      }
+toEmp: (line: String)Empl
+
+scala> toEmp("201,Amar,80000,m,11")
+res: Empl = Empl(201,Amar,80000,male,11,Mrkt,A)
+
+-Now task is convert the each record into case class, already function is there to covert into case class, let's use it.
+
+scala> emp
+res19: Array[String] = Array(101,aaaa,3000,m,11, 102,bbbb,50000,f,12, 103,hhhh,60000,m,11, 104,qqqq,80000,f,11)
+
+val emps = emp.map(x => toEmp(x))
+
+scala> e.foreach(println)
+Emp(101,aaaa,3000,male,11,Marketing,C)
+Emp(102,bbbb,50000,female,12,Hr,B)
+Emp(103,hhhh,60000,male,11,Marketing,B)
+Emp(104,qqqq,80000,female,11,Marketing,A)
+
+scala> def isMale(x: String):Boolean = {
+     | x.toUpperCase=="M"
+     | }
+isMale: (x: String)Boolean
+
+scala> isMale("m")
+res1: Boolean = true
+
+scala> isMale("f")
+res2: Boolean = false
+
+scala> val lst = List("m","M","f","F","M","f","M")
+lst: List[String] = List(m, M, f, F, M, f, M)
+
+scala> isMale("m")
+res3: Boolean = true
+
+scala> val males = lst.filter(x => isMale(x))
+males: List[String] = List(m, M, M, M)
+
+scala> val females = lst.filter(x => !isMale(x))
+males: List[String] = List(f, F, f)
+
+scalaa > emp
+101,aaaa,3000,m,11
+102,bbbb,50000,f,12
+103,hhhh,60000,m,11
+104,qqqq,80000,f,11
+
+scala> val ms = emp.filter(x => isMale(x.split(",")(3)))
+ms: Array[String] = Array(101,aaaa,30000,m,11, 103,hhh,60000,m,11)
+
+scala> val ms = emp.filter(x => !isMale(x.split(",")(3)))
+ms: Array[String] = Array(102,bbbb,50000,f,12, 104,qqqq,80000,f,11)
+
+scala> emps.foreach(println)
+Empl(101,aaaa,3000,male,11,Marketing,C)
+Empl(102,bbbb,50000,female,12,Hr,B)
+Empl(103,hhhh,60000,male,11,Marketing,B)
+Empl(104,qqqq,80000,female,11,Marketing,A)
+
+val res = emps.filter(x => isMale(x.sex.slice(0,1)))
+res: Array[Empl] = Array(Empl(101,aaaa,3000,male,11,Marketing,C),Empl(103,hhhh,60000,male,11,Marketing,B))
+
+val res1 = emps.filter(x => !isMale(x.sex.slice(0,1)))
+res: Array[Empl] = Array(Empl(102,bbbb,50000,female,12,Hr,B),Empl(104,qqqq,80000,female,11,Marketing,A))
+
+scala> def tot(x: Int, y:Int) : Int =  x+y
+tot: (x: Int, y: Int)Int
+
+scala> tot(100,200)
+res5: Int = 300
+
+
+

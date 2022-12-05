@@ -1,0 +1,290 @@
+Pig Commands:
+1.MapReduce mode > pig (Hint : Don't use uppercase)
+
+2.Local mode > pig -x local
+
+3.To know pig version > pig -version
+
+4.To create a file in LFS:
+	vi filename.txt
+	click on enter
+	edit mode is opened
+	enter required data
+	if already data is present or not present click on insert to type in data
+	click on esc > esc is used to enter command mode
+    :q! exit vi without saving any of the changes
+    :w save the file but keep it open
+    :Q save your changes and exit vi
+    :wq save and quit
+
+5.grunt> A = load 'piginput.txt' using PigStorage(':'); (Since : is delimeter we're specifying it)
+
+6.grunt> B = FOREACH A generate $1,$2; (Since we want to generate only 2nd and  3rd column we're mentioning $1 & $2)
+
+7.grunt> STORE B into 'pigop.txt'; (Storing results into folder in LFS and not HDFS)
+Hint: Even though I mentioned pigop.txt it acts as a directory/folder and not like a file
+
+8.Enter into LFS > cd pigop.txt
+
+9.cat part m-00000 > to view our results (Hint: Generally Pig uses Mappers (that's why part m file) over reducers to generate output, rare when it uses reducers)
+
+10.Now let's go on executing stuffs in MapR mode
+	Start hdfs to use hdfs commands > sh Start-HDFS.sh
+	Load data from lfs into hdfs using put command > hadoop fs -put piginput.txt pigip
+	Start pig in MapR mode and start executing commands same as local mode
+
+11.grunt> B = load 'piginput.txt' using PigStorage(':') as (name:chararray,marks:int,gender:chararray); (here we're defining 
+columns with names using ascii words like name.. and with correct datatypes)
+
+12.grunt> C = FILTER B BY gender=='M'; (If not interested to use ascii words like gender or name the same command can be written
+ like C = FILTER B by $2=='M';)
+Note: In production we always use column names since there will be thousands of them.
+
+13. D = ORDER C by name; (to order alphabetically)
+
+14.grunt> A = load 'piginput.txt' using PigStorage(':') as (name:chararray,marks:int,gender:chararray);
+
+15.grunt> SPLIT A into X if gender=='M',Y if gender=='F'; (to split and save the filtered into X and Y for time being, imp min 
+two split conditions to be specified always)
+
+16.grunt> STORE X into '/home/cloudera/pigop/pigopM1';STORE Y into '/home/cloudera/pigop/pigopF'; (Push the saved results to
+actual path)
+
+17.similar to vi we can also use nano piginput.txt to edit and save contents.
+
+18.B = LIMIT A 4; (to get only top 4 rows alone)
+
+19.B = DISTINCT A;(To remove duplicates and get only distinct values)
+
+20.C = GROUP B by gender;(To group it gender wise)
+
+21.grunt> D = FOREACH C generate group,SUM(B.marks); (to get sum of gender and output will be)
+	F,160
+	M,159
+
+22.grunt> D = FOREACH C generate SUM(B.marks); (here the output will be)
+	160
+	159
+
+23.Executing using Script Mode.
+Save the script in a file using command > vi pigscript1.pig (imp: always use extension as .pig) 
+A = load 'piginput.txt' using PigStorage(':') as (name:chararray,marks:int,gender:chararray);
+B = DISTINCT A;
+C = COGROUP B by gender; (COGROUP has better optimisation compare to GROUP when data is huge apart from that both are same)
+D = FOREACH C generate SUM(B.marks);
+Dump D;
+
+In LFS mode type command > pig -x local pigscript1.pig
+In HDFS mode type command > pig pigscript1.pig
+
+Joins:
+24.grunt> A = load 'piginput.txt' using PigStorage(':') as (name:chararray,marks:int,gender:chararray);
+
+25.grunt> B = load 'piginput1.txt' using PigStorage('\t') as (name:chararray,loc:chararray); (we have 
+used \t because delimeter is tab space)
+
+26.grunt> SJ = JOIN A by name,B by name;
+
+Output:
+(abc,65,M,abc,India)
+(abc,65,M,abc,India)
+(abc,65,M,abc,India)
+(mno,89,M,mno,UK)
+(mno,89,M,mno,UK)
+(xyz,85,F,xyz,USA)
+
+27.LJ = JOIN A by name LEFT,B by name; > Left JOIN;
+
+Output:
+(abc,65,M,abc,India)
+(abc,65,M,abc,India)
+(abc,65,M,abc,India)
+(asd,45,F,,)
+(mno,89,M,mno,UK)
+(mno,89,M,mno,UK)
+(xyz,85,F,xyz,USA)
+
+28.RJ = JOIN A by name RIGHT,B by name; > Right JOIN;
+
+Output:
+(abc,65,M,abc,India)
+(abc,65,M,abc,India)
+(abc,65,M,abc,India)
+(mno,89,M,mno,UK)
+(mno,89,M,mno,UK)
+(xyz,85,F,xyz,USA)
+
+29.Full outter join = JOIN by name FULL,B by name;
+
+output:
+(abc,65,M,abc,India)
+(abc,65,M,abc,India)
+(abc,65,M,abc,India)
+(asd,45,F,,)
+(mno,89,M,mno,UK)
+(mno,89,M,mno,UK)
+(,,,pqr,AU)
+(xyz,85,F,xyz,USA)
+
+30.Tokenizeing of data> i.e. to divide entire data into different tokens / small number of words.
+
+actual output > (abc,23,M) > this is a string now samething is divided as tokens
+
+Tokenized output >
+({(abc)})
+({(xyz)})
+({(mno)})
+({(asd)})
+({(abc)})
+({(abc)})
+({(mno)})
+
+If i treat entire input as single line or single attribute.
+grunt> A = load 'piginput.txt' using PigStorage('\n') as (line:chararray);
+
+Output got is iin the form of nested output and to unnest the output we use the FLATTEN
+grunt> B = FOREACH A generate TOKENIZE(line);
+grunt> Dump B;
+
+output>
+({(abc:65:M)})
+({(xyz:85:F)})
+({(mno:89:M)})
+({(asd:45:F)})
+({(abc:65:M)})
+({(abc:65:M)})
+({(mno:89:M)})
+
+if i keep the delimeter as : only.
+grunt> A = load 'piginput.txt' using PigStorage(':') as (line:chararray);
+grunt> B = FOREACH A generate TOKENIZE(line);
+grunt> Dump B;
+
+({(abc)})
+({(xyz)})
+({(mno)})
+({(asd)})
+({(abc)})
+({(abc)})
+({(mno)})
+
+
+31. When we do normal group by the result obtained is:
+
+grunt> A = load 'piginput.txt' using PigStorage(':') as (name:chararray,marks:int,gender:chararray);
+grunt> B = group A by gender;
+grunt> Dump B;
+
+Output:
+(F,{(asd,45,F),(xyz,85,F)}) (It's of more key value types)
+(M,{(mno,89,M),(abc,65,M),(abc,65,M),(mno,89,M),(abc,65,M)})
+
+
+grunt> A = load 'piginput.txt' using PigStorage(':') as (name:chararray,marks:int,gender:chararray);
+grunt> B = group A by gender;
+grunt> C = FOREACH B generate FLATTEN(A);(FLATTEN is used to unnest the tuple)
+grunt> Dump C;
+
+Unnested Output:
+(asd,45,F)
+(xyz,85,F)
+(mno,89,M)
+(abc,65,M)
+(abc,65,M)
+(mno,89,M)
+(abc,65,M)
+
+32.To know the schema use describe
+grunt> describe A;
+
+output:
+A: {name: chararray,marks: int,gender: chararray}
+
+grunt> describe B; (which uses the group by command)
+
+output:
+B: {group: chararray,A: {(name: chararray,marks: int,gender: chararray)}}
+
+33.To know the entire procedure of group by comman then use illustrate:
+illustrate B;
+output:
+------------------------------------------------------------------------
+| A     | name:chararray      | marks:int      | gender:chararray      |
+------------------------------------------------------------------------
+|       | asd                 | 45             | F                     |
+|       | xyz                 | 85             | F                     |
+------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------
+| B     | group:chararray      | A:bag{:tuple(name:chararray,marks:int,gender:chararray)}                          |
+--------------------------------------------------------------------------------------------------------------------
+|       | F                    | {(asd, 45, F), (xyz, 85, F)}                                                      |
+--------------------------------------------------------------------------------------------------------------------
+
+illustrate A;
+------------------------------------------------------------------------
+| A     | name:chararray      | marks:int      | gender:chararray      |
+------------------------------------------------------------------------
+|       | abc                 | 65             | M                     |
+------------------------------------------------------------------------
+
+Explain is also used to give high level execution of physical and logical plans:
+explain A or explain B
+
+Note: Illustrate,describe,explain all these are built in diagnostic operators.
+
+34.To perform word count:
+
+A = load 'wc.log';
+(hi hello hi)
+(hi hi)
+(hello)
+(hello goog good)
+(bad)
+(bad good)
+
+B = FOREACH A generate TOKENIZE((chararray)$0) as word; or B = FOREACH A generate TOKENIZE ($0);
+({(hi),(hello),(hi)})
+({(hi),(hi)})
+({(hello)})
+({(hello),(goog),(good)})
+({(bad)})
+({(bad),(good)})
+
+or (This one using FLATTEN because as of we can't combine both)
+
+B = FOREACH A generate FLATTEN(TOKENIZE((chararray)$0)) as word; or B = FOREACH A generate FLATTEN(TOKENIZE($0)) as word:chararray;
+(hi)
+(hello)
+(hi)
+(hi)
+(hi)
+(hello)
+(hello)
+(goog)
+(good)
+(bad)
+(bad)
+(good)
+
+C = group B by word;
+(hi,{(hi),(hi),(hi),(hi)})
+(bad,{(bad),(bad)})
+(good,{(good),(good)})
+(goog,{(goog)})
+(hello,{(hello),(hello),(hello)})
+
+D = FOREACH C generate COUNT(B);
+(4)
+(2)
+(2)
+(1)
+(3)
+
+D = FOREACH C generate COUNT(B),group;
+(4,hi)
+(2,bad)
+(2,good)
+(1,goog)
+(3,hello)
+
+STORE D into '/home/cloudera/pigop/pigwc';

@@ -1,0 +1,302 @@
+Hive - UDFs(User defined functions):
+--->To develop custom functionalities if any required function is not available in Hive.
+--->Reusability
+> Hive UDFs can devloped by using
+	Python
+	Java
+	C++
+	Ruby
+	R (statistical function is easy to develop)
+-----------------------------------------------------------------------------
+We're using Java here, it's easy antha helthare:
+
+1. public class MyUDF this is a normal Java class to make this class as UDF we need to extend it like below,
+	public class MyUDF extends UDF{
+	....
+	}
+*when java class has extended to UDF class, the class will get UDF functionality.
+*For Hive the UDF logic should be kept in evaluate() function.
+*Evaluate is executed for n times, where n is number of rows fetched by select statement.
+	Ex: If there are 100rows and city is one of column we write select statement to fetch results for city=Hyd
+	    and if hyd is repeated 7 times then eval is executed for 7 times and not 100 times.
+*The bsic template of the class will be like below shown,
+	public class MyUDF extends UDF{
+		public string evaluate(String v)
+			throws IOExecution
+	{
+		.......
+		.......
+	}
+}
+
+Steps in UDF:
+1. Develop UDF class.
+2. Export into jar file.
+3. Register jar file into Hive.
+4. Create temporary function.
+5. Call the function.
+ 
+Consider below table:
+info
+---------------------------
+name	age	city
+---------------------------
+Ravi	25	hyd
+kiran	26	del
+Mini	28	bom
+giri	37	del
+:
+:
+----------------------------
+If we notice few names start will upper case and few in lower case.
+I want to transform name's 1st character into upper case and remaining into lower case.
+
+FirstUpper.java
+-----------------
+package hive.analytics; 			#Custom package
+....
+....
+public class FirstUpper extends UDF{		#FirstUpper is class name and it is extended to make it Hive UDF
+   public string evaluate(string name){	
+	
+#My logic is kept into evaluate, to pass the names we need an argument that is "String Name" and return type is - public "String"
+therefore whatever the value we pass it's available in variable name, but hive is capturing these values into MR datatypes and not 
+Java datatypes.MR data types are called writables, hence same is used by hive as well.
+For string the equivalent MR data type is text, therefore the updated code is as seen below.
+
+public Text evaluate(Text name){
+
+My value is in the variable name let's say variable name as v
+
+public Text evaluate(Text v){
+
+If it is Text datatype we can't apply string functions or methods that's y let's convert it to java string.
+
+String name = v.toString().trim();	#Now Text converted into valid java string now we can apply all valid string methods
+
+Let's separate only the first character.
+
+String fc = name.substring(0,1).toUppercase; 	#fc = First Character
+
+Remaining characters:
+
+String rc = name.substring(1).toLowercase();
+
+rewriting into variable through concatenate,
+
+name = fc=rc
+return new Text(name);
+}
+}
+
+Step 2 > Export into jar file through eclipse.
+	/home/cloudera/desktop/hiveapp.jar
+Step 3 > Register jar into hive
+	hive > add jar Desktop/hiveapp.jar
+Note: A single jar can contain multiple packages and each package can caotain multiple packages and we can use all of them in Hive.
+Step4 > create temporary function for UDF calss
+	hive> create temporary function fupper as 'hive.analytics.FirstUpper';
+Note: Above is temporary function once we come out of hive shell thi function is unavailable.
+      If we feel we need to use 100 list of function on daily basis, better to save them into a script and run that script on daily basis
+Step 5 > Calling the function:
+	hive > create table info(name string,age int,city string) row format delimited fields terminated by ',';
+	hive > load data local inpath 'info.txt' into table info
+--------------Calling the function:
+	hive > insert overwrite table info select fupper(name),age,city from info;
+	fupper is the function already created by us.
+	Once jar is register and function is created we can call it any number of times and this function is available till the end of the session.
+---------------------------------------------------------------------------------------------------------------------------------------------------
+
+emp
+==========================
+id	name	sal	sex	deptno
+------------------------------------
+:
+:
+------------------------------------
+From sal I need to create grades like A,B,C and D
+sal >=70000 ----> A
+sal >=50000 and <70000 ----> B
+sal >=30000 and <50000 ----> C
+sal <30000 ----> D
+
+Want to update sex:
+M to Male
+F to Female
+
+dno ----> 11,12,13,14,15.......
+11 > Marketing
+12 > Hr
+13 > Finance
+14 > Others
+
+**************We need three different UDF to complete this:
+Let's start with Sex:
+Udf name > Gender.java
+-----------------------
+package hive.analytics;
+....
+....
+public class Gender extends UDF
+{
+public Text evaluate(Text v)
+throws IOException
+{
+string sex = v.toString.toUppercase(); #Converting from Text datatype to String
+if(sex.matches("M"))
+sex="Male";			# Plan to clear all the nulls if any
+else
+sex="Female"
+return new Text(sex);	##Since sex is string and we need it as TextObject we mention Text(sex)
+}
+}
+
+
+Let's target on salaries:
+----------------------------------
+Grades.Java
+-------------
+package hive.analytics;
+..
+..
+public class Grades extends UDF
+{
+public Text evaluate(IntWritable v) 	#Int equivalent is IntWritable, long is LongWritable etc.... and Text is return type
+throws IOException
+{
+int sal = v.get(); 		#Converting from IntWritable datatype to Int
+String grade;			#Declaring a variable
+if(sal>=70000)
+grade="A";
+else if (sal>=50000)
+grade="B";
+else if(sal>=30000)
+grade="C"
+else grade="D";
+return new Text(grade); #Since grade is string and we need it as TextObject we mention Text(grade)
+}
+}
+     
+
+-----------------------------
+Depts.java
+------------------------
+package hive.analytics;
+public class Depts extends UDF
+{
+public Text evaluate(IntWritable v) 	#Int equivalent is IntWritable, long is LongWritable etc.... and Text is return type
+throws IOException
+{
+int dno = v.get(); 		#Converting from IntWritable datatype to Int
+String dname;			#Declaring a variable
+switch(dno)
+{
+case 11:
+dname = "Marketing";
+break;
+case 12:
+dname = "Hr";
+break;
+case 13:
+dname = "Finance";
+break;
+default:
+dname="Others"
+}
+}
+}
+-----------------------------
+Step2 > Export all these classes into jar file.
+	Desktop/hiveapp.jar
+Step3 > Register jar in hive.
+	hive > add jar desktop/hiveapp.jar;
+Step4 > create a temporary function for each UDF class.
+	hive> Create temporary function gend as 'hive.analytics.Gender'; 
+	hive> Create temporary function grade as 'hive.analytics.Grades';
+	hive> Create temporary function dept as 'hive.analytics.Depts'; 
+Step5 > Calling functions.
+	hive> create table emp(id int,name string, sal int,sex string,dno int)row format delimited fields terminated by ',';
+	hive> load data local inpath 'emp' into table emp;
+-----Calling functions.
+	hive> create table emp2(id int,name string,sal int,grade string,sex string,dname string)row format delimited fields terminated by ',';
+	hive> insert into table emp2 select id,fupper(name),sal,grade(sal),gend(sex),dept(dno) from emp;
+
+Note: Without using UDF also we can still do changes in hive using HQL but using HQL it is fine to do for smaller dept values if there are 100s of them
+      we got to write multiple level of HQL's which is not feasible.
+      Even in UDFs we're writing the codes and next time onwards we're calling them.
+-----------------------------------------------------------------------------------------
+Practicals:
+------------
+[cloudera@quickstart dvs]$ cat udf
+102,Sri,25000,f,11
+103,mohan,13000,m,13
+104,lokitha,8000,f,12
+105,naga,6000,m,13
+101,janaki,10000,f,12
+201,aaa,90000,m,13
+202,bb,99999,f,14
+203,cc,11111,m,12
+204,dd,77777,f,13
+205,ee,66666,m,15
+206,ff,55555,m,14
+207,gg,44444,f,11
+208,hhh,33333,m,12
+
+hive (udf)> use udf;
+OK
+Time taken: 0.103 seconds
+
+hive (udf)> create table emp(id int,name string,sal int,sex string,dno int)row format delimited fields terminated by',';
+OK
+Time taken: 0.373 seconds
+
+hive (udf)> load data local inpath '/home/cloudera/dvs/udf' into table emp;
+Loading data to table udf.emp
+Table udf.emp stats: [numFiles=1, totalSize=249]
+OK
+Time taken: 1.223 seconds
+
+hive (udf)> select * from emp;
+OK
+102	Sri	25000	f	11
+103	mohan	13000	m	13
+104	lokitha	8000	f	12
+105	naga	6000	m	13
+101	janaki	10000	f	12
+201	aaa	90000	m	13
+202	bb	99999	f	14
+203	cc	11111	m	12
+204	dd	77777	f	13
+205	ee	66666	m	15
+206	ff	55555	m	14
+207	gg	44444	f	11
+208	hhh	33333	m	12
+Time taken: 0.133 seconds, Fetched: 13 row(s)
+
+Open Eclipse > Close all the opened windows > File > New > Java Project > Give name as HiveApp > We got configure it
+Expand HiveApp > src > buildpath > configure build path > Libraries Tab > Add External Jars > Choose File System > Usr >
+lib >  hive > lib > search for hive-exec-1.1.0-cd...> click on OK
+lib > hadoop-0.20-MapReduce >  hadoop-core-2.6.0... > click on ok(We're using this jar becuase we need the MR datatypes)
+> Later click on OK
+
+Src > New > Package > Hive.Analytics
+Hive.Analytics > New > Class > FirstUpper
+
+After typing everything
+HiveApp > Export > JAVA > JAR file
+
+hive (udf)> add jar /home/cloudera/dvs/HiveApp.jar;
+Added [/home/cloudera/dvs/HiveApp.jar] to class path
+Added resources: [/home/cloudera/dvs/HiveApp.jar]
+
+hive (udf)> create temporary function fupper as 'hive.analytics.FirstUpper';
+OK
+Time taken: 0.0080 seconds
+
+hive (udf)> create table info(id int, name string, sal int,grade string,sex string,dno int,dname string)row format delimited fields terminated by',';
+OK
+Time taken: 0.448 seconds
+
+hive (udf)> insert overwrite table info select id,fupper(name),sal,grade(sal),gend(sex),dno,dept(dno) from emp;
+
+hive (udf)> select * from info;

@@ -1,0 +1,324 @@
+Scala:
+======
+-Scala is developed using JAVA language and Scala runs on JVM.
+-But developer need not to write Java, each compiled code of Scala is converted into .class files.
+-So that, scala classes can be used in Java application.Similarly, java classes can be used in Scala app.
+-Consider, we're developing new app in Scala, this app needs some existed feature[already available in Java],
+ then we can call Java class into Scala.
+-Spark framework is built using scala.
+-Scala is functional programming language with oops feature.
+-Even complicated codes are made easy using Scala.
+-It's easy to code using this.
+
+Functional Programming:
+----------------------
+Adv:
+-Saves development time and cost.
+-Complex functionalities can be made easy.
+-Scala uses REPL shell, to support interactive programming.
+-R-Read,E-Evaluate,P-Print and L-Loop
+
+scala> val a = 100
+a: Int = 100
+
+-Val is a keyword for declaration of a variable a.
+-In the above statement when val a = 100 is written scala 'reads' it, later 'evaluates', then 'prints' a value.
+Once it has printed then it provides room for loop new object val b.
+-This is how the REPL shell works.
+-As we get outputs immediately it gives us clue like what type of code should be written next.
+-This style of programming is called interactive programming, which encourage to develop complex flows. 
+-Once everything turns out well, then everything can be kept into file,save it as .scala, compile it as .class file and finally
+ execute it.
+
+scala> val b = a+100
+b: Int = 200
+
+Case(i): Data Filters
+Task: Filter items which are greater than 30.
+
+scala> val l = List(10,20,30,50,20,25,55,45)
+l: List[Int] = List(10, 20, 30, 50, 20, 25, 55, 45)
+
+Here l is a collection and List is an object
+
+scala> val res = l.filter(x=> x>30)
+res: List[Int] = List(50, 55, 45)
+
+Here x represents each element of collection in l.
+
+Note: res and l both are not spark objects they're just scala local objects and 
+      will be lost once session ends.
+
+---------------------------------------------------------------------------------
+(ii) To perform some transformation of items:
+scala> val names = List(" ravi "," rani "," venu "," veni ")
+names: List[String] = List(" ravi ", " rani ", " venu ", " veni ")
+
+-Next task is to remove spaces and make everything uppercase:
+
+scala> val newNames = names.map(x=> x.trim().toUpperCase)
+newNames: List[String] = List(RAVI, RANI, VENU, VENI)
+
+===================================================================================================================
+
+********In Scala everything is an object i.e. within objects methods will be like variable,
+	function everything is created as object.
+	scala> val a = "ravi"
+	a: String = ravi
+
+	Here a is an object, since it is a object, object related methods can be called.
+
+	scala> val len = a.length
+	len: Int = 4
+	
+-Here, name is created as object (string), length is method member of string object. You can call string methods
+over name.
+-Most of scala data types are inherited from java types.
+-i.e. Scala string inherited from Java string. So, that you can apply all string methods of java and additional
+ functionalities of scala string.
+-Similarly Scala Int is extended from Java Integer. Scala datatypes are not primitive, each data type of scala
+ is an essence of Java.
+-------------------------------------------------------------------------------------------------------------------------
+Basic Collections in Scala:
+--------------------------
+-In batch process majority of the work is with collections only. 
+-Array
+-List
+-Tuple
+-Map
+
+-Before jumping into collections let's look into complete declaration of a variable.
+
+scala> val a:Int = 100
+a: Int = 100
+
+scala> val b:String = "Computer"
+b: String = Computer
+
+scala> val b:Double = 123
+b: Double = 123.0
+
+-We can explicitly mention like above or
+-Directly write as mentioned below.
+-Scala will consider the datatypes as we type in. 
+
+scala> val b = 200
+b: Int = 200
+
+scala> val c = "Ravi"
+c: String = Ravi
+
+scala> val f = 123.8
+f: Double = 123.8
+
+-Two types of keyword in Scala i.e. val and var:
+
+val is immutable i.e values are read only & cannot be re-assigned.
+var is mutable both read and overwrite is possible.
+
+scala> val a = 100
+a: Int = 100
+
+scala> var b = 300
+b: Int = 300
+
+scala> b = 400
+b: Int = 400
+
+scala> a = 500
+<console>:27: error: reassignment to val
+         a = 500
+
+*******Note:
+scala> val a = 100
+a: Int = 100
+
+scala> a = 40
+<console>:27: error: reassignment to val
+         a = 40
+           ^
+
+scala> val a = 40
+a: Int = 40           
+
+Ex:
+scala> val lst = List(10,20,30,40,50)
+lst: List[Int] = List(10, 20, 30, 40, 50)
+
+scala> var tot = 0
+tot: Int = 0
+
+scala> for(x<-lst)
+     | tot += x
+
+scala> tot
+res8: Int = 150
+--------------------------------------------------------------------------------
+-Let's come back to collections:
+
+Array: 
+	It's a collection.
+	But fixed/static in size.
+	Once it is fixed addition of new elements is not possible.
+	It is for homogeneous items.
+List: 
+	It's also a collection. 
+	list is dynamic in size.
+	Addition of new element is possible.
+	This also for homogeneous items.
+
+-Homogeneous> Means purpose of the elements is same:
+scala> val name = Array("Kiran","Mani","Venu","Veni")
+name: Array[String] = Array(Kiran, Mani, Venu, Veni)
+
+scala> val sal = List(10,20,30,40,50,60)
+sal: List[Int] = List(10, 20, 30, 40, 50, 60)
+
+-To access array elements use index:
+scala> name(0)
+res10: String = Kiran
+
+scala> name(3)
+res11: String = Veni
+
+To get the last name when array elements are huge in number then,
+scala> name(names.size-1)
+res12: String = Veni
+Here size is a pre-defined method.
+
+-Similarly for list as well:
+scala> sal(0)
+res15: Int = 10
+
+scala> sal(4)
+res16: Int = 50
+-----------------------------------------------------------------------------------------
+Slicing: To get range of sequence.
+
+scala> sal.slice(1,3)
+res18: List[Int] = List(20, 30)
+
+scala> name.slice(0,4)
+res20: Array[String] = Array(Kiran, Mani, Venu, Veni)
+
+scala> sal.slice(2,sal.size)
+res21: List[Int] = List(30, 40, 50, 60)
+------------------------------------------------------------------------------------------------
+Prepending elements: That is adding elements to the collections in the beginning, we have two types of approaches.
+--------------------
+scala> val y = List(10,20,30)
+y: List[Int] = List(10, 20, 30)
+
+scala> y
+res22: List[Int] = List(10, 20, 30)
+
+scala> 25::y
+res23: List[Int] = List(25, 10, 20, 30)
+
+scala> val y = 35::y
+<console>:27: error: recursive value y needs type
+         val y = 35::y
+
+scala> y = 30::y
+<console>:27: error: reassignment to val
+         y = 30::y
+           ^
+
+scala> val z = 35::y
+z: List[Int] = List(35, 10, 20, 30)
+
+scala> y::25
+<console>:28: error: value :: is not a member of Int
+              y::25
+               ^
+For appending it throws error, we can overcome this problem by using list buffers.
+
+Using var:
+scala> var k = List(10,20)
+k: List[Int] = List(10, 20)
+
+scala> k = 30::k
+k: List[Int] = List(30, 10, 20)
+
+scala> k
+res28: List[Int] = List(30, 10, 20)
+-------------------------------------------------------------------------------------------------------------- 
+To append the things:
+-Let's merge two lists:
+
+scala> val x = List(1,3,5,7,9,10,15,20,30,40)
+x: List[Int] = List(1, 3, 5, 7, 9, 10, 15, 20, 30, 40)
+
+scala> val y = List(10,20,30)
+y: List[Int] = List(10, 20, 30)
+
+scala> x.size
+res29: Int = 10
+
+scala> y.size
+res30: Int = 3
+
+scala> x++y
+res31: List[Int] = List(1, 3, 5, 7, 9, 10, 15, 20, 30, 40, 10, 20, 30)
+
+Yay!!! appended.
+(or)
+scala> x.union(y)
+res32: List[Int] = List(1, 3, 5, 7, 9, 10, 15, 20, 30, 40, 10, 20, 30)
+
+scala> val u = y++List(111,222,33)
+u: List[Int] = List(10, 20, 30, 111, 222, 33)
+
+***************List Buffer imp**If not seen in upcoming videos then come back to Scala 1 video time stamp 1:00:50
+
+Note:
+Homogeneous: It means that each element purpose is same.
+Heterogeneous: The purpose of each element can be different.
+=========================================================================================================================
+Tuples: 
+--------
+-This is the collection of heterogenous items, each element purpose is different, tuple allows different data types.
+-Since it allows heterogenous items, this is best suitable for maintaining record structures.
+ex> ravi,26,(rani,25,hyd,bt),List(bt,mt,phd),IBM,SoftwareEngineer
+
+scala> val t = ("ravi",35,"bt","hyd")
+t: (String, Int, String, String) = (ravi,35,bt,hyd)
+here t is a tuple and it contains variety of data types.
+
+-How to access the tuple elements??
+scala> t._1
+res4: String = ravi
+Here we use position numbers which starts from 1, unlike 0 in index.
+
+scala> t._4
+res5: String = hyd
+==============================================================================================
+Map:
+----
+This is a collection of key & value pairs.
+val capitals = Map("Andhra"->"Amaravathi","Telangana"->"Hyd")
+capitals: scala.collection.immutable.Map[String,String] = Map(Andhra -> Amaravathi, Telangana -> Hyd)
+
+-In array or list we use index to identify positions.
+-In tuple we use the position.
+-In Map we use key.
+
+scala> capitals("Andhra")
+res6: String = Amaravathi
+
+scala> capitals("Telangana")
+res7: String = Hyd
+
+If key is not available then some very lengthy error generally due to null exception.
+
+-To add pairs, we should use var inplace of val:
+
+scala> var m = Map("A"->100,"B"->200)
+m: scala.collection.immutable.Map[String,Int] = Map(A -> 100, B -> 200)
+
+scala> m += ("c"->400)
+
+scala> m
+res10: scala.collection.immutable.Map[String,Int] = Map(A -> 100, B -> 200, c -> 400)
+
+

@@ -1,0 +1,741 @@
+Joins are of two types:
+>Inner Joins(we can also write as join) ---> Used for only matching rows with the join criteria i.e. 
+		l.dno=r.dno then 11 will join with 11, 12 with 12 and 13 with 13, if left side 14 is 
+		there not there in right side then won't join.
+>Outer Joins --->Both matching and non-matching will be joined and these are three types.
+	1. Left outer join > matching and non matching of left side
+	2. Right outer join > matching and non matching of right side
+	3. Full outer join > matching + non matching of left + non matching of right side.
+Note: In general in batch process we work more with the full outer join since all data will be present.
+
+-----------------------------------------------------------------------------------
+Queries:
+tab1
+====
+ x
+-----
+1
+2
+3
+3
+4
+-----
+
+tab2
+-----
+ x
+----
+1
+2
+3
+5
+----
+
+Consider we apply join:
+1,1
+2,2
+3,3
+
+left outer join
+1,1
+2,2
+3,3
+4,null
+
+right outer join
+1,1
+2,2
+3,3
+null,5
+
+Full outer join
+1,1
+2,2
+3,3
+4,null
+null,5
+----------------------------------------
+select l.x,r.x from tab1 l join tab2 r on (l.x=r.x); > Inner Join
+select l.x,r.x from tab1 l left outer join tab2 r on (l.x=r.x); > left outer Join
+select l.x,r.x from tab1 l right outer join tab2 r on (l.x=r.x); > right outer Join
+select l.x,r.x from tab1 l full outer join tab2 r on (l.x=r.x); > full outer Join
+
+[cloudera@quickstart dvs]$ cat spark_joins
+101,aaa,10000,m,11
+102,bbb,20000,m,12
+103,ccc,30000,f,13
+104,ddd,40000,m,12
+105,eee,50000,f,14
+106,fff,60000,m,14
+107,ggg,70000,m,15
+109,hhh,80000,f,11
+
+[cloudera@quickstart dvs]$ cat dept
+11,marketing,hyd
+12,hr,del
+13,finance,hyd
+20,admin,del
+21,production,hyd
+
+Note: 
+*So the non matching records are 15,14 from left side and 20,21 on right side.
+*Here we need to de-normalise the content, as per normalisation in OLTP what will happen is complete employee info to one table, dept info to one table,
+manager details to one table since everything is in diff tables at the time of analytics everytime we require to apply joins.
+*In general joins are good compared to subqueries and at times they're bad because consider there are 1cr records each on left and right side when query is ran
+just imagine how time is consumed to complete the comparison.
+*At times it's good take risk apply joins in one short, denormalise the data and save it to one table and next time onwards no need to apply joins just use the same table.
+
+hive> create database joins;
+OK
+Time taken: 0.31 seconds
+
+hive> use joins;
+OK
+Time taken: 0.025 seconds
+
+hive> set hive.cli.print.current.db=true;
+
+hive (joins)> create table emp(id int,name string,sal int,sex string,dno int)row format delimited fields terminated by ',';
+OK
+Time taken: 0.265 seconds
+hive (joins)> load data local inpath '/home/cloudera/dvs/spark_joins' into table emp;
+Loading data to table joins.emp
+Table joins.emp stats: [numFiles=1, totalSize=152]
+OK
+Time taken: 0.864 seconds
+hive (joins)> select * from emp;
+OK
+101	aaa	10000	m	11
+102	bbb	20000	m	12
+103	ccc	30000	f	13
+104	ddd	40000	m	12
+105	eee	50000	f	14
+106	fff	60000	m	14
+107	ggg	70000	m	15
+109	hhh	80000	f	11
+Time taken: 0.27 seconds, Fetched: 8 row(s)
+
+hive (joins)> create table dept(dno int,dname string,dloc string)row format delimited fields terminated by',';
+OK
+Time taken: 0.322 seconds
+hive (joins)> load data local inpath'/home/cloudera/dvs/dept'into table dept;
+Loading data to table joins.dept
+Table joins.dept stats: [numFiles=1, totalSize=73]
+OK
+Time taken: 0.611 seconds
+hive (joins)> select * from dept;
+OK
+11	marketing	hyd
+12	hr	del
+13	finance	hyd
+20	admin	del
+21	production	hyd
+Time taken: 0.098 seconds, Fetched: 5 row(s)
+
+*****Note: The denormalised content for above example > 103 cc 90000 f finance hyd
+
+hive (joins)> create table edinfo(id int,name string,sal int,sex string,
+dname string,dloc string,dno1 int,dno2 int)row format delimited fields terminated by ',';
+OK
+Time taken: 0.256 seconds
+
+hive (joins)> insert overwrite table edinfo select id,name,sal,sex,dname,dloc,l.dno,r.dno from emp l full outer join dept r on (l.dno=r.dno);
+
+hive (joins)> select * from edinfo;
+OK
+109	hhh	80000	f	marketing	hyd	11	11
+101	aaa	10000	m	marketing	hyd	11	11
+104	ddd	40000	m	hr	del	12	12
+102	bbb	20000	m	hr	del	12	12
+103	ccc	30000	f	finance	hyd	13	13
+106	fff	60000	m	NULL	NULL	14	NULL
+105	eee	50000	f	NULL	NULL	14	NULL
+107	ggg	70000	m	NULL	NULL	15	NULL
+NULL	NULL	NULL	NULL	admin	del	NULL	20
+NULL	NULL	NULL	NULL	production	hyd	NULL	21
+Time taken: 0.187 seconds, Fetched: 10 row(s)
+
+[cloudera@quickstart dvs]$ hadoop fs -cat /user/hive/warehouse/joins.db/edinfo/000000_0
+109,hhh,80000,f,marketing,hyd,11,11
+101,aaa,10000,m,marketing,hyd,11,11
+104,ddd,40000,m,hr,del,12,12
+102,bbb,20000,m,hr,del,12,12
+103,ccc,30000,f,finance,hyd,13,13
+106,fff,60000,m,\N,\N,14,\N
+105,eee,50000,f,\N,\N,14,\N
+107,ggg,70000,m,\N,\N,15,\N
+\N,\N,\N,\N,admin,del,\N,20
+\N,\N,\N,\N,production,hyd,\N,21
+
+Above result is denormalised content and going forward we can apply analytics on this.
+ 
+******Note: Consider we're not applying joins and instead playing around with data just like that,
+whenever we apply join each time data needs to be fetched from hdfs file system generally data is distributed,
+it will consume lot of time and creates traffic so it is not recommended, better to take risk once and create
+one full outer join table.  
+
+hive (joins)> select dloc,sum(sal) from edinfo group by dloc;
+NULL	180000
+del	60000
+hyd	120000
+
+Null is for 14 and 15 dept
+
+===========================================================================================================
+New concept, but using previous data
+
+hive (joins)> create table swengineers(id int,name string,sal int,sex string,pid int)row format delimited fields terminated by',';
+OK
+Time taken: 0.271 seconds
+hive (joins)> load data local inpath '/home/cloudera/dvs/spark_joins' into table swengineers;
+Loading data to table joins.swengineers
+Table joins.swengineers stats: [numFiles=1, totalSize=152]
+OK
+Time taken: 0.572 seconds
+hive (joins)> select * from swengineers;
+OK
+101	aaa	10000	m	11
+102	bbb	20000	m	12
+103	ccc	30000	f	13
+104	ddd	40000	m	12
+105	eee	50000	f	14
+106	fff	60000	m	14
+107	ggg	70000	m	15
+109	hhh	80000	f	11
+Time taken: 0.158 seconds, Fetched: 8 row(s)
+
+hive (joins)> create table projects(pid int,pname string,loc string)row format delimited fields terminated by',';
+OK
+Time taken: 0.159 seconds
+hive (joins)> load data local inpath '/home/cloudera/dvs/dept' into table projects;
+Loading data to table joins.projects
+Table joins.projects stats: [numFiles=1, totalSize=73]
+OK
+Time taken: 0.889 seconds
+hive (joins)> select * from projects;
+OK
+11	marketing	hyd
+12	hr	del
+13	finance	hyd
+20	admin	del
+21	production	hyd
+Time taken: 0.179 seconds, Fetched: 5 row(s)
+
+Now we have 3 categories,
+11,12,13 are working team
+14,15 are recruited but on bench since not assigned to any project
+20,21 project started but no employees in that
+
+hive (joins)> insert overwrite table prengineers select l.pid,r.pid,sal from swengineers l full outer join projects r on (l.pid=r.pid);
+Once we check the data output we will get clue on how to transform them into category column,
+Here we will learn conditional transformation and at the same time how to add the column, how to fill the column values also we will learn
+in this join*************
+
+hive (joins)> select * from prengineers;
+OK
+11	11	80000
+11	11	10000
+12	12	40000
+12	12	20000
+13	13	30000
+14	NULL	60000
+14	NULL	50000
+15	NULL	70000
+NULL	20	NULL
+NULL	21	NULL
+Time taken: 0.124 seconds, Fetched: 10 row(s)
+
+****====****Note: We shall learn to use if statement
+	Format is if(condition,true_value,false_value) always only 3 arguments i.e. cond,truval,falsvalue
+	Ex: a,b are two elements then if(a>b,a,b)
+
+hive (joins)> insert overwrite table transformed select if(pid2 is null,'BenchTeam',if(pid is null,'BenchProject','Working')), sal from prengineers;
+
+hive (joins)> select * from transformed;
+OK
+Working	80000
+Working	10000
+Working	40000
+Working	20000
+Working	30000
+BenchTeam	60000
+BenchTeam	50000
+BenchTeam	70000
+BenchProject	NULL
+BenchProject	NULL
+
+hive (joins)> insert overwrite table transformed select stat,if(sal is null,0,sal) from transformed;
+
+hive (joins)> select * from transformed;
+OK
+Working	80000
+Working	10000
+Working	40000
+Working	20000
+Working	30000
+BenchTeam	60000
+BenchTeam	50000
+BenchTeam	70000
+BenchProject	0
+BenchProject	0
+
+hive (joins)> create table prsummary(stat string,tot int) row format delimited fields terminated by',';
+OK
+Time taken: 0.243 seconds
+hive (joins)> insert overwrite table prsummary select stat,sum(sal) from transformed group by stat;
+
+hive (joins)> select * from prsummary;
+OK
+BenchProject	0
+BenchTeam	180000
+Working	180000
+Time taken: 0.157 seconds, Fetched: 3 row(s)
+
+***Above is the example where we used full outer join forcefully because we didn't wanted to miss any data
+In most of the OLTP application full outer join is not recommended, but when it comes batch process area majority of
+analytics is carried out using the full outer join.
+We also use the cartesian product, which is also not recommended in OLTP application, but the same cartesian product places
+major role in batch process.
+
+------------------------------------------------------------------------------------------------------------
+New exmaple:
+
+[cloudera@quickstart dvs]$ cat spark_joins1
+201,aaaa,200000,m,11
+202,eeee,100000,f,12
+203,ee,100000,f,12
+204,uiop,90000,m,11
+
+hive (joins)> load data local inpath '/home/cloudera/dvs/spark_joins1'into table emp;
+Loading data to table joins.emp
+Table joins.emp stats: [numFiles=2, totalSize=233]
+OK
+Time taken: 1.152 seconds
+hive (joins)> select * from emp;
+OK
+101	aaa	10000	m	11
+102	bbb	20000	m	12
+103	ccc	30000	f	13
+104	ddd	40000	m	12
+105	eee	50000	f	14
+106	fff	60000	m	14
+107	ggg	70000	m	15
+109	hhh	80000	f	11
+201	aaaa	200000	m	11
+202	eeee	100000	f	12
+203	ee	100000	f	12
+204	uiop	90000	m	11
+
+The traditional of getting top three employees was,
+hive (joins)> select * from emp order by sal desc limit 3;
+201	aaaa	200000	m	11
+203	ee	100000	f	12
+202	eeee	100000	f	12
+Above query works if salary is unique, but multiple ppl having same salary this won't work
+therefore better option is joins.
+
+hive (joins)> select name,l.sal from emp l join (select distinct(sal) from emp order by sal desc limit 3) r on (l.sal=r.sal);
+aaaa	200000
+eeee	100000
+ee	100000
+uiop	90000
+
+=======================================================================================================================
+Hive Unions: 
+*It's used to merge the data sets (tables).
+*In basic SQL we have two types of unions
+	Union ---> It does not allow duplicates.
+	Union All ---> Will allow duplicate rows.
+*In hql, we have only 'Union All'.
+*Consider we have two tables emp1 and emp2:
+Case(i): Both tables schema is same.
+	select * from emp1 union all select * from emp2;
+*Consider we have three tables emp1,emp2 and emp3:
+Case(ii): Both tables schema is same.
+	select * from emp1 union all select * from emp2 union all select * from emp3;
+1. create table employee like emp1;
+2. insert into table employee
+	select * from emp1
+		union all
+	select * from emp2
+		union all
+	select * from emp3;
+
+Case(iii):Tables schema is different.
+tab1 ---> name,city
+tab2 ---> city,name
+select name,city from tab1
+ union all
+select name,city from tab2;
+*********Note: whatever the column order is given to the first query same to be followed
+for the remaining queries as well.
+
+Case(iv): If tables have different fields.
+tabx ---> name,city,sex
+taby ---> name,city,age
+
+Create a traget table > create table tabz(name string,age int,sex string,city string);
+			insert into table tabz select name,null as age,sex,city from tabx
+				union all
+			select name,age,null as sex, city from taby;
+-------------------------------------------------------------------------------
+Exercise:
+Consider there are three files,
+File1 with schema----> 101,aaaa,10000
+			:
+			:
+File2 ---> 201,bbbb,30000
+		:
+		:
+File3 ---> 301	40000	aaaa (delimiter is tab space and schema is different from file 1 & 2)
+		:
+		:
+All the files are employee data.
+File1 and File2 schema is same I can use one single table for both of them
+
+Solution:
+	create table tab1(id int,name string,sal int) row format delimited fields terminated by ',';
+	create table tab2(id int,sal int,name string) row format delimited fields terminated by '\t';
+	load data local inpath 'file1' into table tab1;
+	load data local inpath 'file2' into table tab1;
+	load data local inpath 'file3' into table tab2;
+	tab1 ---> id,name,sal
+	tab2 ---> id,sal,name
+	insert into table info select id,name,sal from tab1
+				union all
+			select id,name,sal from tab2;
+Let's twist the work:
+consider tab1 ---> has 1cr rows
+	 tab2 ---> has 10000 rows
+So, hive has to take the pain of reading entire 1cr rows to form union all with 10k rows of tab2
+Therefore, we shall go for a short cut method:
+Backend files for tab1 ----> file1 and file2
+		  tab2 ----> file3
+
+create table dummy(id int, name string, sal int) row format delimited fields terminated by ',';
+insert into table dummy select id,name,sal from tab2;
+backend file of dummy ----> /user/hive/warehouse/dummy/000000_0
+*****Note: When table to table copy is done file name will be 000000_0
+The schema for 000000_0 will be int,name,sal (delimiter is ',') i.e. same schema as file 1 and file 2
+create table info like tab1;
+******Note: If we load data into table from hdfs then hdfs source file will be deleted, better to do normal copy and paste
+$ hadoop fs -cp /user/hive/warehouse/tab1/* /user/hive/warehouse/info
+$ hadoop fs -cp /user/hive/warehouse/dummy/000000_0 /user/hive/warehouse/info
+
+In the above steps we have stopped system from reading 1cr records instead we have merged the files manually Awesome!!!!
+One more problem with Hive is suppose we're merging four or five files within each union we need to write select query and
+for each separate select query separate MR job is ran this will delay the execution. 
+
+=============================================================================================================
+HQL basics (Hive Query Language):
+
+DDL:
+----create
+----alter
+----drop
+
+*Create > to create hive objects such as database,table,index,view... and also to create temporary functions in UDF also.
+*While creating table we can specify the data under which it needs to be present like
+	create table urtab(a int,b int,c int) location '/user/mytab';(here it is hdfs location)
+	in hdfs, /user/mydata ---> directory will be created.
+*To load data > load data local inpath 'file1' into table urtab;
+	in hdfs > /user/mydata/file1
+		load data local inpath 'file2' into table urtab;
+	in hdfs > /user/mydata/file1
+		  /user/mydata/file2
+*****If at all we need to overwrite something while loading:
+	load data local inpath 'file3' overwrite into table urtab;
+	in hdfs > /user/mydata/file3
+*By default the table expects, '\001' delimiter unless we specify it explicitly
+
+******If there is any collections in the file
+----
+file4
+-----
+ravi,25,btech#mtech
+rani,26,msc#mba#bsc
+:
+:
+-------------
+Above is collection homogeneous array we need to use special datatype i.e. array
+create table tabx(name string,age int,qual array<string>) row format delimited fields terminated by ',' 
+collection items terminated by '#';
+Later we laod data and to access array elements we got to use index numbers..
+
+----------
+file5
+--------
+Rani,26,btech#nu#eee#2012#72
+Ravi,29,bsc#ou#ece#2011#69
+-----------
+Collection of heterogeneous elements therefore we need to use struct datatype.
+create table taby(name string,age int,qual struct<q:string,u:string,b:string,y:int,p:int>)row format delimited
+fields terminated by ',' collection items terminated by '#';
+load data local inpath 'file5' into table taby;
+How to access struct elements???
+	select name,qual.q,qual.p from taby;
+----------
+File6
+-------
+Ravi,Btech$90#mtech$70,35
+Mani,Bsc$80#Msc$90#Mba$60
+
+the datatype we can use is map
+If we notice above data it is a key-value pair(i.e.Btech$90,mtech$70) and delimiter between them is #
+create table tabz(name string,qual map<string,int>,age int)row format delimited fields terminated by ',' collection
+items terminated by '#' map key terminated by '$';
+
+------------------------------------------------------------
+Default storage format is always text file:
+we also have sequence,ORC,Parquet,RC file etc 
+create table tabu(a int,b int,c int) stored as 'textFile';
+create table tabu(a int,b int,c int) stored as 'sequenceFile';
+create table tabu(a int,b int,c int) stored as 'rc';
+create table tabu(a int,b int,c int) stored as 'orc';
+create table tabu(a int,b int,c int) stored as 'parquet';
+---------------------------------------------------------------------
+To create index objects:
+create index idx1 on emp(id)
+
+To create view: create view myview1 as select name,age,income from info1;
+View with row filter: create view myview2 as select * from info1 where age>25;
+*****Note: Views never contain the data it just contains the query and the query is 
+re-executed whenever we trigger it.
+
+To create temporary functions:
+create temporary function myfun as 'hive.analytics.UDF1';
+
+----------------------------------------
+Alter:
+-----
+Using this we can add columns to table
+alter table tab1 add columns (d int, e int);
+alter can be applied on views,index atc
+insert into is used for appending the data in the table
+******insert overwrite is for overwriting the old data with new data
+(provided the source and target tables both are same)
+----------------------------------------------	
+Drop
+-----
+used to drop the table,db,view,index...
+drop table mytab;
+drop index idx1;
+drop view myview1;
+drop database mydb;(to drop database it should be empty or all the tables should be removed)
+------------------------------------------------------------------------------------------------
+Basic Aggregation functions:
+*sum(),avg(),max(),min(),count(),
+*Other aggregations like statistical functions > co-relation-corr(),standard deviation-stddev(),covariance-cov()
+
+Hive functions are of 3 types:
+	1. UDF(User Defined functions) > For each row one value will be return Ex: substr(),length(),size()....
+	2. UDAF(User Defined Aggregated functions) > For entire column or entire group one value will be return Ex: sum(),avg(),max(),min(),count()...
+	3. UDTF > For each row it returns multi rows / multi columns or combination of multi rows and columns Ex: explode(),json_tuple()...
+*****Note> Above mentioned all list of aggregations come under UDAF category.
+
+>select sum(sal) from info;
+>select sum(sal),avg(sal),max(sal),min(sal),count(*) from info;
+---------------------------------------------------
+Group by > This is used to get aggregations separately for each data group.
+When condition is like where we need total salary details separate for males and females we can go for group by.
+> select sex,sum(sal) from info group by sex;
+f  200000
+m  150000
+> select sex,sum(sal),avg(sal),max(sal),min(sal),count(*) from info group by sex;
+f  200000  14500.0 35000  10000  8
+m  150000  9250.0  30000  6000   15
+
+Multi grouping:
+>select dno,sex, sum(sal),avg(sal),count(*) from info group by dno,sex;
+
+-------------------------------------------
+> select dno,sum(sal) from info where dno in (11,12,18) group by dno;
+> select dno,sum(sal) from info group by dno having dno in(11,12,18);
+*The results for above two queries are same but one is good in performance but other is not.
+*Along with group by if we apply where class filter is applied by reducer, here mapper will write all the dept
+later all the dept will be send to the reducer for applying filter.
+*When we apply having along with group by the filter is done by mapper itself.
+*******Note:If grouping happens at mapper level itself lesser burden will be put on reducer which actually is good.
+-------------------------------------------------------------------
+select dno,sum(sal) from info group by dno having city in('hyd','del','pune');
+***************Note: Above query is invalid because we should use grouping(dno) or aggregated column(sum(sal))
+within having in and we're not suppose to use city.
+
+Then solution to above problem is to use where,
+select dno,sum(sal) from info where city in ('hyd','del','pune') group by dno;
+
+Note:
+* In having column only grouping column and aggregated function is valid.
+* Above condition is true even in Basic SQL as well.
+
+-------------------------------------------------------------------------
+
+We can apply combination of having and where class filter also,
+select dno,sum(sal) from info where city in ('hyd','del','pune') group by dno having dno in(11,12,18);
+
+------------------------------------------------------------------------
+
+ATM Transactions
+------------------
+acno	amt
+=============
+101	1000
+102	2000
+101	2000
+101	3000
+102	8000
+103	1000
+104	9000
+----------------
+select acno,count(*) from ATM group by acno;
+101	3
+102	2
+103	1
+104	1
+
+select acno,count(*) from ATM group by acno having count(*) > 1;
+101	3
+102	2
+
+Get acnos, who did more than 1 transactions:
+select acno from ATM group by acno having count(*) > 1;
+101
+102
+
+select acno,sum(amt) from ATM group by acno;
+101	6000
+102	10000
+103	1000
+104	9000
+
+select acno,sum(amt) as tot from ATM group by acno having tot>5000;
+101	6000
+102	10000
+104	9000
+
+---------------------------------------------------------------------------
+Eliminating duplicate rows > Similar to distinct we can also use group by as well
+
+samp
+----------------------
+name	age
+-----------------
+Ravi	30
+Mani	20
+Ravi	30
+Ravi	30
+Mani	20
+Giri	50
+Giri	50
+Giri	50
+------------------
+
+hive (joins)> create table samp(name string,age int)row format delimited fields terminated by '\t';
+OK
+Time taken: 0.441 seconds
+
+hive (joins)> load data local inpath '/home/cloudera/dvs/basics' into table samp;
+Loading data to table joins.samp
+Table joins.samp stats: [numFiles=1, totalSize=64]
+OK
+Time taken: 1.096 seconds
+
+hive (joins)> select distinct(name),age from samp;
+Giri	50
+Mani	20
+Ravi	30
+
+hive (joins)> select name,age from samp group by name,age;
+Giri	50	
+Mani	20	
+Ravi	30	
+
+Note:
+>Performance wise both grouping and distinct both do well. 
+
+hive (joins)> select name,age,count(*) from samp group by name,age;
+Giri	50	3
+Mani	20	2
+Ravi	30	3
+
+------------------------------------------------------------------------
+>Consider we have 100 columns then how to remove duplicates????
+Solution:
+**********Note: To know the backend location of a file we can mention 'describe extended samp':
+hive (joins)> describe extended samp;
+OK
+name                	string              	                    
+age                 	int                 	                    
+	 	 
+Detailed Table Information	
+Table(tableName:samp, dbName:joins, owner:cloudera, createTime:1578885519, lastAccessTime:0, 
+retention:0, sd:StorageDescriptor(cols:[FieldSchema(name:name, type:string, comment:null), 
+FieldSchema(name:age, type:int, comment:null)], location:hdfs://quickstart.cloudera:8020/user/hive/warehouse/joins.db/samp, 
+inputFormat:org.apache.hadoop.mapred.TextInputFormat, outputFormat:org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat, 
+compressed:false, numBuckets:-1, serdeInfo:SerDeInfo(name:null, serializationLib:org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe, 
+parameters:{field.delim=	, serialization.format=
+Time taken: 0.292 seconds, Fetched: 4 row(s)
+
+From Above query we get information like path,delimiter etc...
+
+Create a dummy table with one column, don't worry about delimiter since we're considering it as single line:
+hive (joins)> create table dummy (line string);
+OK
+Time taken: 0.08 seconds
+
+hive (joins)> load data local inpath '/home/cloudera/dvs/basics' into table dummy;
+Loading data to table joins.dummy
+Table joins.dummy stats: [numFiles=1, totalSize=64]
+OK
+Time taken: 0.461 seconds
+
+The data is still a single line, but while queried it shows as column, but it is still single column.
+hive (joins)> select * from dummy;
+OK
+Ravi	30
+Mani	20
+Ravi	30
+Ravi	30
+Mani	20
+Giri	50
+Giri	50
+Giri	50
+Time taken: 0.19 seconds, Fetched: 8 row(s)
+
+hive (joins)> select distinct(line) from dummy;
+Giri	50
+Mani	20
+Ravi	30
+
+hive (joins)> select line from dummy group by line;
+Giri	50
+Mani	20
+Ravi	30
+
+---------------------------------------------------------------
+Count:
+======
+
+Consider table tab1:
+
+	tab1
+======================
+ id		sal
+========================
+101		1000
+102		null
+103		2000
+104		null
+--------------------------
+
+select count(*) from tab1;
+--->4
+
+select count(sal) from tab1;
+--->2 (It won't count null value)
+
+select count(*)-count(sal) from sal;
+---> 0 (if we get zero means that there are no null values)
+or
+select count(*) from tab1 where sal is null;
+---->0 (if we zero this also means there are no null values)

@@ -1,0 +1,226 @@
+*****Vertical Scaling vs Horizontal scaling:
+Vertical scaling > Trying to increase RAM capacity of my laptop to 32GB.
+			-1st problem is at 1 short 32GB RAM is not available
+			-2nd problem is laptop capacity is 16GB max :(
+Horizontal scaling > Add addtional 3 nodes that will sum upto 32GB, above all hardwares are cheaper (commodity hardware).
+
+*****RDD will be removed from RAM at two instances:
+-Whenever next RDD is ready current RDD will be processed and removed making way for next RDD.
+-Whenever computation is over or flow execution is completed even the last RDD will also be removed, as it is end point.
+
+Spark Streaming:
+-----------------------
+-The different streaming tecnologies
+Flume(Begininning & Basic)
+Strorm
+Kafka
+Spark Streaming
+
+Note: If we look into above things we can't say that Spark Streaming is advanced to Kafka
+      or Kafka is advanced to Storm or Storm is advanced to Flume.
+      Each is better in their own ways have their own importance in this streaming world of BigData.
+      All the 4 purposes are different.
+      Spark Streaming is advanced to all of them.
+
+-Types of Big Data application:
+Online : User interactive applications Ex: ATM
+	 Withdrawing of money from bank account via ATM requires user input and immediately data gets updated in bank.
+ Live Streaming
+
+Batch : Generally no user interaction Ex: Bank Statement geneartion
+	Post withdrawal of money from ATM, message goes to bank and there is no hurry in generating and sending bank statement to user
+	So, chill aaghi Batch processing.
+  Micro Batching
+
+-If we go back to history for Online system almost all the old system were engaged on the platform of RDBMS as backend storage, but nowadays
+ trillions of transactions are attacking the online machine.
+-RDBMS can bear if per minute 1lakh transactions are attacking if the transactions are trillion then it can't do it.
+-As the BigData enetered into online RDBMS couldn't be feasible hence there was need of something better a new thing came into picture that is NoSql.
+-Again online can be classified as considering today's requirement:
+	OLTP > Online transactional processing
+		Ex: NoSql such as MongoDB, Cassandra, Neo4j, HBase
+		Note: The purpose of HBase and Cassandra is same but we use cassandra for open application (were big data doesn't involve) and HBase is
+		      for Hadoop kind of applications. Only little diff in architecture can be seen in cassandra and HBase when compared.
+		      Fun part is earlier days RDBMS use to form our OLTP and it used ti solve all our problems, but now it's replaced with NoSQL and it alone
+		      can't solve all problems. Each NoSQL is used based on the reqiurement.
+				Neo4j > Graph like data (FB)
+				MongoDB > 100% schema less like feature is needed.
+				PNUT > Faster random access of key-value pair
+				Faster random access along with columns(specific columns of Big Table)
+Note: 
+BigTable means a table with huge number of columns, google had presented a white paper with 4Million columns and here data can be less.
+**************When we say select * from table is always faster when compared to select column 10,12 from table.
+It's always good to maintain normalisation in RDBMS acting as OLTP(having all data in single table ex: RDBMS) in OLTP application this will avoid performing joins or other combining stuffs.
+	But this can't store lot of data and column restricted to 1024, hence to store more data in denormalised way in OLTP NoSQL came into picture, no need of joins as well :)
+	NoSQL is schemaless (it means flexible schema, record to record different varities can be maintained)
+Maintain denormalisation (i.e employee data,manager data etc in different table) in batch processing, since it is batch aramse it can take more time.
+
+	Streaming: To capture high speed of streams, per second the no of events are more:
+			Ex:  Generation of web logs as we surf net, social networking etc. All these happen without user intervene.
+			     In today's world logs are used to understand the user behaviour(90%) and remaining 10% to unserstand sytem or app problems
+		   We have many technologies as mentoned earlier
+				Flume, Storm, Kafka and Spark Streaming
+		  -Flume > It's one of the faster stream capturer system, it's not part of Hadoop, it's separate cluster.
+			   Disadv > No guarantee each and every event will reach target.
+			   Logical Overview > Main is Flume Agent.
+					Events > Source > Channel(Data Buffering > Volume and Event based limit can be set ) > Sink
+					If channel fails then process does not happen, hence we can use 2 channels
+						Problem with 2 channels is delay in writing, data duplication and what if two channels fail
+						Due to such issues, this is not suitable for sensitive data.
+						We can use this for sentiment analysis of Tweets, FB etc. were even if we get 800tweets out of 900 is also fine.
+		-Kafka >  Storm is not replacement of Flume but Kafka is.
+			  Like Flume Kafka can stream, along with streaming this can also act as messaging system (i.e Brokerage).
+			  Kafka can handle 100s of 1000s of data/event attacking it, it doesn't bother. Flume is very slow interms of collection.
+			  Kafka is very powerful and large distributed server.
+			  Unlike Flume it won't miss evem single event, very suitable for banking system.
+			  With help of this Twitter,LinkedIn are able to handle trillions of transaction happening per minute or in seconds.
+			  Let's look into Messaging system which is Brokerage kind of thing:
+				In general there are Buyers and Sellers.
+				If there are 100s of buyers, there are 100s of sellers....what is the use of the mediators??
+				If we keenly look into it, sellers don't know the taste of the buyers, similarly buyers don't know which sellers products are good.
+				Hence, mediator acts as a broadcaster, just takes the message from buyers and sends this to all the sellers without hampering/changing the message and vice versa.
+				Kafka is application integrator or communication system.
+			Before Kafka there were lot of heroes like websphere MQ, Rabbit MQ, Tibco, web methods.....
+				All above mentioned Brokerage systems are also called as Middle ware systems and prior all these it was JMS ruling brokerage (Java Messaging System).
+				Prior JMS application - application direct messaging use to happen.
+				For app - app communication to happen both should be build using same language like c++ or Java or C# or Python, if one is C++ and other is Java then no pairing Aiyyo :(
+				To solve above problem first webservices came into picture even prior JMS.
+				Webservices doesn't have queue system i.e. messages needs to be dispatched once received, if target is busy then events are missed.
+				JMS has queue system but stil failed to handle events if inflow is huge. 
+			Similar to Hadoop even into Kafka we can keep adding 1000s of nodes and can handle any number.
+			In Kafka message holding points are called as Topics and these topics are distributed multiple nodes.
+			RDD is logical and physical is partiions, HDFS files are also logical and physical is blocks.
+			Similarly topics are logical and partitions are physical in Kafka.
+			Disadv of Kafka:
+				Kafka not suitable for Live Analytics, for this Storm came into picture.
+				Storm  is senior to Kafka.
+				We can call Kafka has replacement to Flume.
+				Spark Streaming is not replacement to Kafka.
+
+Flume > Can only do streaming (with some loop holes) and no messaging.
+Kafka > Both Streaming(100%) + Messaging, but not Live Analytics over the captured event.
+	Live Analytics in Layman terms: Consider a person entered room, kafka tells there is a person who entered, but it can't tell whether male or female.
+	******Kafka can capture the credit card transaction made in ligthning fast way, but it can't decide it is genuine or fraud one.
+Storm > It is awesome in Live Analytics on particular event.
+	This can't capture the data like Kafka in faster way :P.
+****Note: Best integration is Storm + Kafka :)
+Spark Streaming : Micro Batching for event captured at that moment.
+Kafka + Spark Streaming > This provides Fast capture + micro batching
+The above combination uses:
+Consider there are 1000s of tweets, kafka will capture it and pass on to Spark Streaming
+In Spark Streaming micro batching will happen and it will give frequency of words used in it
+But whether the word is good or bad it can't tell :(, hence Storm is needed.	
+	Storm + Kafka + Spark Streaming > World's best combination
+Kafka ----> Storm -----> Kafka -----> Spark Streaming ------> Kafka -----> Hadoop -----> Kafka
+Kafka writes collected events into Storm. later storm captures the fraud transactions and rewrites to Kafka with fraud label, 
+later the events are sent to Spark Streaming and here through micro batching the number of genuine and fraud events report generated.
+Later written back to Kafka and Hadoop will take the results(from Kafka,Storm and Spark Streaming) and perform Batch Processing finally.
+***Note: Here results is again and again written back to Kafka is because this acts as a very good messaging system and makes it easier for other systems to interact with this.
+Above is the full fledged solution for BigData.
+And for the complete online transaction we need NoSql + Storm + Kafka + Spark Streaming.
+Hadoop is just partial solution or one of the for Big Data (since it can only do Batch Processing, but now world as changed).
+
+Live transaction capturing > NoSQL.
+Live Event Capturing > Kafka.
+Live Analytics of particular data > Storm.
+If I'm interested to know what's happening every 10 to 15s > Spark Streaming's micro batching.
+	Note :  Storm + Trident > Also provided micro batching, but trident was lengthy process, hence this was not preferred.
+Batch Analytics > Hadoop + Spark.
+
+==================================================================================================================================
+Spark Streaming in Detail:
+
+-It is used to stream data from sources like file(local/HDFS/Network Port/Remote Host(FB,Twitter...)/Any other application/Other messaging systems(JMS/Kafka)).
+-In situation were Spark Streaming can't interact with other applications it can takes help from Kafka or JMS as mentioned above.
+-This streams data from sources and batch them (mini) and performs micro batch analytics.
+-Sources ----> Spark Streaming ----> (Prepares Batches) ----->Batches(Buffering) -----> Spark Core -----> Performs Analytics -----> Results written into Given target (Kafka Topic/JMS/HDFS/NoSQL...)
+-The Spark Streaming Data Objects are called DSS streams(Descrictised Data Streams).
+-DSStream is the continuous stream of RDDs.
+-Micro batching operation will be applied on each RDD of DS stream, for every given period of interval these RDDs will be build on one DS stream.
+	Ex: Micro-Batching period is 10s, for every 10s one RDD will be produced under DS stream.
+-As streaming job is running these RDDs will keep generating and these independent RDDs will be processed by Spark core.
+-Streaming job will never be stopped / killed until we do it manually.
+-Each RDD is simply called as Batch. This Batch is prepared by Spark Streaming and later the same batch is executed / Processed by Spark Core.
+-Basic context in Spark is SC, later we create SQL context, after that HiveContext and next one is SSC (SparkStreaming Context).
+-SSC is used to create the DS streams.
+	Ex: val ssc = new SparkStreamingContext(sc,10)
+		Here 10 is micro batching period, i.e. for every 10s worth of streamed data will be buffered at some worker node of spark clustered and
+		prepared as batch(RDD of DSStream). Once batch is prepared this will be submitted to SparkCore. As SparkCore is processing the batch, 
+		SparkStreaming keep collecting data from sources and prepares next batches.
+		In bigger organisation the batch period is kept in seconds.
+		it's bad idea to keep batch period as 1hr that too batching(buffering).
+-Consider there is a security system which needs to stop hackers using live analytics(Storm) and understanding how many attempts are happening every second, 
+ which is the prone area (micro batch processing using SparkStreaming).
+-Storm can execute any type of complex algorithm on live within fraction of second, Storm is that powerful.
+-Simple Pseudo code:
+	-val ssc = new SparkStreamingContext(sc,10 or sc,Minute(10)) // interval of 10s for micro batch period. 
+	-val ds1 = ssc.socketTextStream(localhost,99999) //From this port socketTextstream will capture & Buffer into some nodes and pass to SparkCore after 10s
+	When we perform some transformation or filter over existed DS stream other DS streams will be prepared.
+	****Note: scc.textFileStream for static file and ssc.Kafka for Kafka streaming(we also need required libraries)
+		   Ex:I am Rajath
+		   He is Rajath
+		   He knows Rajath
+		We need simple word count of above data.
+		Now above data is kept into RDD1 of DSStream i.e. DS1 we need to play now with DS1
+		Let's flatten the things first
+	-val ds2 = ds1.flatMap(  //Flatten multi collection into single collection
+			x= x.split(""))
+		[Array(I,am,Rajath,He,is,Rajath,He,Knows,Rajath)]
+	Meanwhile when we keep working on this data SparkStream keeps collecting new events.
+	***Note: Whenever we perform transformation over existed DS stream we get one more DS stream, this works
+	similar to RDD.
+	-val ds3 = ds2.map(x => (x,1)) //each element is prepared as key,value tuple
+	Again the ds3 is also a datastream.
+	val ds4 = ds3.reduceByKey(_+_)
+	I 1
+	He 2
+	Rajath 3
+	:
+	:
+	-ds4.print()
+	Till now 3 steps are done
+ 	Context object creation //Micro Batch period is defined here
+	DS stream Preparation //Here we're connecting the root with the source 
+	Output Operation //This needs to be given like writing it somewhere or saving as textfile etc
+	Now we need to start streaming object by using below code.
+	-ssc.start //Now this job keeps running and for every 10s will get results.
+	If source is not generating any events it keeps listening and waiting for data.
+	By default it keeps generating data if source is blank, then result is also blank
+	The above processing is done by SparkCore, SparkStreaming collects the data prepares Batches
+	Instead of simple word count based on the requirement we can apply ML or graphX etc algorithms and print result
+===============================================================================================================================
+-We have new feature in Spark Streaming called as windowing and sliding:
+
+Let's start with an example, consider I'm a faculty of a class and I'm interested in taking attendance on daily basis (Micro batching):
+But, Principal wants to give a visit to our class every 2 days once (sliding) and check attendance of past 4 days(windowing)
+Since data is not available for last 4 days since it's just 2 days the school begin.
+Principal gives visit after 2 days again and successfully checks attendance of last 4 days.
+
+Similar to above example we got to co-relate to our concept, as the DS streams gets processed we need to persist them to check the data for last 4 days
+Windowing > It's a set of micro batches.
+Sliding > It's a interval to perform the window batch.
+In the previous code once ds4 is ready to include sliding and windowing we can write.
+	-val ds5 = ds4.reduceByKeyAndWindow(_+_,20,40) //20 for sliding and 40 for windowing
+	Above is valid for DS stream API.
+	-To apply logic on ds4 it should be persisted previously.
+	Here we can get to reports for two different things i.e. MicroBatching and Windowing.
+	If at one short we need report for both the things then we need to follow below steps.
+	val ssc = ......Streaming Context
+	val ds1 = ssc.socket...
+	val ds2 = ds1.flatMap...
+	val dspair = ds2.map(x=>(x,1))
+	dspair.persist
+	val report1 = dspair.reduceByKey(_+_) //micro batch interval need otputs, no need of persistance dspair only this output is needed
+	val report2 = dspair.reduceByKeyAndWindow(_+_,20,40) //In order to get this report the dspair should be persisted prior ro report1
+	//reduceByKeyAndWindow is only available with DSStream and not with RDD
+	****Note: Sliding period should be greater than or equal to micro batching period
+	report1.print()
+	report2.print()
+	//Now both the output operations are completed.
+	ssc.start()
+	//We will get two outputs now, for every 10s one output and for every 40s(after worth of every 20s sliding period) one more output will be given.
+****Note: For every 10seconds a big batch is preparing and in that 10seconds 1lakh records are created in such case spark core after 1hr of streaming job is ran
+	  spark RAM will be filled up with data, once data is filled it can't catch next stream.
+	  Keep in mind whenever we apply persist on ds stream only window worth of data is kept in memory or persisted and once window is computed it will be 
+	  perished(i.e. if there are four days of data first two days will be removed and 3rd & 4th day will be kept to compute along 5th & 6th day).
+****Note: RDD and DSStream persisting is totally different.

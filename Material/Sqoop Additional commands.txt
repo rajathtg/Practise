@@ -1,0 +1,285 @@
+﻿1.To know which sqoop version is installed on your system > sqoop version.
+
+2.The main purpose of sqoop is to perform import and export of data between hadoop and RDBMS(here it is mysql).
+
+3.Import> To perform this operation we need to have some data already installed in mysql database.
+To enter into mysql,
+	In LFS type > mysql -u root -p
+	Password > cloudera
+	show databases;(to view all the databases)
+	create database SqoopDB; (SqoopDB is created)
+	use SqoopDB; (To use the created  DB)
+	mysql> create table emp(eid int(5),ename varchar(15),salary int(10)); (To create table under Sqoop DB)
+
+	+--------+-------------+------+-----+---------+-------+
+	| Field  | Type        | Null | Key | Default | Extra |
+	+--------+-------------+------+-----+---------+-------+
+	| eid    | int(5)      | YES  |     | NULL    |       |
+	| ename  | varchar(15) | YES  |     | NULL    |       |
+	| salary | int(10)     | YES  |     | NULL    |       |
+	+--------+-------------+------+-----+---------+-------+
+	Note: Since no constraints are used table is showing null values
+
+
+4.desc emp; or describe emp; > To know the schema of the table.
+
+5.To insert data into newly created table emp > insert into emp values(102,'abc',10000);
+
+6.Post inserting to view data inside the table use command > select * from emp;
+
++------+-------+--------+
+| eid  | ename | salary |
++------+-------+--------+
+|  101 | abc   |  10000 |
+|  102 | abc2  |  20000 |
+|  102 | abc3  |  30000 |
+|  104 | abc4  |  40000 |
++------+-------+--------+
+
+7.To give access or permission to users i.e from hadoop environment to access databases
+	Login to Mysql and type command to give access > grant all privileges on SqoopDB.* to '%'@'localhost';
+	SqoopDB.* (To give access to all the tables under SqoopDB)
+	%(All the users) @localhost (working on local host server)
+	
+8. To grant privileges to non database users or any kind of user in place of '%' just mention ''
+	grant all privileges on SqoopDB.* to ''@'localhost';
+
+
+9.To insert above table into the hdfs folder. To perform data exchange we need to use sqoop tool.
+Imp : We need to execute below command in LFS mode.
+sqoop-import --connect jdbc:mysql://localhost/SqoopDB --username root --password cloudera --table emp  --target-dir SqoopIm --m 1
+Note: 
+1. To encrypt credentilas we can pass parameter files while running above command (that is storing password in a file and pointing the commands to that file
+   Ex: sqoop_param in the below mentioned command)
+2. --m1(number of mappers=4(by default)) needs to be specified if there are primary keys and --m1 means 1 partm file will be generated.
+3. If there is no primary key in the table and we need parallel import then we can use 'split by column name' and specify the number of mappers therefore those many
+   part m files will be generated. 
+*******Command > sqoop-import -options-file/home/cloudera/dvs/sqoop_param --table employee --split-by EDept
+
+10.Data will be loaded into HDFS directory > open the SqoopIm and check for part-m file.
+To view just use > hadoop fs -ls
+
+11.Even sqoop uses the mappers for execution and default delimeter is ','.
+
+101,abc,10000
+102,abc2,20000
+102,abc3,30000
+104,abc4,40000
+
+12.Let's chsnge the delimeter to tab space:
+sqoop-import --connect jdbc:mysql://localhost/SqoopDB --username root --password cloudera --table emp  --target-dir SqoopIm2 --m 1
+--fields-terminated-by '\t'
+Imp: The output will be tab separated in HDFS directory.
+
+101     abc     10000
+102     abc2    20000
+102     abc3    30000
+104     abc4    40000
+
+13 To get particular data :
+sqoop-import --connect jdbc:mysql://localhost/SqoopDB --username root --password cloudera --table emp  --target-dir SqoopIm3 --m 1
+ --fields-terminated-by '\t' --columns 'eid,ename,salary' --where 'salary > 25000'
+Columns(additional attribute in sqoop)
+
+102     abc3    30000
+104     abc4    40000
+
+14.To generate the import file in the sequence file format:
+sqoop-import --connect jdbc:mysql://localhost/SqoopDB --username root --password cloudera --table emp  --target-dir SqoopIm5 --m 1
+--fields-terminated-by '\t' --columns 'eid,ename,salary' --where 'salary > 25000' --as-sequencefile
+
+SEQ!org.apache.hadoop.io.LongWritableempe▒'a▒1m▒▒▒▒2▒fabc3uhabc4▒@
+
+15. To generate the import file in the avrodata format, used for performing serialisation and de-serialisation or in general JSON format.
+sqoop-import --connect jdbc:mysql://localhost/SqoopDB --username root --password cloudera --table emp  --target-dir 
+SqoopIm8 --m 1 --fields-terminated-by '\t' --columns 'eid,ename,salary' --where 'salary>25000' --as-avrodatafile
+
+Objavro.schema▒{"type":"record","name":"emp","doc":"Sqoop import of emp","fields":[{"name":"eid","type":["null","int"],"default":null,"columnName":
+"eid","sqlType":"4"},{"name":"ename","type":["null","string"],"default":null,"columnName":"ename","sqlType":"12"},{"name":"salary","type":["null","int"]
+,"default":null,"columnName":"salary","sqlType":"4"}],"tableName":"emp"}▒8Ec▒▒▒▒(▒▒z\▒▒4abc3▒▒abc4▒▒▒8Ec▒▒▒▒(▒▒z\▒▒PuTTY
+
+Note: Try paraquet,RC and ORC file format.
+
+16. Let's work on exporting of data now:
+whether it's import or export we need to connect to DB
+till now we had given target directory now here we need to mention table 
+Sqoop only works on HDFS not LFS therefore it epxorts or imports from HDFS only and not LFS
+Therefore before exporting data should be saved in the HDFS
+
+Data is created in LFS and moved to hdfs SqoopIm10
+110,asdf,15000
+111,qwer,18000
+112,zxcv,17000
+
+sqoop-export --connect jdbc:mysql://localhost/SqoopDB --username root --password cloudera --table emp  --export-dir SqoopIm10 --m 1
+Note: We need to push the file to be executed into a directory (Ex: SqoopIm10 mentioned in above query) instead of pointing to file directly and also be careful of 
+matching columns and limits of char/int mentioned
+
+Ouput:
+Can be only checked in the mysql
+Therefore login to the mysql
+Commands:
+use SqoopDB
+select * from emp
++------+-------+--------+
+| eid  | ename | salary |
++------+-------+--------+
+|  101 | abc   |  10000 |
+|  102 | abc2  |  20000 |
+|  102 | abc3  |  30000 |
+|  104 | abc4  |  40000 |
+|  110 | asdf  |  15000 |
+|  111 | qwer  |  18000 |
+|  112 | zxcv  |  17000 |
++------+-------+--------+
+
+Note: What happens when the delimeter is || or tab space or dot because it always takes comma
+then we need to edit our command by using fields separated by etc...
+
+Input:
+110     asdf    15000
+111,qwer,18000
+112,zxcv,17000
+
+command:
+sqoop-export --connect jdbc:mysql://localhost/SqoopDB --username root --password cloudera --table emp
+  --export-dir SqoopIm10 --m 1 --fields-terminated-by '\t'
+  
+output:
++------+-------+--------+
+| eid  | ename | salary |
++------+-------+--------+
+|  101 | abc   |  10000 |
+|  102 | abc2  |  20000 |
+|  102 | abc3  |  30000 |
+|  104 | abc4  |  40000 |
+|  110 | asdf  |  15000 |
+|  111 | qwer  |  18000 |
+|  112 | zxcv  |  17000 |
++------+-------+--------+
+
+
+17. Let's take a real time scenario, FB everyday generating 10TB data and everything is stored in mysql.
+I need to load data from mysql to hadoop environment.
+My task is to import newly added data into hadoop on daily basis
+
+MySql per day:
+userReg-->table
+day1 => 5 rows ==>/user/part-m-00000 (hadoop path where data is added) 
+day2 => 10 rows ==> When this is also exported to hadoop to same part-m-00000 file it throws error file already exists
+day => 4
+
+To overcome above problem we use sqoop jobs to perform import and export concurrently
+Adv is we create bulk of statements and execute them and also schedule them on timely manner without any issue.
+
+18.Simple Sqoop job:
+Command:
+sqoop-job --create First -- import --connect jdbc:mysql://localhost/SqoopDB --username root --password cloudera 
+--table emp -m1 --target-dir SqoopIm15 --incremental append --check-column eid --last-value 112
+
+First > It's just the Sqoop Job name, it won't create any new folder name. 
+append is used to add data to same directory, i.e part files get created part-m-00000,part-m-00001,part-m-00002 etc......
+incremental is used to continue appendment of the data, i.e for part-m-00000(data > 123),part-m-00001(data > 123456),part-m-00002(data > 123456789) etc......
+Note: 
+1. Since Sqoop Job 'First' is created no need to type or such for such a big query, just type sqoop-job --exec First and if there are 
+any new data it will get appended.
+2. If we change 'last value' from there on wards appendings get added.
+
+19.To check whether the sqoop is created or not
+command > sqoop job --list
+output:
+Available jobs:
+  First
+
+20.To see what's there inside
+command:
+sqoop job --show First
+output:
+It will ask for password, enter cloudera
+
+Enter password:
+Job: First
+Tool: import
+Options:
+----------------------------
+reset.onemapper = false
+codegen.output.delimiters.enclose = 0
+sqlconnection.metadata.transaction.isolation.level = 2
+codegen.input.delimiters.escape = 0
+codegen.auto.compile.dir = true
+accumulo.batch.size = 10240000
+codegen.input.delimiters.field = 0
+accumulo.create.table = false
+mainframe.input.dataset.type = p
+enable.compression = false
+accumulo.max.latency = 5000
+db.username = root
+sqoop.throwOnError = false
+db.clear.staging.table = false
+codegen.input.delimiters.enclose = 0
+hdfs.append.dir = true
+import.direct.split.size = 0
+hcatalog.drop.and.create.table = false
+codegen.output.delimiters.record = 10
+codegen.output.delimiters.field = 44
+hdfs.target.dir = SqoopIm15
+hbase.bulk.load.enabled = false
+mapreduce.num.mappers = 1
+export.new.update = UpdateOnly
+db.require.password = true
+hive.import = false
+customtool.options.jsonmap = {}
+hdfs.delete-target.dir = false
+incremental.last.value = 112
+codegen.output.delimiters.enclose.required = false
+direct.import = false
+codegen.output.dir = .
+hdfs.file.format = TextFile
+incremental.col = eid
+hive.drop.delims = false
+codegen.input.delimiters.record = 0
+db.batch = false
+split.limit = null
+hcatalog.create.table = false
+hive.fail.table.exists = false
+hive.overwrite.table = false
+incremental.mode = AppendRows
+temporary.dirRoot = _sqoop
+verbose = false
+import.max.inline.lob.size = 16777216
+import.fetch.size = null
+codegen.input.delimiters.enclose.required = false
+relaxed.isolation = false
+sqoop.oracle.escaping.disabled = true
+db.table = emp
+hbase.create.table = false
+codegen.compile.dir = /tmp/sqoop-cloudera/compile/91306c8676c0ebd6f35e50792e27088b
+codegen.output.delimiters.escape = 0
+db.connect.string = jdbc:mysql://localhost/SqoopDB
+
+21.To know about the simple execution:
+command> sqoop job --exec First
+output:
+It will ask for password, enter cloudera
+
+Enter password:
+19/06/03 01:20:06 INFO tool.ImportTool: No new rows detected since last import.
+
+Note: oozie one of the job scheduling tool can be used to execute sqoop jobs on hourly or daily basis.
+
+22.To delete the job
+command > sqoop job --delete First
+
+*****Note: oozie one of the job scheduling tool can be used to execute sqoop jobs on hourly or daily basis.*****
+
+*******************************************************************************************************************************************************
+
+Oozie:
+1. It's a workflow schdulers.
+2. Used to schedule a job to run at a particular time or there is a one job which needs to be completed and immediately after that a new job
+needs to be started, even that can also be done with this.
+3. Generally an Adminstrator tool.
+4. Cloudera goes with Oozie, but few projects using Hortonworks prefer Apache Falcon(This is an GUI over Oozie).
+5. Oozie can only work only on top Hadoop can't work with other things.
+6. This supports JAVA actions.
+7. This was introduced in hadoop 1.x.

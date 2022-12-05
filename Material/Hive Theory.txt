@@ -1,0 +1,371 @@
+HIVE:
+To perform Data Analysis in Hadoop
+It's a Data Warehouse technique built on Hadoop
+Only Manage & used to process structural data i.e tables (PIG is for unstructured data)
+We use HiveQL (SQL in general)
+Was invented by FB
+It's built over HDFS and MR
+Hive always takes data from HDFS only, not from any No-Sql or RDBMS data bases (Hive-HBASE or Hive-Sqoop can be done, end of the Hive Storage is HDFS :))
+In HDFS data is stored as Files, here Hive takes those files and adds schema i.e tables (rows and columns).
+Components of HIVE 
+	Driver
+	Compiler
+	Metastore(Stores meta data, tables,views and derby is default metastore db)
+	ExecutionEngine
+Hive Uses CLI interface (I.e common command line interface).
+In Hive interactive shell we can't insert data row by row because it is meant only for loading large sets of data.
+
+Hive Prgramming Language:
+Databases (data got from HDFS) > Converted as Tables
+We can perform following actions using hive tables
+	Partitions/Buckets
+	Views/Indexes
+Tables are divided into Managed/Internal and External tables.
+
+Always by default it is managed table, if need to create external tables, we need to mention it explicitly.
+Main difference:
+Managed Table: when deleted even hdfs data is also gone
+Ext table: when deleted meta information is only deleted and data remains untouched.
+
+Things to specify while creating tables:
+	Row format delimited
+	Fields terminated by '\t'
+	lines terminated by'\n'
+	store as text file,sequence file
+	Partitions/Bucketting based on table creation
+	Views and Indexs
+
+Note: we need to use 'partitioned by' keyword for partitioning of table and similarly 'clustered by' keyword for bucketting of table.
+
+Partitioning > slices data are not known go for partition.(more or less will be done by us)
+
+We have built in functions are present > COUNT,AVG,MAX etc...
+
+Beeline > !connect jdbc:hive2://localhost:10000 root cloudera
+Bucketting > easy when data slices are known. (hash algorithm takes care of slicing of data)
+
+
+What is Hive? Is it a database or a datawarehouse tool?
+-Hive is a data warehouse tool, it gives us SQL queries to run analysis, tough it gives logical abstraction of 
+ databases and tables it's not database.
+
+What is the role of HiveMetastore?
+-It contains metadata(columns,types,partition info, bucketing info,SerDeetc) about the actual table.
+-Input,output function and all these are stored in Derby database, but can be accessed from other database as well like MySQL, Oracle etc.
+
+What are the limitations of Derby database for hive metastore?
+-Generally it is default metastore for hive, with Derby database for hive metastore,multiple sessions can not be instantiated on the same
+ machine to connect to hive.
+-Because it runs in a local mode and it creates log file so that multiple users cannot access hive simultaneously.
+
+What are managed and external tables in hive?
+-Data and metadata for managed tables are under the control of hive.
+-For external tables, only metadata is under the control of hive, whereas actual data is under the control of a different owner, hence when
+ the table is dropped only metadata is lost.
+
+What are the complex data types in hive?
+-MAP: <primitive_type,data_type> - More or less like key-value correspondence like dictionary of JAVA or hash map of python.
+-STRUCT: <colname : datatype[COMMENT col_comment],....> - Collection of elements with diff datatypes like address where pincode int and street string.
+-ARRAY: Array<data_type> - Collection of data of same datatype like we can have multiple string as skillset.
+-UNIONTYPE: UNIONTYPE<data_type,data_type,..> - It represents a column which has value which can belong to either of datatype we specify, like 
+						some column can be integer or some can be string, then UNIONTYPE comes to picture.
+
+How does partitioning help in faster execution of queries?
+-Partitioning creates a subdirectory inside a parent directory and we use a partitioned column in the WHERE clause, only a specific sub-directory 
+ is scanned and full table scan is avoided.
+
+
+What are types of partitioning in Hive?
+-It means dividing a table into a coarse grained parts based on the value of a partition column such as date. This make it faster to do queries
+on slices of data.
+	-Parttion keys determine how the data is stored.
+	-Each unique value of the partition keys of the partition keys defines partition of the table.
+	-Partitions are named after the dates for convenience.
+-Static and Dynamic partitioning
+-We can anable Dynamic partitioning 
+	set hive.exec.dynamic.partition.mode=nonstrict;(If it is strict then when we query on non partitioned column it won't fetch reults because
+	it hampers the performance, hence no strict for our easiness)
+	insert overwrite table emp_details_partitioned
+	partition(location)
+	select*from emp_details
+-When dataset is having small number of distinct values we go for partitioning
+-Try to use select count(*) from <table_name>;
+-Try to use ls -lsr or ls -lsrt
+
+How does bucketing help in faster execution of queries?
+-If we need to join two tables and it's large, we can use reduce side join which is possible.
+-We both the tables have same number of buckets or perfect multiple number of buckets andthey're bucketed on same column and sorted also
+ on same column there is possibility of SMBM.
+-With bucketing, there is a possibility of Sort Merge Bucket Map(SMBM) join.
+-In SMBM join, if two tables are sorted and bucketed on the join columns in integral multiple of buckets, then they can be joined in map
+ phase itself.
+-For SMBM to take place, following conditions are set.
+	set hive.enforce.enforce.sortmergebucketmapjoin=false;
+	set hive.auto.convert.sortmerge.join=true;
+	set hive.optimize.bucketmapjoin=true;
+	set hive.optimize.bucketmapjoin.sortedmerge=true;
+-To enable bucketing in hive: SET hive.enforce.bucketing=true;
+-When dataset is having large number ofvdistinct value we can go for bucketing
+
+Which method has to be overriden when we use custom UDF in Hive?
+-UDF class has to be extended and eveluate() method needs to be overriden.
+
+What are the different file formats in hive?
+-Text File Format
+-Sequence File Format
+-RC File Format
+-Parquet File Format
+-Avro File Format
+-ORC (Optimized Row Columnar) File Format
+
+How is SerDe(Serializer & Deserializer) how are they different from FileFormat in hive?
+-SerDe determines how to encode / Decode the field values from a record.
+-FileFormat determines how records are store / retrieve in Key Value in the file.
+
+What is RegexSerDe?
+-Regular Expressions SerDe.
+-It is used in case of pattern matching.
+-Use ROW FORMAT SERDE:
+	org.apache.hadoop.hive.contrib.serde2.RegexSerDe
+-In SERDEPROPERTIES, define input pattern and output fields.
+	Ex: 
+	To get column values from line xyz/pqr@def -> Here task is to get xyz,pqr and def all in different column.
+	input.regex'='(.*)/(.*)@(.*)' -> Defines how the Regex should be.
+	hadoop fs-Ddfs.replication=2/my/file -> Defines where the output file should be stored.
+
+How is ORC file format optimised for data storage and analysis?
+-ORC stores collections of rows in one file and within the collection the row data is stored in a columnar format.
+-Eacwjdh file with the columnar layout is optimized for compression and skipping of data/columns to reduce read and
+ decompression load.
+-ORC introduces a lightweight indexing that enables skipping of complete blocks of rows that do not match a query.
+-It comes with basic statistics - min,max,sum, and count -on columns.
+-Lastly, a larger block size of 256 MB by default optimizes for large sequential reads on HDFS for more throughput
+ and fewer files.
+
+How to access HBase tables from Hive?
+-Whenever we want to access tables from MongoDB or HBase we take advantage of storage handler.
+-We have HBase storage handler using that we specify what is column mapping of hive table with HBase table and which
+ table of HBase we would like to connect to.
+-After we're done with Hive connection then we can query our HBase table from hive using SQL syntaxes and we can also
+ join hbase table with hive as well.
+
+	create external table
+	employee_hbase
+	(
+	eid string,fname string,lname string,salary int
+	)
+
+	STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler' with serdeproperties
+	("hbase.columns.mapping"=":key,personaldetails:fname,personaldetails:Lname,personaldetails:salary")
+	tblproperties("hbase.table.name"="employee");
+
+Intead of using Insert into command we can also try using Insert overwite table <table_name> for table stored in hdfs or Insert overwrite local 'Directory' 
+for table stored in some local directory.
+
+Uses of HIve:
+1. Tables can be partitioned and Bucketed.
+2. Schema flexibility and evolution.
+3. Easy to plug-in custom mapper/reducer code.(i.e UDFS)
+4. JDBC/ODBC drivers are available.(Used for print data to Reporting tools Tableau, Microsurgy)
+5. Hive tables can be defined directly on HDFS.
+6. Extensible: Types, Formats, Functions, Scripts. 
+
+What is Hive??
+1. Data Warehousing package built on top of Hadoop.
+2. Used for data analysis.
+3. Targeted towards users comfortable  with SQL.
+4. ******For managing and querying structured data*******
+5. It is similar to SQL and called HiveQL.
+6. Abstracts complexity of Hadoop.
+7. No need to learn java and Hadoop APIs.
+8. Developed by FB and contributed to community.
+9. FB analyzed several TBs of data everyday using Hive.
+
+Hive Applications:
+1. Data Mining.
+2. Log Processing.
+3. Customer -facing Business Intelligence.
+4. Document Indexing.
+5. Predictive Modeling, Hypothesis Testing.
+
+Components of Hive:
+1. Shell
+2. Drier
+3. Compiler
+3. MetaStore
+4. Execution Engine
+
+What Hive can't do??
+1. Not designed for online transaction processing.
+2. Does not offer real-time queries and row level updates.
+3. Latency for Hive queries is generally very high (minutes)
+4. Provides acceptable (not optimal) latency for interactive data browsing.
+
+Things to do with HiveQL:
+1. Ability to filetr rows from a table using 'where' clause.
+2. Ability to store the results of a query into another table.
+3. Ability to do equi-joins between two tables.
+4. Ability to store the results of a query in Hadoop dfs directory.
+5. Ability to manage tables and partitions(create,drop & alter).
+
+Schema on Read vs Schema on Write:
+1. Hive does schema on Read rather than schema on Write i.e Hive does not varifies data when it is loaded, but rather when a query is issued.
+2. Schema on Read makes for a very fast initial load, since data does not have to be read, parsed and serialized to disk in the database's internal
+format. The load operation is just a file copy or move.
+3. No Updates, Transactions and Indexes.
+
+Primitive Types:
+1. Boolean Type > Boolean - True/False
+2. Integers >	TINYINT - 1 Byte integer
+		SMALLINT - 2 Byte integer
+		INT - 4 Byte integer
+		BIGINT - 8 Byte integer
+3. Floating point numbers >	Float - Single Precision
+				DOUBLE - Double Precision
+4. Sring Type >	STRING - Sequence of character
+
+******Note : Use Ctrl+L to clear data on hive shell screen***********
+
+Types of operations that can be performed on data in Hive:
+1. Loading of data to Hive is of two types i.e. 
+	Load data local inpath (Data is present in LFS later copied and pasted to Hive(HDFS Storage))
+	Load data inpath (Data is present in HDFS later cut and pasted to Hive(HDFS Storage))
+	Managed Table, External Table and Temporary Table(Nothing but Managed Table).
+
+Loading data local inpath or Managed or Temporary table:
+1. For all this the primary data storage is LFS and data needs to be moved to HDFS using load data local inpath.
+2. In above all cases the table created is always Managed table unless explicitly mentioned as something else.
+3. Meta data can be viewed by using 'desc table_name;' in Hive.
+4. Once the table is dropped both meta data and actual data(present hive default path) will be lost(data present in LFS still remains).
+5. Here we need to give the path pointing directly to the file to load file into Hive.
+
+Load data inpath or Managed or Temporary table:
+1. Here the data is present in HDFS(if not available just copy a file to HDFS from LFS for testing purpose) and needs to be pushed to Hive.
+2. Even the table created here as well is mananged table always unless explicitly mentioned.
+3. Here we need to give the path pointing directly to the file to load file into Hive.
+4. Post loading data movement happens and file is no more present in HDFS path instead available in Hive default path.
+5. *****If at all we don't have a copy of this file in local, table being a managed table, post dropping entire data is 'Smoku'. 
+
+hive (dvs_dec12)> create table dvs_dec555(eid int,ename string,ejob string,esal double,ecomm float,edept int) row format delimited fields terminated by ',';
+
+Meta Data:
+hive (dvs_dec12)> desc dvs_dec555;
+OK
+eid                 	int                 	                    
+ename               	string              	                    
+ejob                	string              	                    
+esal                	double              	                    
+ecomm               	float               	                    
+edept               	int                 	                    
+Time taken: 0.118 seconds, Fetched: 6 row(s)
+
+Copy file from LFS to HDFS for practise purpose:
+[cloudera@quickstart dvs]$ hadoop fs -put '/home/cloudera/dvs/emp.csv' 'emp'
+
+hive (dvs_dec12)> load data inpath 'emp/emp.csv' into table dvs_dec555;
+Loading data to table dvs_dec12.dvs_dec555
+Table dvs_dec12.dvs_dec555 stats: [numFiles=1, totalSize=493]
+OK
+
+*****Data movement has happened the emp folder is empty:
+[cloudera@quickstart dvs]$ hadoop fs -ls
+Found 4 items
+drwxr-xr-x   - cloudera cloudera          0 2018-12-14 10:17 .sparkStaging
+-rw-r--r--   1 cloudera cloudera          0 2018-07-09 11:00 abc.txt
+drwxr-xr-x   - cloudera cloudera          0 2019-12-06 16:28 emp
+drwxr-xr-x   - cloudera cloudera          0 2018-12-06 02:44 xmlCsvData
+[cloudera@quickstart dvs]$ hadoop fs -ls emp
+[cloudera@quickstart dvs]$ 
+
+hive (dvs_dec12)> select * from dvs_dec555;
+OK
+7369	SMITH	CLERK	800.0	NULL	20
+7499	ALLEN	SALESMAN	1600.0	300.0	30
+7521	WARD	SALESMAN	1250.0	500.0	30
+7566	JONES	MANAGER	2975.0	NULL	20
+7654	MARTIN	SALESMAN	1250.0	1400.0	30
+7698	BLAKE	MANAGER	2850.0	NULL	30
+7782	CLARK	MANAGER	2450.0	NULL	10
+7788	SCOTT	ANALYST	3000.0	NULL	20
+7839	KING	PRESIDENT	5000.0	NULL	10
+7844	TURNER	SALESMAN	1500.0	0.0	30
+7876	ADAMS	CLERK	1100.0	NULL	20
+7900	JAMES	CLERK	950.0	NULL	30
+7902	FORD	ANALYST	3000.0	NULL	20
+7934	MILLER	CLERK	1300.0	NULL	10
+Time taken: 0.112 seconds, Fetched: 14 row(s)
+
+[cloudera@quickstart dvs]$ hadoop fs -ls /user/hive/warehouse/dvs_dec12.db/dvs_dec555
+Found 1 items
+-rw-r--r--   1 cloudera cloudera        493 2019-12-04 17:29 /user/hive/warehouse/dvs_dec12.db/dvs_dec555/emp.csv
+
+Once table is dropped it will all the data will be smoku:
+hive (dvs_dec12)> drop table dvs_dec555;
+OK
+Time taken: 0.145 seconds
+
+hive (dvs_dec12)> desc dvs_dec555;
+FAILED: SemanticException [Error 10001]: Table not found dvs_dec555
+
+[cloudera@quickstart dvs]$ hadoop fs -ls /user/hive/warehouse/dvs_dec12.db
+Found 3 items
+drwxrwxrwx   - cloudera supergroup          0 2019-12-06 16:26 /user/hive/warehouse/dvs_dec12.db/dvs_dec556
+drwxrwxrwx   - cloudera supergroup          0 2019-12-04 18:52 /user/hive/warehouse/dvs_dec12.db/dvs_dec812
+drwxrwxrwx   - cloudera supergroup          0 2019-11-30 23:07 /user/hive/warehouse/dvs_dec12.db/emp_dec12
+
+Avoid file movemwnt, point at the location directly:
+1. ****For both the data present in LFS and HDFS we can directly point at the data, but here we need to point at the *folder* where the data is present
+and not the *file*.
+2. Because of this there will be no data movement from LFS/HDFS to Hive default path.
+
+External table:
+1. Post dropping the table, only meta data will be lost and actual data is still present.
+2. ***Actual data only can be seen in Hive default path and can't fetched in hive shell by just entering 'Select * from table_name;'
+
+Copy file from LFS to HDFS for practise purpose:
+[cloudera@quickstart dvs]$ hadoop fs -put '/home/cloudera/dvs/emp.csv' 'emp'
+
+Create table pointing to folder in HDFS:
+hive (dvs_dec12)> create external table dvs_dec544(eid int,ename string,ejob string,esal double,ecomm float,edept int) row format delimited 
+fields terminated by ',' location '/emp';
+
+No folder created in hive default path:
+[cloudera@quickstart dvs]$ hadoop fs -ls /user/hive/warehouse/dvs_dec12.db
+Found 2 items
+drwxrwxrwx   - cloudera supergroup          0 2019-12-04 18:52 /user/hive/warehouse/dvs_dec12.db/dvs_dec812
+drwxrwxrwx   - cloudera supergroup          0 2019-11-30 23:07 /user/hive/warehouse/dvs_dec12.db/emp_dec12
+
+**************When table is created pointing towards file in location select query doesn't fetch the table data: 
+hive (dvs_dec12)> select * from dvs_dec544;
+OK
+Time taken: 0.2 seconds
+
+Hive Prgramming Language:
+Databases (data got from HDFS) > Converted as Tables
+We can perform following actions using hive tables
+	Partitions/Buckets
+	Views/Indexes
+Tables are divided into Managed/Internal and External tables.
+
+Always by default it is managed table, if need to create external tables, we need to mention it explicitly.
+Main difference:
+Managed Table: when deleted even hdfs data is also gone
+Ext table: when deleted meta information is not deleted
+
+Things to specify while creating tables:
+	Row format delimited
+	Fields terminated by '\t'
+	lines terminated by'\n'
+	store as text file,sequence file
+	Partitions/Bucketting based on table creation
+	Views and Indexs
+
+Note: we need to use 'partitioned by' keyword for partitioning of table and similarly 'clustered by' keyword for bucketting of table.
+
+Partitioning > slices data are not known go for partition.(more or less will be done by us)
+
+We have built in functions are present > COUNT,AVG,MAX etc...
+
+Beeline > !connect jdbc:hive2://localhost:10000 root cloudera
+Bucketting > easy when data slices are known. (hash algorithm takes care of slicing of data)
+

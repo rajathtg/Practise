@@ -1,0 +1,385 @@
+Hadoop:
+-Hadoop is a framework that allows us to store and process large data sets in parallel and distributed fashion.
+-Hadoop uses HDFS as storage(Distributed File System) and MP as processing system(Allows parallel and distributed processing).
+-Hadoop was created by Doug Cutting, the creator of Apache Lucene, the widely used text search library.
+-Hadoop has its origin in Apache Nutch, an open source web search engine, itself part of the Lucene project. 
+-Hadoop is a distributed system for data storage and analysis.
+-Mapreduce is a batch Processing and is not suitable for interactive analysis.
+-HBase was the first component to provide online access to Hadoop, a key-value store that uses
+HDFS for its underlying storage.
+-The real enabler for new processing models in Hadoop was the introduction of YARN(Yet another resource negotiator).
+YARN is a cluster resource management system, which allows any distributed program to run on data in a Hadoop cluster.
+
+Big Data, now we're in era of Exabytes:
+	-Capturing and Managing lots of information.
+	-Working with many new types of data
+	-Exploiting these masses of information and new data types with new styles of applications
+or
+	-Big Data is the term for a collection of datasets so large and complex that it becomes difficult to process using 
+	on hand database management tools or traditional data processing applications.
+
+The 5V's of Big Data by IBM :
+-Volume : Processing increasing huge data
+-Variety : Processing different types of data
+-Velocity : Data is being generated in alarming rate
+-Value : Finding correct meaning out of data
+-Veracity : Sparscity of data or Data whic is not true always or missing data or Uncertainity and inconsistencies in the data
+
+HDFS block size is 128MB Hadoop 2.x and it was 64MB in Hadoop 1.x.
+
+MapReduce is a programming framework that allows us to perform distributed and parallel processing on large data sets in a
+distributed environment.
+
+Sqoop is for Structured Data
+Flume if for Unstructured and Semi-Structured Data
+
+Speculative execution happens in Hadoop 2.x Durga Soft part 2 hdfs
+HDFS Federation concept in 2.x architecture, i.e multiple name node and name spaces concept
+
+==========================================================================================================================================================
+
+Comparison between Hadoop with other data processing systems:
+- Hadoop is junior when it coms to parallel processing, infact parallel processing was there in industry years back Hadoop coming into picture.
+- But, in what way Hadoop is great is what matters.
+
+1. Types of Data Processing Systems [Servers]:
+	- Non-Distributed systems:
+		Old (<2000) oracle,db2,sql server etc.,
+		Vertical scaling model is used i.e. By adding components(RAM/HardDisk) or replacing processor on a single machine.
+		But here always 1 CPU acts as server.
+		Problem: Highlevel scaling is not possible (Ex: We can't increase our laptop RAM capacity to 500GB, because it is not available in market/ not
+		compatible).
+		These non-distributed systems are not recommended for Big Data.
+	- Distributed systems (Recommended for Big Data):
+		Ex: New(>=2000) Oracle,db2,sqlserver,mysql,teradata,hadoop,netezza,vertica,storm...
+		A cluster acts as a server (cluster: A group of network of CPUs acts as a server)
+		Each CPU in the cluster is called as 'Node'
+		We have two types of Nodes:
+			One Master Nodes
+			N number of Slave Nodes
+		Slave Nodes:
+			Data Storage
+			Data Processing
+			Data is always stored in Slave Nodes and when query is ran then Job is also executed by Slave machine.
+			Slave stores and executes the Data
+		Master Node has additional responsibility,
+			Work assignments(Work can be storage or process)
+			Load Balancing
+			Fault Tolerance
+			Health Monitoring
+			Decision Maker
+		Sacling style : Horizontal Scaling(i.e. by adding slave nodes to the same cluster, scale up is done.)
+		High level scaling is possible.
+		To have 100 TB storage, we can keep 100 slaves to the cluster, with 1TB storage of each slave easy-peasy.
+			
+2. Types of Distributed Systems:
+	-Non-Parallel systems:
+		Ex: Oracle,db2,sqlserver,mysql,sybase...
+		Job execution is single slave
+		In RDBMS, we insert data into tables, table is a logical structure, which does not hold any data, table's backend storage is 
+		'Table Space', as per operating system, each table space is a file.The file type of above DataBases is 'Non-DFS'.
+		*******Here even though the Hardware is distributed but the File is non distributed type(Non-DFS)
+		Means, Table's backend file is kept into single slave, so when job(query) is submitted, entire query process(execution) is done
+		by single slave. In this momemnt, remaining slaves are free, they cannot participate in execution bcoz they don't have given table's data.
+		If table has more than terabyte data, the processing time will be more than a day, henec these non parallel systems not recommended for Big Data.
+	-Parallel systems:
+		Ex: Teradata,netezza,vertica,hadoop and NoSQL like storm,kafka...
+		The file type of above systems is DFS.
+		Here both the hardware and data is Distributed yayy!!!
+		DFS behaviour:
+			File is divided into blocks, blocks are distributed across multiple slave machines
+		When job is submitted, multi slaves will be parallely processing the data.
+		Advantage: High Speed.
+		Ex: One Biggest task executed by Oracle(non-parallel) in 10hour, if same data is distributed into 100 slaves and if 100 slaves parallely execute it,
+		the time will be 6minutes
+		Parallel distributed systems are recommended for BigData.
+
+3. Types of Parallel systems:
+	-Shared Architecture:
+		Non-Localised system >  A system which fetches data from other systems/servers/networks and then processing is called 'Non-Localised' and it's slower in general
+		Ex: ORACLE OPS (Oracle Cluster + OPS Server + SAN)
+		Basically parallelism is not available, but it's present in ORACLE OPS which works on SAN technique too complicated and failure model.
+		Consider there is,
+			1master + Slave1 + Slave2 + Slave3.....
+			To acheive parallelism they avoided storage in slave and kept the data in SAN
+			Hence, only processing happens in Slave.
+			SAN feature is that it can provide unlimited Storage, but it can't process the data.
+			OPS(oracle Parallel Server): Will act as intermediate b/w SAN and Cluster(master+Slave), OPS stores the metadata (mapping b/w oracle table and SAN file)
+			Query > Master(Provides Data that 4 slaves are free) > OPS(Tells SAN to divide file into 4 partition and also provides IP address of Slave) > 
+			SAN(will partition and sends data to 4 slaves) > SLave will carry out processing.
+			Problem:
+				Data transfer will happen across multiple networks which makes the processing slower 
+				Imagine if from 100 diff clients 100 diff queries are submitted, lot of network traffic is created
+				If any processing failed then enire process needs to be restarted, not good fault tolerance
+				Data transfer from SAN to Cluster is always slow (similar to Laptop to Pendrive), hence bandwidth incompatibility
+			Henec above process is called Shared Archtecture (All data is available in some common storage pool called as SAN and remaining slaves are sharing data of SAN)
+	-Shared Nothing Architecture:
+		Ex: HADOOP, Teradata, Netezza, Vertica
+		Localised system: A system which processes its own disk data is called 'Localised Processing'
+		Hadoop > HDFS > File type:dfs
+		File is divided into blocks
+		HDFS block size = 128mb
+				= 64mb (1.x Version)
+		1 master + Slave1 (block1 data - Task1) + Slave2 (block2 data - Task2) + Slave3 + ....
+		Here the file 1 is moved to Hadoop, that is divided into two blocks as block1 and block2, distributed into Slave1 and 2.
+		When job is submitted, the job is divided into two tasks as task1 and task2.
+		task 1 is assigned to slave1 for block1 and task2 is assigned to slave2 for block2.
+		These two tasks are parallely executed by slave 1 and slave2.
+		Here each slave is processing it's own disk data and a slave data is not shared by other slaves.
+		This overcomes the problems of Shared Architecture.
+
+4. Types of Shared nothing architecture:
+	-Record distributed:
+		Ex: Kafka,Storm,Teradata
+		For online streaming systems, record distributed model is good
+		Teradata is generally for Batch Processing and record ditributed model is not good batch.
+		When data is interms of PB teradata will fail.
+		If Name Node keeps track of each record it is will be overloaded, generally not good
+	-Block distributed
+		Ex: Hadoop,Netezza,Spark
+		What we call it as blocks in hadoop it is partitions in Spark
+		Here blocks are distributed, best fit for Big data batch processing.
+
+5. Types:
+	-Netezza:
+		Consider there are three blocks and job is distributed to three slaves, all three will be parallely processing, from slaves we get separate results
+		These independent result will be collected by Master, Master will collect them aggregate them and finally merge them.
+		Generally Master will be busy with other works like load balancing,fault tolerance etc...it is kind of overloading the Master node.
+		Imagine if there are 10000 slave nodes.
+	-Hadoop and Spark:
+		Here the results generated by different slaves are aggregared and merged by a different slave(acts as kind of Team Lead slave).
+		Hence Master doesn't have consolidating of task.
+		That to in Hadoop we have two different Master (Storage and Processing)
+		
+============================================================================================================================================================
+
+Job Tracker:
+--------------
+
+1. Key Responsibilities:
+	-Work Assignment
+	-Load Balancing
+	-Fault Tolerance
+	-Health Monitoring
+
+(i) Load Balancing:
+	-Load Balancing Before work Assignment.
+		Selection process of task trackers to execute the task is called load balancing before work assignment.
+		Consider to excute a query in block1 and if block1is in blocks 1,3 and 5 slaves(i.e. the replicas) which slaves to choose the below is the priority sequence
+			Priority sequence:
+				-High Hardware Config
+				-Nearest Location
+				-Free Slave (Ideal Slave with no work)
+				-If all slaves are free then it will choose high healthy machine via health throughput ratio
+				-If all slaves are healthy, then it will go for random selection 
+				-If all slaves are busy then it will choose the less busy(it will calculate which is more or less busy through the heart beats)
+					Consider Master is expecting 1 heart beat every 3 second from 7 slaves and in a minute depending on business the count received from
+					every slaves vary based on this the task can be assigned.
+					***If any slave doesn't send any heart beat then that slave is completely down then system undertands that slave is out of order
+					and reassign that task to some other slave > Fault Tolerance
+				-If all slaves are highly busy, then Job Tracker will trigger the Non-Localised processing.
+				Ex: Task 1 is for block1 and block 1 is in Slave 1,3 and 5
+				    Then Task 1 will order the free slave 7 to fetch data from slave 5 and process it.
+				***Note: In any other FrameWork the task will be kept in waiting, but it is very less chance that job will be kept in waiting.
+	-Load Balancing during job execution(work).
+		-Job Speculation point of view:
+			ex: HDFS file is File1
+			    It has 3 blocks, 3 replicas of each, total no. of blocks = 9
+			    No. of unique blocks = 3
+				B1 > Slave1,S2,S3
+				B2 > Slave2,S4,S6
+				B3 > Slave7,S8,S9
+			    Therefore, no. of unique tasks = 3 Mapper tasks as m1,m2 and m3
+				Map1 is assigned to S3
+				Map2 is assigned to S4
+				Mpa3 is assigned to s9
+			   Note: The tasks are assigned based on the priority sequence listed above.
+				 In all the slaves work might get started at same time but there is no guarantee it will be completed on time.
+				 Consider if S9 is very slow / executed only 0.4% of work then immediately task will be triggered on S8 without terminating on 
+				 S9, once after S8 is completed the task then S8 and S9 are compared, if S9 is kind of lagging then S9 will be kept block listed.
+				 S9 Block list will be removed if Hadoop Admin does maintenance work of it or when Server is restarted.
+			   No job is assigned to the block listed slaves, this is called Job Speculation, the job which uses this speculation feature is called 
+			   speculative job.
+	-Estimation of task completion by application(Job Tracker will do here):
+		This is not special feature, this was also present in older systems.
+		It will check for Block 1 which all machines(3 machines in total based on replicas) can complete the task quickly, then it will check the priority, later
+		assign the task to it.
+=====================================================================================================================================================================================
+
+Secondary Name Node:
+-------------------
+-Name Node (Master of Storage(hdfs))
+	DataNode is the Slave
+	One more component assisting NameNode is Secondary Name Node(Acts as BackUp), SNN is not Master or Slave
+-Job Tracker (Master of Processing(MapReduce))
+	TaskTracker is the Slave
+-Until Hadoop2.x came into existence Mapreduce was only processer.
+
+What is the problem if SNN is not existed??
+
+NN maintains following information:
+	-MetaData > File block mapping addresses 
+		ex: File 1 has three blocks,
+			file1 - block1 - replica1 - Slave 1
+			f1 - b1 - r2 - Slave 2
+			f1 - b1 - r3 - Slave 3
+		The above metadata is stored in FS Image file of namenode.
+	-Physical addresses of slaves (IP Address)
+	-Space availability at each node that is DataNode
+	-HDFS Configuration i.e. block size,replica factor...
+	-EDit Log >  
+		All change activities of the file system will be recorded into edit log as seen in the Note below
+		*****The first entry of file details will be saved to Edit log.
+
+Note: The Hadoop purpose is write once and read many times, that means no updates and no delete(records)
+      Then where is the chance for change activities of file system????purpose of Edit Log??
+      Point to note here is it is the log for change of file block addressess in the following situations,
+		-When block size increased or decreased >  
+		 F1 has 2 blocks with 64mb size of eavh with 3 replicas if block size increased to 128mb then 6 blocks 
+		 reduced to 3 blocks so address needs to be updated.
+		 F2 has 2 blocks with 128mb with 3 replicas now if block size decreased to 64mb total replicas will be
+		 2*2*3 = 12 blocks, again file block addressess are changed.
+		-Replica factor may be required to be increased to 6/file when dealing with huge file spread across 400 slaves etc or when decreased to 2/file
+		 then the ip addressess will change so needs to updated in edit log
+		-When a slave node is decommissioned > It's kind of suspending for maintenance or can be for any other work
+			Then no task of storage or processing will be assigned and existing data will be moved to another slave
+			Again the adressess of the file block will be updated or changed.
+			This block will be having some data for sure then those data will be moved or copied to some other slave
+
+-When for the first time a file is saved into HDFS, the complete information of the file such as
+			TimeStamp
+			Client Infomation
+			FileName
+			BlockSize
+			Replica
+			DataNode address....Will be recorded in edit log(ex: F1)
+-Then file block addressess will be recorded into FS Image(metadata)...
+
+******Note: The complete info of the file will be in EditLog and only the file block addressess (block,replica and slave) details will be in FS Image.
+
+-Any changes done to file as mentioned earlier will only be recorded to EditLog alone and not FS image(meta data).
+	NN is not avail of latest file system information from FSImage file.
+
+-When does Edit log details of file block changes is updated in FS Image?
+	-When server is restarted the deatils are updtaed to FS Image
+	-Problems:
+		1. When job is submitted on some file ex: File1, this req goes to job tracker. Job tracker has to req metadata of input file to NameNode
+		   But there is no guarantee that file block address or metadata is latest hence contacts edit log to get updates from previous checkpoint.
+		   If previous checkpoint is at 4AM and now time is 6AM then NN has to read all edit log data from 4AM and 6AM and has to construct latest 
+		   meta information of input file and submits to job tracker, if data generated during 4 to 6AM is small then okay if not this will create
+		   high latency
+		2. When server is stopped and restarted NameNode will read all data of editlog from previous checkpoint to end of editlog and identifies file
+		   system changes and updates into FSImage. Consider If gap between server stop and restart is 1 day and data generated would be 1TB for NN to scan 
+		   it might take hours.
+		******Slaves can be distributed but NN is always single machine and needs to scan TB's of data post restarted and obvious it takes time.
+		Note: If we take production servers they won't shut down on daily basis generally it will be monthly once or rarely weekly basis.
+		      Just for one day itself it is 1TB, if it is for entire month 30TB and 30TB can't be stored by single machine and not possible if we use
+		      SAN as well. Next thing 30TB scanning & updating will take lot of time.
+		Ex: Consider 2000 node cluster
+		    Per day log volume = 1TB
+		    If restarting of server strategy is weekly once
+		    When server is restarted, NN has to scan 7TB log data and update into FSImage which will cause hours ~7hours
+		    To overcome above faced problems of NameNode SNN is used,
+			-To help NN to speedup restarting time SNN is used.
+			-Acts as backup node to filesystem(metadata)
+
+Secondary Name Node:
+--------------------
+-When SNN service is started the first activity is to take FS Image snapshot (metadata) and keeps redaing edit log events and updating into snapshot,
+ after given periodic interval of time(consider 0.5hr), the SNN will update the latest filesystem information into FS Image(metadata) of NameNode.
+-Once updated, NN has latest file system information.Then checkpoint is modified to current state of edit log.
+Ex: If server started at 6AM.
+    If SNN's interval of updating is 30mins
+    When server restarted at 9:40PM, then NN will be missing only 10min worth of data easy-peasy :)
+-How SNN acts as Backup??
+	Suppose when NN is down by 9:45, admin will replace hardware, install basic software of NN, but still new NN does not have file system info.
+	This info is already available with SNN FSImage snapshot, SNN will update this to New NN. Here, SNN is acting as backup node of file system infomation.
+
+==========================================================================================================================================================================
+
+Hadoop Version 2.x:
+--------------------
+====================
+
+Let's see the changes incorporated into HDFS:
+	- Multiple name nodes can be engaged into cluster as NN1 and NN2 etc..(Atleast 2 Passive NN and 1 active NN is maintained in Production) and SNN is also present.
+		It was 1 NameNode and SNN, but SNN is not a hot backup to NN in Hadoop 1.x
+	- By default 1 NN will be active and remaining nodes are passive (Not deactivated, it's doze/sleep mode, it's still working, doesn't involve in decision making
+	  , or interact with DN etc stuff) instead whatever data is generated in NN1 a replica will be copied to passive NNs.
+	- Whenever NN1 is down NN2 will activated, heart beat communication happens b/w active and passive NNs, if there is a miss in heart beat from active to passive,
+	  then the passive NN will get activated.
+	-Metadata backup is provided by SNN as usual
+
+High avauilability is added.
+----------------------------
+Processing:
+	From Hadoop 2, new arch introduced for processing.
+YARN (Yet Another Resource Negotiator): It is a replacement of Old Arch (Job Tracker + Task Tracker)
+	-Improves performance, since work load is more distributed
+YARN Components:
+----------------
+- Resource Manager
+- Application Manager
+- Resources Scheduler
+- Job History Server
+- Application Master is diff Application Manager
+- Node Manager
+- Container
+
+-Resource Manager, Application Manager and Resource Scheduler ---> All these runs at Master level
+-Job History Server ---> Keeps track of job history
+-Application Master, Node Manager and Container ---> Runs at slave level
+--------------------------------------------------------------------------------------------------------
+
+Resource Manager > It is the master of entire YARN and it is kind of dummy below two components take care the stuffs
+It has two sub components:
+	-App Manager
+	-Resource Scheduler
+
+Node Manager > Is responsible to execute the tasks, to stop / start containers.
+		Containers > Is set of hardware components [Req Hard Ware capacity to execute task]
+			container1 ---> 4GB + 2Cores
+			container2 ---> 8GB + 4Cores
+Application Master > It manages node managers and containers of a specific job.
+		     Runs at one of the slave machine.
+		     For each separate job, one application master will be engaged.(if 100 jobs then 100 diff Application Masters).
+		     Earlier if there was only one Job Tracker which had to take of entire Jobs.
+		     Avg no. of tasks for each job is 10.
+		     Then if there are 10 jobs then 10*10 = 100 tasks, in hadoop 1.x all these job was handled by Job Tracker.
+		     But, in YARN these 100 tasks will be managed by 10 Application Master, each Application Master managing 10 tasks
+==========================================================================================================================================
+High availability available in Hadoop 2 for both Storage and Processing:
+-NN1 and NN2 ---> Because of multiple NNs storage has high availability.
+-Even in Hadoop 2 Job Tracker is available but it is deprecated. If we want we can still use it, but only one JT is available.
+-In YARN, we have two things Resource Manager and HARM (High Availability Resouce Manager or RM2 - This is passive), HARM similar to passive NN this also keeps
+ replica of activities done by Resource Manager.
+-From Hadoop 2.x onwards zero downtime server is acheived.
+===============================================================================================================================================
+Flow:
+
+-Client submits job by using command below, 
+ YARN Jar ......Req goes to RM	
+-RM will handover the responsibility of job execution to App Manager
+-App Manager will fetch MetaData of input file from NN
+	f1 - b1 - 1,3,5
+	f2 - b2 - 8,10,12
+2 blocks with 6 replicas
+-App Manager will identify one optimized closest slave node to all other slaves(in which req blocks are available) ex: Slave 6
+-AppMgr will order Node Manager of slave 6 to start the AppMstr	and handover the job responsibility to AppMstr
+ AppMstr acts as a PrjectManager at Job level of particular job.
+-AppMstr will divide job into two tasks 
+-AppMstr selects node managers(slave) for each task.
+	ex: Task1 ---> NodeManager5 
+	    Task2 ---> NodeManager8
+-App Mstr will estimate container capacity under each node manager.
+-App Mstr will send the estimated proposal for no of containers to Resource Scheduler.
+-Reource container has authorities to modify the proposed estimate or directly approve it.
+-Once containers are sanctioned, AppMstr will order selected NodeManagers to start containers.
+	ex: container1 ---> 4GB + 2Cores ----> NM5
+	    container2 ---> 8GB + 4Cores ----. NM8
+-NM, will start their containers and provide ack to AppMstr
+-AppMstr informs to App Manager
+-After approval of AppMngr, AppMstr will order NM to execute (initiate and execute) their tasks.
+====================================================================================================
+Look into Fault Tolerance If Possible
+-

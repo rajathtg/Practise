@@ -1,0 +1,181 @@
+-Let's start spark-shell, if we start spark-shell directly like usual it provides just one thread.
+-But for streaming we need multiple threads i.e, one for continuous streaming and it will buffer it in the
+ interval of micro batching period. Later it will transfer this buffered micro batch events into spark core
+ and final aggregations or transformations are performed by Spark core.
+-Hence, if in normal process it releases only one thread it can only collect the events and can't do any other
+ tasks, therfore minimum we require two threads.If we have two sources then 2+1 is needed.
+-Thumb rule is minimum number threads can be calculated like number of sources + 1.
+
+-Hence let's start spark shell with multiple threads.
+[root@quickstart kafka_2.11-0.10.2.1]# spark-shell --master local[2]
+In the result we can see this,
+Spark context available as sc (master = local[2], app id = local-1583040880576).
+
+-We all know in shell by default spark context is available, since we're working spark streaming we got to create
+ the streaming context object.
+*****Note: Even we can use IDE, then accordingly we need to import stuffs and all.
+Let us import below related imports.
+
+scala> import org.apache.spark._
+import org.apache.spark._
+
+scala> import org.apache.spark.streaming._
+import org.apache.spark.streaming._
+
+scala> import org.apache.spark.streaming.StreamingContext._
+import org.apache.spark.streaming.StreamingContext._
+
+-Let's create streaming context object.
+scala> val ssc = new StreamingContext(sc, Seconds(10))
+ssc: org.apache.spark.streaming.StreamingContext = org.apache.spark.streaming.StreamingContext@73534675
+
+-The inputs can be static file or a network port or kafka topic
+-Let's create root DSStreams from socket stream, it means it is collecting data from source
+
+scala> val lines = ssc.socketTextStream("localhost",9999)
+lines: org.apache.spark.streaming.dstream.ReceiverInputDStream[String] = org.apache.spark.streaming.dstream.SocketInputDStream@6ab80ea
+
+-Consider from the source we're receiving chat messages and my task is to do a word count.
+scala> val words = lines.flatMap(x => x.split(" "))
+words: org.apache.spark.streaming.dstream.DStream[String] = org.apache.spark.streaming.dstream.FlatMappedDStream@65d5de1a
+
+-To perform aggregation we need key value pair, only then we can apply reduce by and other stuff.
+scala> val pair = words.map(x => (x,1))
+pair: org.apache.spark.streaming.dstream.DStream[(String, Int)] = org.apache.spark.streaming.dstream.MappedDStream@720f29f0
+
+scala> val res = pair.reduceByKey(_+_)
+res: org.apache.spark.streaming.dstream.DStream[(String, Int)] = org.apache.spark.streaming.dstream.ShuffledDStream@42c5d861
+
+scala> res.print()
+
+scala> ssc.start
+
+ssc.start is executed the exection will start from root in form of in-memory or DAG, all this transformation will be done by 
+spark core.
+Mainly streaming has two things to do keep collecting and buffer it for given micro batch period cool alva.
+
+-Let's start the port fro which the streaming wants to get the data.
+
+[cloudera@quickstart ~]$ nc -lk 9999
+hi
+hi
+hu
+hi hi hi hi
+hello
+hi
+hu
+hu
+hu
+hi hi
+
+-Meanwhile let's see in streaming:
+Yay!!!!
+Time: 1583042970000 ms
+-------------------------------------------
+(hello,1)
+(hu,3)
+(hi,5)
+
+20/02/29 22:09:30 WARN storage.BlockManager: Block input-0-1583042970400 replicated to only 0 peer(s) instead of 1 peers
+20/02/29 22:09:33 WARN storage.BlockManager: Block input-0-1583042973200 replicated to only 0 peer(s) instead of 1 peers
+-------------------------------------------
+Time: 1583042980000 ms
+-------------------------------------------
+(hu,1)
+(hi,2)
+
+-Here spark streaming taking the input and giving ten seconds worth of results in the console.
+ Let's learn on how to save this or integrate this with other networks or write into kafka topic.
+==========================================================================================================================
+
+Spark : Spark streaming and Kafka Integration steps:
+	-Start zookeeper server
+	-Start kafka brokers(one or more)
+	-Create topic
+	-Start console producer(to write message)
+	-Start console consumer(to test, whether message is received)
+	-Create spark streaming context, which streams from kafka topic
+	-Perform transformations or aggregations
+	-Output operation : which will direct the results to some source or on console
+
+Note: Even spark streaming can also collect data from sources, but if they're in hundreds then it is not ef
+      -fcient, hence there is need of Kafka here.
+      It's efficient only for micro batching.
+
+-In the above integration at the beginning the role of spark streaming is consumer and then perform micro batch aggregations
+ and then re-write into Kafka topics at this point it will act as producer.
+-Zookeeper and Server(Broker) is started.
+-Started Spark shell as well
+-We already 3 topics
+-Let's take into account mytopic
+-Let's enter the messages by starting producer
+-Let's create one more topic results
+[root@quickstart kafka]# bin/kafka-topics.sh --create --zookeeper localhost:2182 --replication-factor 1 --partitions 1 --topic results
+Created topic "results".
+
+-Here one producer is writing into one topic, spark has to stream from mytopic perform micro batch results write into results topic.
+-To check the output of results topic let's start the console consumer.
+[root@quickstart kafka]# bin/kafka-console-consumer.sh --zookeeper localhost:2182 --topic results --from-beginning
+Using the ConsoleConsumer with old consumer is deprecated and will be removed in a future major release. Consider using the new consumer by passing [bootstrap-server] instead of [zookeeper].
+
+To stream from kafka to spark we need special libraries, kafka utils:
+
+scala> import org.apache.spark.streaming.StreamingContext
+import org.apache.spark.streaming.StreamingContext
+
+scala> import org.apache.spark.streaming.Seconds
+import org.apache.spark.streaming.Seconds
+
+scala> val ssc = new StreamingContext(sc, Seconds(5))
+ssc: org.apache.spark.streaming.StreamingContext = org.apache.spark.streaming.StreamingContext@4ea8832c
+
+We have engaged micro batch with 5 seconds.
+
+scala> import org.apache.spark.streaming.kafka.KafkaUtils
+import org.apache.spark.streaming.kafka.KafkaUtils
+
+CreateStream has 4 arguments:
+-ssc > Streaming Context object
+-LocalHost : 2182 > For spark Stream to connect to Zookeeper, later zookeeper goes and gets required input to spark stream
+-spark-streaming-consumer-group > Any consumer group name we can give.
+-mytopic => 5 > The topic from which data is fetched or streamed, 5 indicates the number of consumer threads.
+		Consider if my topic has 5 partitions, 5 diff partitions into 5 diff brokers.
+		Here threads equals to number of partitions, more the threads quicker is the data reading because of parallelism
+-In our previous example what was our root ds stream lines, here it is kafkastream.
+	For root dsstream the source was network socket, here it is kafka topic
+	
+scala> val kafkaStream = KafkaUtils.createStream(ssc,"localhost:2182","spark-streaming-consumer-group",Map("mytopic" -> 5))
+kafkaStream: org.apache.spark.streaming.dstream.ReceiverInputDStream[(String, String)] = org.apache.spark.streaming.kafka.KafkaInputDStream@49dce561
+
+scala> val lines = kafkaStream.map(x=>x._2.toUpperCase)
+lines: org.apache.spark.streaming.dstream.DStream[String] = org.apache.spark.streaming.dstream.MappedDStream@749aa36f
+
+scala> val words = lines.flatMap(x => x.split(" "))
+words: org.apache.spark.streaming.dstream.DStream[String] = org.apache.spark.streaming.dstream.FlatMappedDStream@17d1b2a0
+
+scala> val pair = words.map(x=>(x, 1))
+pair: org.apache.spark.streaming.dstream.DStream[(String, Int)] = org.apache.spark.streaming.dstream.MappedDStream@2ce1d507
+
+scala> val res = pair.reduceByKey(_+_)
+res: org.apache.spark.streaming.dstream.DStream[(String, Int)] = org.apache.spark.streaming.dstream.ShuffledDStream@7bb5f1b5
+
+Till now we're done with two steps streaming context and DS Stream flow(with root taking result from kafka)
+
+if we just type
+res.print() > Results are printed on Console
+res to Save as TextFile > Results are saved into HDFS
+But here we want to save this back to Kafka
+
+scala> import org.apache.kafka.clients.producer.ProducerConfig
+import org.apache.kafka.clients.producer.ProducerConfig
+
+scala> import java.util.HashMap
+import java.util.HashMap
+
+scala> import org.apache.kafka.clients.producer.KafkaProducer
+import org.apache.kafka.clients.producer.KafkaProducer
+
+scala> import org.apache.kafka.clients.producer.ProducerRecord
+import org.apache.kafka.clients.producer.ProducerRecord
+
+props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,"org.apache.kafka.common.serialization.StringSerializer")

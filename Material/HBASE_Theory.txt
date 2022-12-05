@@ -1,0 +1,153 @@
+HBASE Introduction:
+1.It's kind of column oriented DB from hadoop stack on hadoop or HDFS cluster to maintain and store the huge amount of data.
+2.Performs things like random access manner.
+3.It's NO-SQL DB from hadoop stacg or stack.
+4.No-SQL > Not only SQL and it's used to store large amount of data, but it can't process it.
+5.Hadoop is also used for storing along with that it can also process it.
+6.Popular NO-SQL DB are:
+	a.Dynamo  > Maintained by Amazon, It process data as key value pairs.
+	b.BigTable > By Google and here the purpose is also to store.
+	c.Cassandra,TeraStore
+	d.FlockDB > Used by twitter and it's graph database.
+	e.MongoDB > Document storage type.
+7.We have many db to process like above,but to process we need something i.e Hadoop.
+8.So, we thought of something to have in house DB that led path to HBASE, which is similar to our google's BigTable.
+9.HBASE maintain's data as column oriented structure.
+10.Uses of NO-SQL DBs:
+1.Diff b/w HBASE & RDBMS:
+RDBMS > 
+Maintains data interms of ROW Based structure or ROW oriented()
+when we perform OLAP or analytical, these gives less performance
+OLTP RDBMS gives better performance
+ID  Name Marks
+101 a	 90
+102 b	 91
+103 c	 92
+Distribution or sharing of data is not of ease
+No Horizontal scalability
+Here also random access possible
+Doesn't give better performance when it comes to sparse content(Null data)
+Only structured data
+
+HBASE> 
+Column oriented and gives better performance for OLAP  or analytical operations
+
+ID	101 102 103
+Name	a   b	c
+Marks	90  91	92
+
+Distribution, sharing and configuring of data is very simple
+High Scalability horizontally
+random access is possible, but not possible on HDFS because we need to retrieve in terms of sequential manner
+we can use this for semistructured,unstructured data
+When we're dealing sparse content(Null data) gives better performance
+
+11.Main purpose of HBASE here is to perform random access particularly to apply OLAP operations.
+12.HDFS maintaince high latency issue(The state of exisiting but not yet being developed) and also performs or best suites for batch processing
+13.HBASE maintaince random access and takes low latency when retrieving large amount of data.
+
+
+HBASE is a distributed No_SQL DB from Hadoop stack
+Maintaince sparse(scattred or thinly distributed) & semistructed content as much possible for distribution of a huge of amount data to perform multi dimensional operation.
+
+=========================================================================================================================================================================================
+
+Hive-HBASE Integration:
+=======================
+
+Let's create a table in Hive:
+
+1. create table hivetab1(k int, v int); = If this command is submitted then this table is created under hive default path.
+2. Let's go an extra mile and integrate with HBase
+	create table hivetab1(k int, v int) stored by 'org.apache.hadoop.hive.hbase.HBaseStorageHandler' with serdeproperties
+	("hbase.columns.mapping"=":key,x:a) = k is mapped with row key of hbase :key and v is mapped to a and a has column family x.
+3. The hivetab1 table is created both under hbase and hive.
+4. enter list in hbase shell = hivetab1 table will be created.
+5. But I need hive and hbase table needs to be different then follow below steps:
+	create table hive1(k int,v int) stored by 'org.apache.hadoop.hive.hbase.HBaseStorageHandler' with serdeproperties
+	("hbase.columns.mapping"=":key,x:a") tblproperties("hbase.table.name"="hbtab1");
+****Note: If needed we can have two column families in above statement, just add additional columns for table hive1 and 
+    parallely map it to new family ex: d:loc,d:sal etc for habse table hbtab1.
+6. put 'hbtab1',101,'x:a',100
+   put 'hbtab1',102,'x:a',200
+   put 'hbtab1',103,'x:a',300
+   put 'hbtab1',104,'x:a',400
+   put 'hbtab1',105,'x:a',500
+7.scan 'hbtab1'
+ROW		COLUMN+CELL
+101		column=x:a,timestamp=..........,value=100
+102		column=x:a,timestamp=..........,value=200
+103		column=x:a,timestamp=..........,value=300
+104		column=x:a,timestamp=..........,value=400
+105		column=x:a,timestamp=..........,value=500
+8. Since Hive-HBase intefration has happened, now in hive let's execute below command,
+select * from hive1;
+101	100
+102	200
+103	300
+104	400
+105	500
+9. We can apply all required aggregations.
+select * from hive1 where v>=300;
+103	300
+104	400
+105	500
+10. get 'hbtab1',103,'x:a'
+COLUMN		CELL
+x:a		timestamp=........., value=300
+******Note: Perform row level operations in HBase and Batch level process in Hive.
+	    Hive can access even mongodb kind of databases.
+10. select sum(v) from hive1;
+	1400
+11.scan 'hemp'
+ROW		COLUMN+CELL
+101		column=e:name, timestamp=....., value=Ravi
+101		column=e:age, timestamp=....., value=30
+101		column=e:sal, timestamp=....., value=30000
+101		column=e:sex, timestamp=....., value=m
+101		column=d:dno, timestamp=....., value=11
+101		column=d:name, timestamp=....., value=marketing
+101		column=d:loc, timestamp=....., value=hyd
+12. put 'hemp',102,'e:name','Amala'
+    put 'hemp',102,'d:name','hr'
+13. scan 'hemp'
+ROW		COLUMN+CELL
+101		column=e:name, timestamp=....., value=Ravi
+101		column=e:age, timestamp=....., value=30
+101		column=e:sal, timestamp=....., value=30000
+101		column=e:sex, timestamp=....., value=m
+101		column=d:dno, timestamp=....., value=11
+101		column=d:name, timestamp=....., value=marketing
+101		column=d:loc, timestamp=....., value=hyd
+102		column=e:name, timestamp=....., value=Amala
+102		column=d:name, timestamp=....., value=hr
+14.To connect to existing table in HBase, then the hive table needs to be a external table*********.
+create external table hive2(id int,name string,age int,sal int,qual string,dno int,dname string,
+loc string) stored by 'org.apache.hadoop.hive.hbase.HBaseStorageHandler'with serdeproperties("hbase.columns.
+mapping"=":key,e:name,e:age,e:sal,e:qual,d:dno,d:name,d:loc") tblproperties("hbase.table.name"="hemp");
+15.select * from hive2;
+101	Ravi Kumar	30	30000	NULL	11	Marketing	hyd
+102	Amala		NULL	NULL	NULL	NULL	Hr		NULL
+*****The fields which are not available will show as null here
+15. put 'hemp',102,'e:sal',50000
+16. select * from hive2;
+101	Ravi Kumar	30	30000	NULL	11	Marketing	hyd
+102	Amala		NULL	50000	NULL	NULL	Hr		NULL
+17. insert overwrite table hive2 select id,name,age,sal+(sal*10/100),qual,dno,dname,loc from hive2;
+*****Note: The data resides in Hbase, hive fetch data from HBase perform aggregations and store back the result to HBase again.
+101	Ravi Kumar	30	33000	NULL	11	Marketing	hyd
+102	Amala		NULL	55000	NULL	NULL	Hr		NULL
+******Similarly we can do all the batch process from Hive.
+18. scan 'hemp'
+ROW		COLUMN+CELL
+101		column=e:name, timestamp=....., value=Ravi
+101		column=e:age, timestamp=....., value=30
+101		column=e:sal, timestamp=....., value=33000
+101		column=e:sex, timestamp=....., value=m
+101		column=d:dno, timestamp=....., value=11
+101		column=d:name, timestamp=....., value=marketing
+101		column=d:loc, timestamp=....., value=hyd
+102		column=e:name, timestamp=....., value=Amala
+102		column=d:name, timestamp=....., value=hr
+102		column=e:sal, timestamp=....., value=55000
+

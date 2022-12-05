@@ -1,0 +1,623 @@
+For more information go to www.scala-lang.org
+
+Scala became popular because Spark and Kafka framework is written in Scala
+-A general purpose programming language.
+-Aimed to implement common programming patterns in a concise,elegant, and type-safe way
+-Supports both object-oriented and functional programming styles, thus helping programmers to
+be more productive.
+-Publicly released in Jan 2004 on the JVM platform and a few months later on the .NET platform.
+
+Scala is statically Typed:
+-Statically typed language binds the type to a variable for its entire scope
+-Dynamically typed languages bind the type to the actual value referenced by a variable.
+
+Mixed Paradigm-OOP
+-Fully supports Object Oriented Programming.
+-Everything is an object in Scala.
+-Unlike Java, Scala does not have primitives.
+-Supports "static" class members through Singleton Object Concept
+-Improved support for OOP through Traits, similar to Ruby Modules.
+
+Mixed Paradigm - Functional Programming
+-Scala supports Functional Programming(FP)
+-"Pure" functional languages don't allow any mutable state, thereby avoiding the need for 
+synchronization on shared access to mutable state.
+-Scala supports this model with its Actors library, but it allows for both mutable and
+immutable variables.
+-Functions are "First-class" citizens in FP,means they can be assigned to variables,passed
+to other functions,etc.,just like other values.
+-In Scala everything is an object, functions are themselves objects in Scala.
+Scala also offers closures,similar to Python and Ruby.
+
+Why Scala?
+-Developers want more flexible languages to improve their productivity.
+-This resulted in evolution of scripting languages like Python,Ruby,Groovy,Clojure etc.
+-The optimization performed by today's JVM are extraordinary,allowing byte code to outperform
+natively compiled code in many cases.
+ Scala > scalac(compiler) > Bytecode > JVM > Any system (gives good performance)
+
+Scala in Other Frameworks:
+-Play-For Web Development
+-Spark-In-memory Processing
+-Akka-Actors Based Framework
+-Scalding-For Map/Reduce
+-Neo4j-Graph Database
+-Apache Kafka
+
+REPL:Read Evaluate Print Loop
+-Easiest way to get started with Scala,acts as an interactive shell interpreter
+-Even though it appears as interpreter, all typed code is converted to Bytecode
+and executed.
+-Invoked by typing Scala as shown below.
+
+To enter into REPL shell
+Just type "scala" in the terminal that is it.
+to know possible commands which can be used type ":help"
+
+Using the shell we can perform simple calculations such as 
+scala> 1*2+(3*2)/321
+res1: Int = 2
+
+scala> 1+2
+res2: Int = 3
+
+*************************************************************************************
+
+Declaring variables:
+-val > Using val we can declare immutable variable...it can't be changed
+-var > using var we can declare mutable variable...it can be changed
+
+scala> val x = 10.2
+x: Double = 10.2 (Here Scala makes Type inference when we don't mention int or double etc)
+hence it is statically typed language
+
+scala> val x : Int = 12
+x: Int = 12
+
+**************************************************************************************
+
+***Note : Scala REPL looks like a Scala interpreter but it's actually not, instead it's a compiler langauge, 
+internally code is converted to class file and executed.
+
+Scala does not supports primitives and wrapper classes.
+
+****************************************************************************************
+
+-In Java or C++ a code block is a list of statements in curly braces{}
+-In Scala, a {} block is a list of expressions, and result is also an expression
+****-The Value of a block is the value of the last expression of it i.e "b-a" / "a+b" in below example.
+
+scala> val x = {val a=10;val b=100;b-a}
+x: Int = 90
+
+without ; we can write as below.
+
+scala> val x = {
+     | val a = 100
+     | val b = 300
+     | a+b
+     | }
+x: Int = 400
+
+*********************************************************************************************************
+
+Lazy evaluation: For example there are 1 million numbers which are initialised, but we don't want to use all of them at
+the beginning we can use lazy evaluation to avoid use of memory space there, if we don't use lazy memory will be occupied by system
+to store those values and this creates un necessary burden to it. Only on demand it will be used yo yo Cool!!!.
+This could be used for loading huge files.
+
+***This concept is similar to PIG DAG concept
+
+-Lazy values are very useful for delaying costly initialisation instructions.
+-lazy values don't give error on initialisation whereas no lazy value do give error.
+
+scala> val x =List(100,200,300,400)
+x: List[Int] = List(100, 200, 300, 400)
+
+scala> lazy val x =List(100,200,300,400)
+x: List[Int] = <lazy>
+
+*****************************************************************************************************************
+
+Control Structures in Scala: If-else syntax
+
+-If-else syntax in Scala is same as Java or C++
+-In Scala, if-else has a value, of the expression following it
+semicolons are optional in Scala
+
+scala> var x=5
+x: Int = 5
+
+scala> val s=if(x>0&&x<6)1 else 0
+s: Int = 1
+
+scala> val s=if(x>0&&x<6)"positive" else 0
+s: Any = positive
+
+-Every expression in Scala has a type
+-First if statement has a type int
+-Second statement has a type Any.Type of a mixed expression is supertype
+of both the branches.
+
+*********************************************************************************
+
+Loop Concept:
+-Foreach is a function since Scala is a functional programming language.
+-Foreach prints objects mentioned created using collection seen below.
+-Foreach loop can be used for any collection.
+-In below ex string is a collection.
+
+scala> val str = "Test"
+str: String = Test
+
+scala> str.foreach(println) (it is case sensitive, not to use F in caps)
+T
+e
+s
+t
+
+scala> str.foreach(print) (without using new line)
+Test
+
+For Loop:
+syntax is > "for (arg <- collection) code
+
+scala> for (i <- 1 to 5) print(i)
+12345
+scala> for (i <- 1 to 5) println(i)
+1
+2
+3
+4
+5
+
+In the above ex <- is a operator used to assign numbers 1 to 5 to i and later it is printed.
+Note: In for loop count always increase and it never decreases, 
+ex: for (i<-5 to 1)print(i) > No output is generated
+Therefore,
+    scala> for(i<-5 to 1 by -1)println(i)
+5
+4
+3
+2
+1
+
+to print odd number:
+scala> for(i<-1 to 5 by 2)println(i)
+1
+3
+5
+
+-While traversing an array, following could be applied:
+scala> val in = "Hello World"
+in: String = Hello World
+
+scala> var sum = 0
+sum: Int = 0
+
+scala> for(i <- 0 until in.length) sum +=i
+
+scala> print(sum)
+55
+
+-Advanced for loop:
+we can have multiple generators in for loop
+
+scala> for(i<-1 to 3;j<-1 to 3)println(10*i+j)
+11
+12
+13
+21
+22
+23
+31
+32
+33
+
+scala> for(i<-1 to 3;j<-1 to 3)println(j)
+1
+2
+3
+1
+2
+3
+1
+2
+3
+
+scala> for(i<-1 to 3;j<-1 to 3)println(i)
+1
+1
+1
+2
+2
+2
+3
+3
+3
+
+scala> for(i<-1 to 3)println(i)
+1
+2
+3
+
+scala> for(j<-1 to 3)println(j)
+1
+2
+3
+
+Note: Below example of tuples
+scala> for(i<-1 to 3;j<-1 to 3)println(s"($i,$j)")
+(1,1)
+(1,2)
+(1,3)
+(2,1)
+(2,2)
+(2,3)
+(3,1)
+(3,2)
+(3,3)
+
+s"($i,$j)" here s is a string i and j is referred inside string and it can be done by using prefix $, then
+scala knows it is a variable which needs to be subsituted at run time and as a string it will subsituted.
+
+This also works as shown below, but we need to be more precised go for above option,
+scala> for(i<-1 to 3;j<-1 to 3)println(i,j)
+(1,1)
+(1,2)
+(1,3)
+(2,1)
+(2,2)
+(2,3)
+(3,1)
+(3,2)
+(3,3)
+
+Note:
+-Scala doesn't have for(initialize;test;update)syntax
+-Either you'll use a while loop or a statement like below
+for(i<-1 to 5)
+println(i)
+1
+2
+3
+4
+5
+
+or
+
+For loop with a gaurd condition (that is when for with an if inside)
+Better example, here we can see how efficient it is, than normal loops in c or JAVA
+scala> for(i <- 1 to 5;j <- 1 to 6 if i==j)
+
+********************************************************************************************************
+
+--While practicising we don't go for println instead we prefer yield and data gets stored in vector
+--In yield = the result of each for loop iteration is stored in a list(Vector)
+
+scala> for (i<- 1 to 20 if i % 2 == 0) yield(i)
+res24: scala.collection.immutable.IndexedSeq[Int] = Vector(2, 4, 6, 8, 10, 12, 14, 16, 18, 20)
+
+scala> val x = for (i<- 1 to 20 if i % 2 == 0) yield(i)
+x: scala.collection.immutable.IndexedSeq[Int] = Vector(2, 4, 6, 8, 10, 12, 14, 16, 18, 20)
+
+scala> x
+res25: scala.collection.immutable.IndexedSeq[Int] = Vector(2, 4, 6, 8, 10, 12, 14, 16, 18, 20)
+
+     | println(s"($i,$j)")
+(1,1)
+(2,2)
+(3,3)
+(4,4)
+(5,5)
+
+or scala> for (cust <- custList if cust.isActive())processing > live example
+
+********************************************************************************************************
+
+Let's learn Functions:
+
+standard syntax for function:
+
+def function_name(function params): return_type = {
+code..
+}
+
+ex:
+scala> def areaRect(l: Float,b: Float): Float = {
+     | l*b
+     | }
+areaRect: (l: Float, b: Float)Float
+
+scala> areaRect(45,55)
+res0: Float = 2475.0
+
+as discussed earlier last expression is return statement or output so l*b here
+
+If we don't want function to return anything we can mention unit, it acts like
+a void function as seen below 
+scala> def areaRect(l: Float,b: Float): Unit = {
+     | l*b
+     | }
+areaRect: (l: Float, b: Float)Unit
+
+scala> areaRect(45,55)
+
+*******************************************************************************************************************
+
+To check whether number is even or not,
+
+scala> def isEvenNumber(number: Int): Boolean = {
+     | number % 2 == 0
+     | }
+isEvenNumber: (number: Int)Boolean
+
+scala> isEvenNumber(100)
+res3: Boolean = true
+
+scala> isEvenNumber(101)
+res4: Boolean = false
+
+or if want to use if statement:
+
+def isEvenNumber(number: Int): Boolean = {
+if(number % 2 == 0) true
+else false
+}
+
+*****************************************************************************************
+
+To pass default arguments, similar to Telusko taught,
+
+scala> def areaRect(l: Int, b: Int = 10): Int = {l*b}
+areaRect: (l: Int, b: Int)Int
+
+scala> areaRect(10)
+res5: Int = 100
+
+here we define b value prior so if we just mention value for i that's enough
+
+******************************************************************************************
+
+Scala: Collections,
+
+-Scala has a rich library of collections, they are:
+--Array
+--Array Buffers
+--Maps
+--Tuples
+--Lists
+
+All above 5 are very important and we most probably use these in our programming
+
+*************************************************************************************************
+
+-Fixed Lenght Arrays:
+
+scala> val n = new Array[Int](10)
+n: Array[Int] = Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+
+scala> val s = new Array[String](10)
+s: Array[String] = Array(null, null, null, null, null, null, null, null, null, null)
+
+scala> val st = Array("Hello","World")
+st: Array[String] = Array(Hello, World)
+
+***Note: In Scala just like Java or C++ we can only store homogeneous objects in Array
+
+scala> val n = new Array[Int](10)
+n: Array[Int] = Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+
+scala> n(0)
+res10: Int = 0
+
+scala> n(0)=10
+
+scala> n(1)=24
+
+**********Imp thing to note since we have mentioned "val" how can we edit stuffs then, that is n = 10 0r 20
+it's breaking rule of immutability of Scala.
+Actually when we declare objects as val basically object reference becomes immutable and doesn't mean object becomes
+immutable, i.e n always points to new Array[Int](10)
+we can change only contents of array not it's physical term  
+
+scala> n
+res13: Array[Int] = Array(10, 24, 0, 0, 0, 0, 0, 0, 0, 0)
+
+scala> n.foreach(print)
+102400000000
+scala> n.foreach(println)
+10
+24
+0
+0
+0
+0
+0
+0
+0
+0
+
+similarly for string a swell,
+***Static way of declaring it is usually not good practise,
+scala> val arr = Array(1,2,3,4,5)
+arr: Array[Int] = Array(1, 2, 3, 4, 5)
+
+scala> arr.foreach(println)
+1
+2
+3
+4
+5
+
+**************************************************************************************************
+
+Array Buffer:
+
+Only difference between array and array buffer is that it as variable lenght
+
+scala> import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.ArrayBuffer
+
+scala> val a = ArrayBuffer[Int]()
+a: scala.collection.mutable.ArrayBuffer[Int] = ArrayBuffer()
+
+scala> a +=1
+res0: a.type = ArrayBuffer(1)
+
+or
+
+scala> a+= (2,3,5)
+res1: a.type = ArrayBuffer(1, 2, 3, 5)
+
+or
+
+scala> a++= Array(6,7,8)
+res3: a.type = ArrayBuffer(1, 2, 3, 5, 6, 7, 8)
+
+scala> a--= Array(7,8)
+res8: a.type = ArrayBuffer(1, 2, 3, 5, 6)
+
+***********************************************************************************
+
+-Common Operations:
+ a.trimEnd(2) > Removes last 2 elements
+ a.insert(2,9) > Adds element at 2nd index
+ a.insert(2,10,11,12) > Adds a list
+ a.remove(2) > Removes an element
+ a.remove(2,3) > Removes three elements from index 2
+ 
+-Traversing and Transformation:
+scala> for(el <-a)
+     | println(el)
+1
+2
+3
+5
+6
+
+scala> for(el<-a if el%2==0)yield(2*el)
+res10: scala.collection.mutable.ArrayBuffer[Int] = ArrayBuffer(4, 12)
+
+************************************************************************************
+
+Two way of printing:
+
+**Note : Better to use foreach in production, the most preffered one
+
+scala> a
+res11: scala.collection.mutable.ArrayBuffer[Int] = ArrayBuffer(1, 2, 3, 5, 6)
+
+scala> a.foreach(println)
+1
+2
+3
+5
+6
+
+scala> for(n<-a)println(n)
+1
+2
+3
+5
+6
+
+*********************************************************************************************
+
+To calculate sum,max and min
+
+scala> a.max
+res14: Int = 6
+
+scala> a.sum
+res15: Int = 17
+
+scala> a.min
+res16: Int = 1
+
+*************************************************************************************************
+
+-In Scala, a map is a collection of pair
+-A pair is a group of two values(Not necessarily of same type)
+
+scala> val mapping = Map("vishal"->"kumar","vijay"->"verma")
+mapping: scala.collection.immutable.Map[String,String] = Map(vishal -> kumar, vijay -> verma)
+
+scala> val mapping = scala.collection.mutable.Map("vishal"->"K","vijay"->"V")
+mapping: scala.collection.mutable.Map[String,String] = Map(vishal -> K, vijay -> V)
+
+scala> val x = mapping("vishal")
+x: String = K
+
+scala> val x = mapping.getOrElse("vish",0)
+x: Any = 0
+
+Note: The mapping of key value pairs is based on the hashtable/map, hash function is used to 
+determine the location of the key-value.
+
+**************************************************************************************************
+
+When to use mutable vs immmutable collections?
+
+Designing API used to check only values we can use immutable :
+def getCustomerRecords(): scala.collection.immutable.Map[Int,Customer]
+Use of immutable:
+1.Data integrity
+2.Synchronisation overhead is reduced.
+
+or other way we can go for mutable, used very less time.
+
+******************************************************************************************
+
+Tuples: From practical point of view we don't use tuples much, instead we go for case class.
+-Tuple is more generalised form of pair
+-Tuple has more than two values of potebtially different types
+	val a=(1,4,"Bob","Jack")
+-Accessing the tuple elements
+	a._2 or a_2//Returns 4
+-In tuples the offset starts with1 and NOT from 0
+-Tuples are typically used for the finctions which return more than one value
+	"New Delhi India".partition(_.isUpper)
+
+**************************************************************************************************
+
+Maps takes data in the form of key value pairs:
+Here, keys are unique and values can be duplicate.
+
+scala> import scala.collection.mutable.Map
+import scala.collection.mutable.Map
+
+scala> var map1 = Map(101->"a")
+map1: scala.collection.mutable.Map[Int,String] = Map(101 -> a)
+
+Adding additional values:
+scala> map1+=(102->"b")
+res0: scala.collection.mutable.Map[Int,String] = Map(101 -> a, 102 -> b)
+
+scala> map1
+res1: scala.collection.mutable.Map[Int,String] = Map(101 -> a, 102 -> b)
+
+scala> map1(102)
+res2: String = b
+
+scala> print(map1(102))
+b
+
+To remove any value:
+scala> s1-=105
+res8: s1.type = Map(104 -> qwe, 106 -> uio)
+
+To update value of key:
+scala> s1+=104->"raj"
+res10: s1.type = Map(104 -> raj, 106 -> uio)
+
+****Note: It is not possible to retrieve data using values this won't work:
+
+Look into Mapping concept.
+
+
+
+
+
+
+

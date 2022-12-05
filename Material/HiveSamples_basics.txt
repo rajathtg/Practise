@@ -1,0 +1,418 @@
+Three different type of collections:
+1. Array > Collection of homogeneous items i.e. purpose of each element is same.
+	name	qual
+	Ravi	[btech,mtech]
+	Rabiya	[bsc,msc,mtech]
+select qual[0] from tab;
+btech
+bsc
+
+select qual[2] from tab;
+null
+mtech
+
+select name,size(qual) from tab;
+Ravi 	2
+Rabiya	3
+
+select * from tab where array_contains(qual,'mtech'); 
+Ravi	[btech,mtech]
+Rabiya	[bsc,msc,mtech]
+
+hive (HiveSamples)> create table profile1(id int,name string,age int,qual array<string>,city string)row format delimited fields terminated by ',' collection items terminated by '#';
+OK
+Time taken: 0.241 seconds
+
+hive (HiveSamples)> select * from profile1;
+OK
+101	Ravi	30	["[\"btech\""]	"mtech"
+102	Rani	25	["[\"bsc\""]	"msc"
+101	Ravi	30	["[btech","mtech","phd]"]	hyd
+102	Rani	25	["[bsc","msc","mtech]"]	del
+
+hive (HiveSamples)> insert overwrite table profile1 select * from profile1 where city in ('hyd','del');
+
+hive (HiveSamples)> select * from profile1;
+OK
+101	Ravi	30	["[btech","mtech","phd]"]	hyd
+102	Rani	25	["[bsc","msc","mtech]"]	del
+
+hive (HiveSamples)> select name,qual[0] from profile1;
+OK
+Ravi	btech
+Rani	bsc
+
+hive (HiveSamples)> select name,size(qual) from profile1;
+OK
+Ravi	3
+Rani	3
+Time taken: 0.233 seconds, Fetched: 2 row(s)
+
+*******========*********Note:
+Diff b/w length and size:
+Lenght is applied on string and size is applied on array.
+
+To flatten the array elements into different rows use explode()
+hive (HiveSamples)> select explode(qual) as q from profile1;
+OK
+btech
+mtech
+phd
+bsc
+msc
+mtech
+Time taken: 0.182 seconds, Fetched: 6 row(s)
+
+hive (HiveSamples)> insert into table qtab select explode(qual) as q from profile1;
+select
+hive (HiveSamples)> select * from qtab;
+OK
+btech
+mtech
+phd]
+bsc
+msc
+mtech
+Time taken: 0.083 seconds, Fetched: 6 row(s)
+
+hive (HiveSamples)> select qual,count(*) from qtab group by qual;
+bsc	1
+btech	1
+msc	1
+mtech	2
+phd	1
+Time taken: 25.182 seconds, Fetched: 6 row(s)
+
+Now pushing result got in previous step to another table and in backend it is saved as CSV file:
+
+hive (HiveSamples)> create table res(q string, cnt int) row format delimited fields terminated by ',';
+hive (HiveSamples)> insert into table res select qual,count(*) from qtab group by qual;
+hive (HiveSamples)> select * from res;
+OK
+bsc	1
+btech	1
+msc	1
+mtech	2
+phd	1
+Time taken: 0.136 seconds, Fetched: 6 row(s)
+
+------------------------------------
+Hive has 3 types of functions:
+>UDF - ex: substr(),lenght(),size,(),sqrt()......
+	For each row one value is returned such type of function is called UDF function
+	name
+	------
+	abc
+	xyzf
+	ab
+	if I apply lenght(name) it gives output as no.of letters in name
+	3
+	4
+	2
+>UDAF ex sum(),count(),avg().....
+	For entire column or for entire group this function returns single value.
+>UDTF - (User defined table generated functions)
+	Ex: explode(),json_tuple(),parse_url_tuple()....
+	The functions which return multiple rows/columns or table is called UDTF.
+
+[cloudera@quickstart dvs]$ cat sales
+c101,10#20#100
+c102,100#50
+c103,300#500#800#100
+c101,600#400
+
+hive (HiveSamples)> create table transaction(cid string,price array<int>)row format delimited fields terminated by ',' collection items terminated by '#';
+OK
+Time taken: 0.19 seconds
+
+hive (HiveSamples)> load data local inpath '/home/cloudera/dvs/sales'into table transaction;
+Loading data to table hivesamples.transaction
+Table hivesamples.transaction stats: [numFiles=1, totalSize=61]
+OK
+Time taken: 0.947 seconds
+
+hive (HiveSamples)> select * from transaction;
+OK
+c101	[10,20,100]
+c102	[100,50]
+c103	[300,500,800,100]
+c101	[600,400]
+Time taken: 0.05 seconds, Fetched: 4 row(s)
+
+hive (HiveSamples)> select explode(price) pr from transaction;
+OK
+10
+20
+100
+100
+50
+300
+500
+800
+100
+600
+400
+*******Note:We're missing clsrity so let's try including cid column as well
+
+hive (HiveSamples)> select cid, explode(price) pr from transaction;
+FAILED: SemanticException [Error 10081]: UDTF's are not supported outside the SELECT clause, nor nested in expressions
+
+But the query fails, because along with UDTF function other columns expression can't be included.
+solution for this problem is:
+
+hive (HiveSamples)> select cid,mypr from transaction
+                  > lateral view explode(price) p as mypr;
+lateral view explode(price) > here lateral view and explode are both UDTF functions hence can be include together
+Above p is alias for 'lateral view explode(price)' and finally mypr is alias for p.
+Note: at the end "p as mypr" is must needed, we can't skip it at any cost, if skipped it throws error.
+OK
+c101	10
+c101	20
+c101	100
+c102	100
+c102	50
+c103	300
+c103	500
+c103	800
+c103	100
+c101	600
+c101	400
+Time taken: 0.179 seconds, Fetched: 11 row(s)
+
+hive (HiveSamples)> create table strans(cid string,price int);
+OK
+Time taken: 0.161 seconds
+
+hive (HiveSamples)> insert into table strans select cid,mypr from transaction lateral view explode(price) p as mypr;
+hive (HiveSamples)> select * from strans;
+OK
+c101	10
+c101	20
+c101	100
+c102	100
+c102	50
+c103	300
+c103	500
+c103	800
+c103	100
+c101	600
+c101	400
+Time taken: 0.147 seconds, Fetched: 11 row(s)
+
+Internally what happens??
+c101 will be like that, but
+price will form column
+			10
+			20
+later cartesian product will be formed that is each element will join with each and other element
+c101 10
+c101 20
+Samething happens for cid > c102 
+*************later c101 and c102 will form union all
+
+hive (HiveSamples)> select cid,sum(price) from strans group by cid;
+c101	1130
+c102	150
+c103	1700
+
+==================================================================
+Struct: Heterogeneous
+-----
+[cloudera@quickstart dvs]$ cat struct;
+Ravi,30,Rani#25#del,hyd
+Raghu,35,Sailu#23#hyd,del
+
+hive (HiveSamples)> create table profile2(name string, age int,wife struct<name:string,age:int,city:string>,city string) row format delimited fields terminated by ',' collection items terminated by '#';
+OK
+Time taken: 0.215 seconds
+
+hive (HiveSamples)> load data local inpath '/home/cloudera/dvs/struct' into table profile2;
+Loading data to table hivesamples.profile2
+Table hivesamples.profile2 stats: [numFiles=1, totalSize=50]
+OK
+Time taken: 0.443 seconds
+
+hive (HiveSamples)> select * from profile2;
+OK
+Ravi	30	{"name":"Rani","age":25,"city":"del"}	hyd
+Raghu	35	{"name":"Sailu","age":23,"city":"hyd"}	del
+Time taken: 0.162 seconds, Fetched: 2 row(s)
+
+hive (HiveSamples)> select name,wife.name from profile2;
+OK
+Ravi	Rani
+Raghu	Sailu
+Time taken: 0.168 seconds, Fetched: 2 row(s)
+
+hive (HiveSamples)> create table couples(hname string,wname string,hage int,wage int,hcity string,wcity string)row format delimited fields terminated by '\t';
+OK
+Time taken: 0.132 seconds
+
+hive (HiveSamples)> insert into table couples select name,wife.name,age,wife.age,city,wife.city from profile2;
+
+hive (HiveSamples)> select * from couples;
+OK
+Ravi	Rani	30	25	hyd	del
+Raghu	Sailu	35	23	del	hyd
+Time taken: 0.101 seconds, Fetched: 2 row(s)
+---------------------------------------------------
+MapObject : Generally it is keyvlue pair kind of stuff.
+		We can get data by passing key simple, for array it is index,struct wife.name what we saw
+=========
+[cloudera@quickstart dvs]$ cat mapobject
+Ravi,30,btech$89#mtech$79#mba$60,hyd
+Raghu,35,bsc$80#msc$70,del
+
+hive (HiveSamples)> create table profile3(name string,age int,qual map<string,int>,city string) row format delimited fields terminated by',' collection items terminated by '#' map keys terminated by '$';
+OK
+Time taken: 0.208 seconds
+
+hive (hivesamples)> load data local inpath '/home/cloudera/dvs/mapobject' into table profile3;
+Loading data to table hivesamples.profile3
+Table hivesamples.profile3 stats: [numFiles=1, totalSize=64]
+OK
+Time taken: 1.232 seconds
+
+hive (hivesamples)> select * from profile3;
+OK
+Ravi	30	{"btech":89,"mtech":79,"mba":60}	hyd
+Raghu	35	{"bsc":80,"msc":70}	del
+
+Just pass key as below to access the mapobject
+
+hive (hivesamples)> select name,qual['btech'] from profile3;
+OK
+Ravi	89
+Raghu	NULL
+Time taken: 0.218 seconds, Fetched: 2 row(s)
+
+hive (hivesamples)> select map_keys(qual) from profile3;
+OK
+["btech","mtech","mba"]
+["bsc","msc"]
+Time taken: 0.083 seconds, Fetched: 2 row(s)
+hive (hivesamples)> select map_values(qual) from profile3;
+OK
+[89,79,60]
+[80,70]
+Time taken: 0.167 seconds, Fetched: 2 row(s)
+
+hive (hivesamples)> select name,map_keys(qual),map_values(qual) from profile3;
+OK
+Ravi	["btech","mtech","mba"]	[89,79,60]
+Raghu	["bsc","msc"]	[80,70]
+Time taken: 0.135 seconds, Fetched: 2 row(s)
+ 
+hive (hivesamples)> insert into table infos select name,map_keys(qual),map_values(qual) from profile3;
+Query ID = cloudera_20200113031313_c62d9edb-3c3d-4152-9929-69e59355ccc4
+Total jobs = 3
+Launching Job 1 out of 3
+
+hive (hivesamples)> select * from infos;
+OK
+Ravi	["btech","mtech","mba"]	[89,79,60]
+Raghu	["bsc","msc"]	[80,70]
+Time taken: 0.108 seconds, Fetched: 2 row(s)
+
+hive (hivesamples)> select name,myq from infos lateral view explode(q) ql as myq;
+OK
+Ravi	btech
+Ravi	mtech
+Ravi	mba
+Raghu	bsc
+Raghu	msc
+Time taken: 0.177 seconds, Fetched: 5 row(s)
+
+hive (hivesamples)> select name,myp from infos lateral view explode(p) p as myp;
+OK
+Ravi	89
+Ravi	79
+Ravi	60
+Raghu	80
+Raghu	70
+Time taken: 0.192 seconds, Fetched: 5 row(s)
+
+hive (hivesamples)> select explode(q) as q from infos;
+OK
+btech
+mtech
+mba
+bsc
+msc
+Time taken: 0.127 seconds, Fetched: 5 row(s)
+
+****Below is invalid because two explodes  can't be given in same expression
+
+hive (hivesamples)> select name,myq,myp from infos lateral view explode(q) q as myq,explode(p) p as myp;
+FAILED: ParseException line 1:71 missing EOF at '(' near 'explode'
+
+hive (hivesamples)> select explode(q) as q, explode(p) as p from infos;
+FAILED: SemanticException 1:24 Only a single expression in the SELECT clause is supported with UDTF's. Error encountered near token 'p'
+
+Solution is to use UDF, because even below super query will give result but infact table is wrong because ravi is for
+two times but repeated for six times.Cartesian product happened but in wrong way.
+Hence we need to use UDF
+ 
+hive (hivesamples)> select name,myq,myp from infos
+                  > lateral view explode(q) q as myq
+                  > lateral view explode(p) p as myp;
+OK
+Ravi	btech	89
+Ravi	btech	79
+Ravi	btech	60
+Ravi	mtech	89
+Ravi	mtech	79
+Ravi	mtech	60
+Ravi	mba	89
+Ravi	mba	79
+Ravi	mba	60
+Raghu	bsc	80
+Raghu	bsc	70
+Raghu	msc	80
+Raghu	msc	70
+Time taken: 0.112 seconds, Fetched: 13 row(s)
+
+We also have Union in collection which we see in future.
+therefore in total we have 4 types array,struct,map and union
+
+-----------------------------------------------------------------------------------
+DataTypes in Hive:
+	Simple Data Types
+	Complex Data Types
+Simple Data Types > int,long,float,double,boolean,date and timestamp
+Complex Data Types(collections) > array,struct,map
+
+============================================
+Consider there is a person who is married and he has 10 years of overall exp (worked in 3 diff companies)
+name > string
+age > int
+sal > double
+city > string
+wife > struct
+qual > array
+exp > map
+===============================
+**********Note:
+File1
+------
+100,200,300
+200,500,900
+11,12,12
+1,2,3
+
+create table info1(a int,b int,c int);
+load data local inpath 'file1' into table info1;
+select * from info1;
+null null null
+null null null
+null null null
+null null null
+
+***we get null because we didn't specify the delimiter while creating table.
+because by default hive considers '\001' as delimiter or ctrl+A symbol kind of diamond.
+Hence entire is traeted as single column, The entire line is a string and can't fit into first column which int hence
+1st column became null and as per \001 delimiter there are no 2nd and 3rd fields in the file that's y b and c columns also
+became null.
+
+
+

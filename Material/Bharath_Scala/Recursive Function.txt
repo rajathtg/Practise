@@ -1,0 +1,317 @@
+Recursive Function: 
+-If we see the below example the main function is power and inside that again we're calling
+power function i.e. called as recursive function: To calculate 3^2 / 5^3....
+-We don't see any major advantage of this, it just reduces the code length.
+
+scala> def power(x:Int,n:Int):Int = {
+     | if (n>=1) x*power(x,n-1) //Ex:For 5^4 is written as 5 * 5^3
+     | else 1
+     | }
+power: (x: Int, n: Int)Int
+
+scala> power(2,1)
+res6: Int = 2
+
+scala> power(2,-1)
+res7: Int = 1
+
+a: Int = 1000
+scala> def fact(x: Int):Int = {
+     | if(x > 1) x * fact(x-1)
+     | else 1
+     | }
+fact: (x: Int)Int
+
+scala> fact(4)
+res13: Int = 24
+
+scala> fact(2)
+res14: Int = 2
+
+scala> fact(3)
+res15: Int = 6
+
+scala> val y : Double = 1000.25
+y: Double = 1000.25
+
+scala> val x : Int = y
+<console>:27: error: type mismatch;
+ found   : Double
+ required: Int
+         val x : Int = y
+
+Note: Bcoz, y is double(high rank), x is Int(low rank) to assigned high rank types to low
+      rank types. Explicitly casting is required.
+
+val x : Int = y.toInt i.e
+
+scala> val y : Double = 1000.25
+y: Double = 1000.25
+
+scala> val x : Int = y
+<console>:27: error: type mismatch;
+ found   : Double
+ required: Int
+         val x : Int = y
+                       ^
+
+scala> val x : Int = y.toInt
+x: Int = 1000
+
+***********Note: In this case implicit casting is done Int(Low rank) to Double(High Rank).
+
+======================================================================================================
+-Consider below example:
+
+scala> val str = "1000"
+str: String = 1000
+
+scala> var a = 100
+a: Int = 100
+
+scala> a = str
+<console>:29: error: type mismatch;
+ found   : String
+ required: Int
+         a = str
+             ^
+
+scala> a = str.toInt //This possible through two things, first is var and next is irrespective data type the data is numerical hence it
+			turned out to be easy.
+
+scala> val str1 = "Hello"
+str1: String = Hello
+
+scala> var a = 100
+a: Int = 100
+
+scala> val a = "1000.53"
+a: String = 1000.53
+
+scala> a = str1.toInt
+This output will throw error because the data is double and below procedure needs to be followed.
+
+scala> a.toDouble.toInt
+res1: Int = 1000
+=========================================================================================================
+
+Numberic Data Types:
+---------------------
+Byte > -127 to 128
+Short > -32768 to 32767
+Int > -2^31 to 2^31-1
+Long > 2^63 to 2^63-1
+Float > n/a(4byte)
+Double > n/a(8 byte)
+
+Automatic type conversios based on Rank of data type:
+--------------------------------------------------------------------------------
+Logical operators in Scala: (Check this and re-confirm refering other materials)
+&& --- &
+|| --- |
+! --- (not)
+
+&&,|| are lazy in evaluating conditions:
+
+ex: dno==11 || dno==13 || dno==20 > 
+In this condition, all logical operators are "OR" so atleast one condition as "True" enough.
+Active model: It will check all conditions, even if found any one as true. 
+Lazy models are always faster.
+
+scala> val sal = 20000
+sal: Int = 20000
+
+scala> sal > 10000 & sal < 30000 //
+res2: Boolean = true
+
+scala> sal > 10000 && sal < 30000
+res3: Boolean = true
+--------------------------------------------------------------------------------
+
+To know data type (class):
+scala> val i = 100
+i: Int = 100
+
+scala> i.getClass()
+res5: Class[Int] = int
+-------------------------------------------------
+Expressions and statement:
+
+-We can semicolon in a statement to add new statement:
+scala> val a = 100
+a: Int = 100
+
+scala> val b = a*2 ; val c = b*2
+b: Int = 200
+c: Int = 400
+
+Blocking statements:
+
+scala> val r = { val x = 10; //We can use
+     | val y = x+20
+     | val z = x-20
+     | (x,y,z) //Here this acts as blocking statement, this is written based on required output and this acts as return for us.
+     | }
+r: (Int, Int, Int) = (10,30,-10)
+
+scala> val r = { val x = 10 //Even without that is possible as well
+     | val y = x+20
+     | val z = x-20
+     | (x,y,z) //Here this acts as blocking statement, this is written based on required output and this acts as return for us.
+     | }
+r: (Int, Int, Int) = (10,30,-10)
+-----------------------------------------------------------------------------------------------------------------------
+Match with multiple cases:
+------------------------
+scala> val dayno = 3
+dayno: Int = 3
+
+scala> val dayname = dayno match{
+     | case 1 => "Monday"
+     | case 2 =>"Tuesday"
+     | case 3 => "Wednesday"
+     | case 4 => "Thursday"
+     | case 5 => "friday"
+     | case 6 => "saturday"
+     | case 7 =>"sunday"
+     | }
+dayname: String = Wednesday
+
+-I want to return whether working day or holiday.
+
+scala> val dd = dayname match {
+     | case "mon" | "tue" | "wed" | "thu" | "fri" =>
+     | "working day"
+     | case other => "holiday"
+     | }
+dd: String = holiday
+
+scala> val name = List("Ravi","rani","vani","varun","veni")
+name: List[String] = List(Ravi, rani, vani, varun, veni)
+
+scala> for(x <- name) println(x)
+Ravi
+rani
+vani
+varun
+veni
+
+scala> name.foreach(println)
+Ravi
+rani
+vani
+varun
+veni
+
+scala> for(x <- name)
+     | {
+     | val y = x.toUpperCase
+     | println(y)
+     | }
+RAVI
+RANI
+VANI
+VARUN
+VENI
+
+scala> name.map(x => x.toUpperCase).foreach(println)
+RAVI
+RANI
+VANI
+VARUN
+VENI
+
+******Note: Using Scala we can implement both traditional and functional programming approach. Functional approach has more benefit.
+
+scala> for (x <- 1 to 7)
+     | println(s"Day $x") //Each string part is added into this string part.
+Day 1
+Day 2
+Day 3
+Day 4
+Day 5
+Day 6
+Day 7
+
+scala> for (x <- 1 to 7)
+     | println("Day $x") //Mentioning s is more important. 
+Day $x
+Day $x
+Day $x
+Day $x
+Day $x
+Day $x
+Day $x
+
+-To get output as 1 vector collection, can be done using yield function.
+
+scala> val v = for(x <- 1 to 7)
+     | yield(s"Day $x")
+v: scala.collection.immutable.IndexedSeq[String] = Vector(Day 1, Day 2, Day 3, Day 4, Day 5, Day 6, Day 7)
+
+scala> var x = 10
+x: Int = 10
+
+scala> while (x>0)
+     | {
+     | println(x)
+     | x-=1
+     | }
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+========================================================================================================
+-Reduce operation:
+
+scala> val l = List(1,2,30,40,50,60)
+l: List[Int] = List(1, 2, 30, 40, 50, 60)
+
+scala> l.sum
+res13: Int = 183
+
+scala> l.reduce((x,y)=>x+y) //Here cumulative operation happens
+res14: Int = 183
+
+x=1
+y=2
+x+y=3
+x=3
+y=30
+x+y=33
+x=33
+:
+:
+
+scala> l.size
+res15: Int = 6
+
+scala> l.reduce((x,y) => Math.max(x,y))
+res16: Int = 60
+x=1
+y=2
+max=2
+x=2
+y=30
+max=30
+x=30
+:
+:
+
+scala> l.reduce((x,y) => Math.min(x,y))
+res17: Int = 1
+x=1
+y=2
+min = 1
+x=1
+y=30
+min=1
+x=1
+:
+:
