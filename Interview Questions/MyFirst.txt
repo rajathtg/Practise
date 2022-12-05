@@ -1,0 +1,70 @@
+val num = list[1,2,3,4,5]
+val rdd1 = sc.parallelize(list[1,2,3,4])
+val A = rdd1.map(x=>x*2)
+a.foreach(println)
+O/p:
+2,4,6,8
+
+val num = list[1,2,3,4,5]
+val rdd1 = sc.parallelize(list[1,2,3,4])
+val A = rdd1.flatMap(x=>x*2)
+O/p:
+2
+4
+3
+4
+
+
+rrd1 is created
+rrd2 rrd1 > Narrow 
+
+rrd2 rrd1
+rdd3 rrd1
+rdd4 rrd1
+
+Product Table 	Category Table
+Need to find 7th Costliest product.
+
+I will prefer SQL in Spark?
+
+val 7th_costliest_product = sc.sql(select * from(select product, 
+							price,dense_cost over( ) as r from joiningtable)
+							where r = &n;
+							When n = 7 it gives 7th highest..
+
+1. Say about Project?
+
+2. Once spark job is submitted what are all the process running behind it?
+
+3. Difference between map and flat map using numbers and not using words?
+l=["spark is super fast","hive is sql on hadoop","spark is awesome"]
+rdd=sc.parallelize(l)
+rdd.collect()
+['spark is super fast', 'hive is sql on hadoop', 'spark is awesome']            
+rddm=rdd.map(lambda line:line.split())
+rddm.collect()
+[['spark', 'is', 'super', 'fast'], ['hive', 'is', 'sql', 'on', 'hadoop'], ['spark', 'is', 'awesome']]
+rddf=rdd.flatMap(lambda line:line.split())
+rddf.collect()
+['spark', 'is', 'super', 'fast', 'hive', 'is', 'sql', 'on', 'hadoop', 'spark', 'is', 'awesome']
+
+https://medium.com/@aristo_alex/how-apache-sparks-transformations-and-action-works-ceb0d03b00d0 > Tenks!
+https://medium.com/@daveford/map-versup-flatmap-14780ab01d2b
+
+4. Currying - Scala?
+
+5. Higher Order functions - Scala?
+
+6. Partial functions - Scala?
+
+7. Options - Scala?
+implicits - Spark/Scala
+https://medium.com/@achilleus/spark-session-10d0d66d1d24#:~:text=Prior%20Spark%202.0%2C%20Spark%20Context,create%20a%20Spark%20Context%20object.&text=In%20a%20nutshell%2C%20Spark%20session,of%20all%20these%20different%20contexts. > Spark implicits
+
+8. oozie for Scheduling and Spark-Ingestion?
+
+9. Airflow?
+
+10. 7th highest product?
+
+11. Shuffling?

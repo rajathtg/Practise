@@ -1,0 +1,71 @@
+1. Difference between SparkSession and SparkContext?
+Prior to Spark 2.0, Spark Context was the entry point of any spark application and used to access all spark features and needed a sparkConf which had all the cluster configs and parameters to create a Spark Context object. We could primarily create just RDDs using Spark Context and we had to create specific spark contexts for any other spark interactions. For SQL SQLContext, hive HiveContext, streaming Streaming Application. In a nutshell, Spark session is a combination of all these different contexts. Internally, Spark session creates a creates SparkConfig and SparkContext with the configuration provided with SparkSession and also all the required contexts such as SQLContext, HIveContext and StreamingContext can be accessed using the SparkSession object 'Spark'.
+
+SparkSession : SparkSession introduced in version 2.0, It is an entry point to underlying Spark functionality in order to programmatically create Spark RDD, DataFrame and DataSet. It’s object spark is default available in spark-shell and it can be created programmatically using SparkSession builder pattern. With Spark 2.0 a new class "org.apache.spark.sql.SparkSession" has been introduced to use which is a combined class for all different contexts we used to have prior to 2.0 (SQLContext and HiveContext e.t.c) release.
+import org.apache.spark.sql.SparkSession
+val spark = SparkSession.builder()
+	    .master("local[x]")
+	    .appName("com.interview")
+	    .config("spark.some.config.option1", "some-value")
+            .config("spark.some.config.option2", "some-value")
+	    .config("spark.sql.warehouse.dir","/user/hive/warehouse")
+	    .enableHiveSupport()
+	    .getOrCreate()
+a. The spark session object “spark” is by default available in Spark shell.
+b. To create SparkSession in Scala or Python, you need to use the builder pattern method builder().
+c. master() – If you are running it on the cluster you need to use your master name as an argument to master(). usually, it would be either yarn or mesos depends on your cluster setup. Use local[x] when running in Standalone mode. ***************x should be an integer value and should be greater than 0; this represents how many partitions it should create when using RDD, DataFrame, and Dataset. Ideally, x value should be the number of CPU cores you have.
+d. appName() – Sets a name for the application, which will be shown in the Spark web UI. If no application name is set, a randomly generated name will be used.
+e. enableHiveSupport() - It is similar to creating a HiveContext and all it does is enables access to Hive metastore, Hive serdes, and Hive udfs.
+f. .config() - Used to set the config values, even if needed we can change hive default location like above.
+g. getOrCreate() – This returns a SparkSession object if already exists, creates new one if not exists.
+
+*******Note: We don’t have to create a spark session object when using spark-shell(CommandLine). It is already created for us with the variable spark. We should only create when we're using an IDE.
+
+Spark Context: To import SparkContext when working with an IDE use org.apache.spark.{SparkConf, SparkContext}. When you do programming either with Scala, PySpark or Java, first you need to create a SparkConf instance by assigning app name and setting master by using the SparkConf static methods setAppName() and setMaster() respectively and then pass SparkConf object as an argument to SparkContext constructor to create Spark Context.
+*******Note:
+At any given time only one SparkContext instance should be active per JVM. In case if you want to create a another new SparkContext you should stop existing Sparkcontext (using stop()) before creating a new one.
+By default Spark shell provides “sc” object which is an instance of SparkContext class. We can directly use this object where required.
+package com.sparkbyexamples.spark.stackoverflow
+
+import org.apache.spark.{SparkConf, SparkContext}
+
+object SparkContextOld extends App{
+
+  val conf = new SparkConf().setAppName("sparkbyexamples.com").setMaster("local[1]")
+  val sparkContext = new SparkContext(conf)
+  val rdd = sparkContext.textFile("/src/main/resources/text/alice.txt")
+
+  sparkContext.setLogLevel("ERROR")
+
+  println("First SparkContext:")
+  println("APP Name :"+sparkContext.appName);
+  println("Deploy Mode :"+sparkContext.deployMode);
+  println("Master :"+sparkContext.master);
+ // sparkContext.stop()
+  
+  val conf2 = new SparkConf().setAppName("sparkbyexamples.com-2").setMaster("local[1]")
+  val sparkContext2 = new SparkContext(conf2)
+
+  println("Second SparkContext:")
+  println("APP Name :"+sparkContext2.appName);
+  println("Deploy Mode :"+sparkContext2.deployMode);
+  println("Master :"+sparkContext2.master);
+  
+}
+
+*******************Note: Only if you are running on a cluster you should first "collect" the data in order to print on a console as shown below.
+			rdd.collect.foreach(f=>{
+			println(f)
+			})
+
+
+2. What is an RDD?
+Resilient Distributed Datasets (RDD) is a fundamental data structure of Spark, It is an immutable distributed collection of objects. Each dataset in RDD is divided into logical partitions, which may be computed on different nodes of the cluster.
+RDD can be created by,
+a. Parallelizing a List/Array.
+	ex: val rdd = spark.sparkContext.parallelize(List(1,2,3,4,5,6)) 
+			or
+	    val sc = spark.sparkContext
+	    val rdd = sc.parallelize(Array(1,2,3,4,5,6))
+b. We can even create an empty rdd.
+	ex: val emptyRDD = spark.sparkContext.parallelize(Seq.empty[String])

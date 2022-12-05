@@ -1,0 +1,192 @@
+-Spark Core:
+Polygot - We can implement logics using Scala,Python,Java & R
+Spark Core
+Spark SQL***Concept is imp
+Spark Streaming
+MLIB and Graph X > not discussed.....
+
+Spark Core > Is the basement for Spark SQL and Spark Streaming, we can play around in spark core using low level programming (i.e. RDD) or we can work with DF or DS(using SQL or Hive context) these both are abstraction over RDD.  
+For Hive,Pig,Sqoop basement is > HDFS/MR.
+
+-In Spark Core > We store data as RDD
+    Spark SQL > We store it as DF and DS
+    Spark Streaming > We store it is as DStreams
+
+-Entry point for your Spark Job?
+ JOBS > Stages > Tasks > (How to find out the number of stages)
+ Operations on RDD and why RDD are immutable.
+
+DAG:
+Direct - Transformation is an action which transitions data partition state from A to B.
+Acyclic -Transformation cannot return to the older partition
+
+Answers:
+-Spark Context or Spark sessions(2.0v and above) are the entry points of the Spark Shell.
+-Spark Context is a class or object ? it is a Class
+-Learn more in google by typing Spark Context API
+-Spak Context is a driver and take it as class when we start any job
+Job > SC > YARN > Worker Nodes
+-SC stores data as RDD
+-Why RDDs are immutable?
+	-As developer can I identify which node consists data? - Nope it is not possible.
+	-RDD is combination of partitions.
+	-RDD is an abstraction over actual data.
+	-Which lives on disk and definitely safe to share across processes.
+	-Immutable data can as easily live in memory as on disk. This makes it reasonable to easily move operations that hit disk to instead use data in memory, and again, adding memory is much easier than adding I/O bandwidth.
+	-Whenever we fire query on RDDs (can be action or transformations), generally RDDs are partitions and can be in any data nodes(which deve doesnot know), while receiving data from data nodes through network the data can get changed or hacked so it is made immutable.
+	-RDD significant design wins, at cost of having to copy data rather than mutate it in place. Generally, that's a decent tradeoff to make: gaining the fault tolerance and correctness with no developer effort worth spending disk memory and CPU on.
+	-We can perform Actions and Transformations
+	Transformation > To “change” a DataFrame, you need to instruct Spark how you would like to modify it to do what you want. These instructions are called transformations and are of two types Narrow and Wide.
+	Actions > To see the result, unless and until action is applied the data is not moved physically from one transformation to another like dump in PIG.
+		  ex:  reduce(func),count(),foreach(func),collect(),first(),take(n),saveAsTextFile,countByKey()
+ 
+-Narrow and Wide is very important.
+Narrow (1 to 1 maaping) > Here each input partition will contribute to only one output partition and there is no scope of shuffle.
+ex: map(),flatMap(),union(),sample,mapPartition(),filter
+Wide (1 to many) > With narrow transformations, Spark will automatically perform an operation called *****pipelining******, meaning that if we specify multiple transformations like filters, map etc on DataFrames or RDD, they’ll all be performed in-memory. The same cannot be said for shuffles. When we perform a shuffle, Spark *****writes***** the results to disk.Shuffling happens.
+ex: groupByKey(), aggregateByKey(), aggregate(), join(), repartition(),reduceByKey(),intersection(),coalesce,distinct(),cartesian()
+
+-JOB > Stages > Tasks
+Collection of tasks is Stages
+Collection of stages is Job
+Task is the place were our logics run or threads
+
+Lazy evaulation > Means that Spark will wait until the very last moment to execute the graph of computation instructions. In Spark, instead of modifying the data  immediately when you express some operation, you build up a plan of transformations that you would like to apply to your source data. By waiting until the last minute to execute the code, Spark compiles this plan from your raw DataFrame transformations to a streamlined physical plan that will run as efficiently as possible across the cluster. This provides immense benefits because Spark can optimize the entire data flow from end to end. An example of this is something called predicate pushdown on DataFrames. If we build a large Spark job but specify a filter at the end that only requires us to fetch one row from our source data, the most efficient way to execute this is to access the single record that we need. Spark will actually optimize this for us by pushing the filter down automatically.
+
+-What is the best application based on what we can say application is working as expected from dev point of view ? > It totally depends on stages.
+
+-When we go with Narrow transformation doesn't req new stages
+-Each and every wide transformations req new stages
+
+Ex:
+sc.textFile("someFile.txt").
+	map(mapFunc).
+	flatMap(flatMapFunc).
+	filter(filterFunc).
+	count()
+Above code requires only one stage.
+RDD > Partition
+Parent RDD	 >		Child RDD
+4	Transfomation   	4
+1	1 (Here 1 takes help from 1 only and not 2,3,4)
+2	2 (Here 2 takes help from 2 only and not 1,3,4, henec 1 to 1 Narrow)
+3	3
+4	4
+Count is the actoin.
+textFile > map depends on textFile > flatMap on Map > filter on flat Map > it is 1 to 1 happening and it creates DAG doing this.
+We have three transformations map,flat and filter and all these doesn't req data from diff nodes, hence there is no shuffles, narrow transformations hence single stage.
+
+****************************************
+It is actually extremely easy to find this out, without the documentation. For any of these functions just create an RDD and call to debug string, here is one example you can do the rest on ur own.
+
+scala> val a  = sc.parallelize(Array(1,2,3)).distinct
+scala> a.toDebugString
+MappedRDD[5] at distinct at <console>:12 (1 partitions)
+  MapPartitionsRDD[4] at distinct at <console>:12 (1 partitions)
+    **ShuffledRDD[3] at distinct at <console>:12 (1 partitions)**
+      MapPartitionsRDD[2] at distinct at <console>:12 (1 partitions)
+        MappedRDD[1] at distinct at <console>:12 (1 partitions)
+          ParallelCollectionRDD[0] at parallelize at <console>:12 (1 partitions)
+So as you can see distinct creates a shuffle. It is also particularly important to find out this way rather than docs because there are situations where a shuffle will be required or not required for a certain function. For example join usually requires a shuffle but if you join two RDD's that branch from the same RDD spark can sometimes elide the shuffle.
+
+Note:
+If you are using dataframes (spark sql) you can use df.explain(true) to get the plan and all operations (before and after optimization).
+If you are using rdd you can use rdd.toDebugString to get a string representation and rdd.dependencies to get the tree itself.
+If you use these without the actual action you would get a representation of what is going to happen without actually doing the heavy lifting.
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+DAG (Direct Acyclic Graph) vs LLG
+-val RDD1 = sc.textFile
+-val RDD2 = rdd1.(Transformations)
+-val RDD3 = rrd2.(Transformations)
+rdd3.action
+
+RDD1 is created using sc > RDD2 using RDD1 > RDD3 using RDD2 > Acyclic movement.
+DVS > Home > DVS > Cyclic Movement
+DVS > Home > Office > Acyclic Movement
+
+LLG > Bottom to Top to Bottom will happen (Bottom to Top checks dependencies or lineage, later Top to Bottom physical stuff)
+DAG > Top to Bottom approach will happen
+
+LLG > RDD3 action call happens > RDD2 > RDD1 > SC > RDD1 > RDD2 > RDD3
+
+We can still see DAG and LLG if req by setting few methods, but not req as part of UI point of view.
+17 days generally the history of jobs will be stored, depends on daily frequencies
+
+To recover the lost data, i.e. fault tolerance, both will help, DAG performance wise good and also LLG plays good role.
+DAG doesn't have dedicated storage.
+
+There is no restrictions that when we have RDD we shouldn't have LLG or if LLG is there is no restriction DAG shouldn't be there.
+LLG and DAG both will be there.
+
+-Logical Graph
+-Logical Plan
+-Logical Execution Plan
+
+******Note: Lineage graph deals with RDDs so it is applicable up-till transformations ,  Whereas, DAG shows the complete task, ie; trasnformation + Action 
+
+https://www.quora.com/What-is-the-difference-between-RDD-Lineage-Graph-and-Directed-Acyclic-Graph-DAG-in-Spark#:~:text=Lineage%20graph%20deals%20with%20RDDs,(transformation%20and%20also%20Action).&text=The%20execution%20DAG%20or%20physical%20execution%20plan%20is%20the%20DAG%20of%20stages. > Second Answer
+
+http://commandstech.com/what-is-lineage-graph-in-spark-with-example-what-is-dag-lineage-graph-vs-dag/
+
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+-Colesece vs repartition ----(Both work on partitons (RDD))
+Question > Why we need to inc & dec partitions?when to use
+colesece/repartitions.
+After O/p stored into HDFS stored as part files, consider each part files doesn't have req block size of 64MB(default).
+So, it is req to see the o/p part files to see decide whether to go for cole or repartition
+Then go for colesece or repartition to inc or dec.
+cole uses exixting partions and doesn't re shuffle help, bec existing part files is already shuffled.
+repartition has to take help from shuffles to increase, but not during dec. 
+colesece doesn't take help from shuffles and helps in decrease the partitions.
+repartitions increase and decrease the partitions and takes help from shuffles.
+Hence colesece obviously better.
+Note: Go for colesece for decrease and repartition for increase (don't use repartition for decr even though it has that feature)
+A full data shuffle is an expensive operation for large data sets, but our data puddle is only 2,000 rows. The repartition method returns equal sized text files, which are more efficient for downstream consumers.
+
+https://sparkbyexamples.com/spark/spark-repartition-vs-coalesce/ > Good Source
+https://medium.com/@mrpowers/managing-spark-partitions-with-coalesce-and-repartition-4050c57ad5c4#.36o8a7b5j > Real time example
+https://stackoverflow.com/questions/42034314/does-coalescenumpartitions-in-spark-undergo-shuffling-or-not
+
+-Cache vs persistence:
+Persistance takes helps from both in memory and storage levels.
+Cache takes helps from in memory
+After applying both cache and persist, it is our duty to uncache and unpersist or else we will get mail from admin team
+In general Spark RAM size is 128GB
+******RDD less size go for Cache and RDD size more go for persist as we an option to accomodate or store data even on disk.
+Diff Storage levels for persist is:
+	memory only
+	memory only serde
+	memory and disk
+	memory and disk_ser
+	disk only
+
+-val RDD1 = sc.textFile
+-val RDD2 = rdd1.(Transformations)
+-val RDD3 = rrd2.(Transformations)
+rdd3.action
+rdd3.action
+rdd3.action
+Above code creates 3 LLG will be created, this creation can be avoided by using below code. 
+-val RDD1 = sc.textFile
+-val RDD2 = rdd1.(Transformations)
+-val RDD3 = rrd2.(Transformations)
+rdd3.cache() > This stores data in memory
+rdd3.action
+rdd3.action
+rdd3.action
+cache() and persist() both are just functions only, it's kind of functions that triggered before action is triggered.
+
+https://sparkbyexamples.com/apache-spark-rdd/spark-rdd-cache-and-persist-example/ > Good Source
+
+-When we have transformation ending with by or key part of wide transformations:
+reducebykey, sortbykey,groupby key.
+-reducebykey vs sortbykey vs foldbykey
+Performance wise which is good, shuffle is involved then perf dips
+groupbykey > Sends data unecessary over the network and later shuffles
+reducebykey > shuffles the data and then sends data over network and it avoids uncessary data over network. 
+foldbykey vs fold
+foldbykey > When we perform aggre based on key, kind of accumulator.
+reducebykey and foldbykey uses 0 initial value difference

@@ -1,0 +1,160 @@
+URL for memory management > https://spoddutur.github.io/spark-notes/distribution_of_executors_cores_and_memory_for_spark_application.html
+
+-Real Time:
+I'm creating a method, for the method I've internally created RDD, later action and transformation:
+
+	def dvs():Array[String] = {
+	val r1 = sc.textFile()
+		.filter
+		.map
+		.flatmap
+		.collect()
+
+	val r2 = r1.map(_)
+
+	}
+In the above code, which one will run on driver node and which one on worker node.
+def DVS > Driver Node (Initiating method)
+Filter,map,flatmap > Worker Node
+Collect() > Driver Node (The data is collected and sent to driver again i.e. r1 )
+r2 > Driver node because it works on r1 which is currently in driver
+https://stackoverflow.com/questions/38687053/how-to-know-which-piece-of-code-runs-on-driver-or-executor#:~:text=The%20Driver%20process%20will%20run,the%20lifetime%20of%20your%20application.
+
+
+Code2:
+	val lines = sc.textFile("hdfs://data/Spark_README.md")
+	val words = lines.flatMap(line => line.split(","))
+	words.filter(word => word.length > 3)
+sc.textFile > Is look into by Driver Node
+flatMap & filter > workerNode
+https://stackoverflow.com/questions/44423611/is-it-the-driver-or-the-workers-who-reads-the-text-file-when-sc-textfile-is-used
+
+Hi this is DVS institute
+questions:
+	-Word count program....
+	-They might ask how to find characters which are repeating more than 2
+	Ans : i,2
+	      n,1
+	      t,3 > Therefore t is repeating more than 2 times, this can be found by filtering
+	      s,1
+	      u,1......
+	-Words repeating more than lenght 3 > Ans : Institute
+
+-Cloning of RDD is possible it will be more like copying data from one variable to another.
+
+Performance Tuning: There are totally Eight methods.
+	Data Serialization ******
+	Memory Tuning - Not much needed
+	Tuning Data Structures
+	Serialized RDD Storage
+	GC Tuning (Garbage Collection) - not much needed
+	Level of Parallelism *******
+	Braodcast Variable - Already discussed
+	Data Locality *****
+-Performance Tuning in spark point of view where it plays major role?
+-Data Skewness?
+-Out of memory?
+
+-Data Serialization > To convert data from one form to another format to store in the form of records, it used when to save data in 3 or more worker nodes.
+	Serialization (kind of SerDe) > Spark at the backend Java serialization is used, it is not so fast, data is big, it will take more time while copying data from one network to another.
+	To overcome above problem they came up with Kyro serialization, it won't take more help from various classes like how java does hence it is fast, one draw back is Kyro doesn't support many serialization types like Java, converting serialization from Java to Kyro also it is headache if network is not fast or very good.
+conversion from Java to Kyro done we got to enable below thing:
+	conf.set("spark.serializer","org.apache.spark.serializer.KyroSerializer")
+******Gangadhar sir uses Kyro
+
+-Memory Tuning:
+	-The amount of memory used by objects
+	-The cost of accessing those objects
+	-Overhead of GC (Garbage Collections)
+While creating objects(which happens when rdd is created, or any actions etc..), java object header will be there and along with that content will be there, so every distinct object will have header and content. Sometimes header will be 16bytes, content 3 bytes :(, finally it will eat lot of data.
+We can go for common collections using hash map, linked map..(ex:Boxer Objects)
+in real time no need to worry much, because we have never done customization stuff as developer.
+
+-Tuning data structure:
+	This also plays major role.
+	Avoid nested structures for smaller stuffs
+	Ex: Instead using string for keys, go for numeric
+	When RAM size is less than 30GB then do this(For admin stuff > (--XX:+useCompressesOps)
+
+-Serialized RDD storage:
+	Thing is one RDD is created and stored, backend perspective it will taken care by storage levels.
+	Backend don't take help of java objects like strings.
+	Better to go with Pair RDDs(Distributed key-value pairs are represented as Pair RDDs in Spark.) it will not create java header or java content.
+https://medium.com/@goyalsaurabh66/pair-rdds-transformations-and-actions-1a286fc999f8#:~:text=Follow,%2D%2D%2D%20treated%20specially%20by%20Spark
+
+
+-GC Tuning:
+Better to go with Pair RDDs it will not create java header or java content.
+
+-Level of Parallelism:
+	No of partitions = no. of tasks
+	Level of parallelism can be passed as argument
+	Whenever we are implementing any tasks, better to inc no of parallelism, it will inc the performance
+	We might get Data Skewness issue, but can be overcomed
+	
+Note: Colesece acts as both Inc and Dec, therefore wide and narrow 
+	When it uses shuffles, they will come under wide
+	When it doesn't uses shufles it will acts as narrow.
+      Data Skewness can be overcomed by re-partition********	
+
+-Data Locality:
+	If code is one node and data in other, it affects performance.
+	If both are in same node, it is good.
+	Diff types of locality: (check once)
+		Process Local > Both are in same machine/node, always better
+		Node Local > Data travel from one node to another.
+		Rack Local > Same rack but diff nodes.
+	Do we have control on this? This is generally done by us, but can be done, but spark is smart enough to do this, again depends.
+
+https://blog.cloudera.com/how-to-tune-your-apache-spark-jobs-part-1/ > Good Content
+https://blog.cloudera.com/how-to-tune-your-apache-spark-jobs-part-2/
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+If there are less no of executors, but data is 1TB, how do you optimise it?
+We can say use file formats, optimise the data and proceed , this helps.
+
+Skew Data? If data is unevenly distributed in the cluster
+	Consider we have partitions like below
+	Part 1 - 150MB
+	Part 2 - 50MB
+	Part 3 - 50MB
+	Part 4 - 50MB
+	One problem: Unless and until Part1 is made correct, all other parts has to wait, consider if data is huge like 10s of TB, it will take more time, hence needs to resolved.
+Solution:
+	Repartition
+	Salting technique
+	Isolating salting
+	Isolating Map join
+	Iterative Broadcast join
+Note: Salting techniques, Isolating comes under DataSet
+
+-How to access the running web ui of the job?> we will have URLs to check
+-I ran 10days back one job, how to get the history of that? - spark history server ui 18088 (Maintained by Admin)
+-Spark default Driver host/port number > 4040 (check)
+	They create high availability, if 4040 is down, they'll create new instant 4042
+-Testing of code also plays major role.
+-Standalone Spark jobs or testing spark jobs using customization of jobs*********
+-SacalSuit used for testing by Gangadhar Sir*****
+-99% speculation will be enabled if not we can use dedicated command for that.
+-We can 4 nodes, mentioned no of partitions
+	Node 1 > 1,2,3
+	Node 2 > 4,5
+	Node 3 > 6,7,8
+	Node 4 > 9,10
+When we call colence 2, thing is the nodes will be decreased 2 and each node will have 5 partitions, not possible to knopw which 2 nodes..
+
+Important Questions:
+We need to use right operator at right time chossing b/w groupby / reduceby key / Cogroup?
+> Avoid groupByKey when performing an associative reductive operation i.e. example, rdd.groupByKey().mapValues(_.sum) will produce the same results as rdd.reduceByKey(_ + _). However, the former will transfer the entire dataset across the network, while the latter will compute local sums for each key in each partition and combine those local sums into larger sums after shuffling.
+> Avoid reduceByKey When the input and output value types are different. For example, consider writing a transformation that finds all the unique strings corresponding to each key. One way would be to use map to transform each element into a Set and then combine the Sets with reduceByKey.
+> Avoid the flatMap-join-groupBy pattern. When two datasets are already grouped by key and you want to join them and keep them grouped, you can just use cogroup. That avoids all the overhead associated with unpacking and repacking the groups.
+
+******Memory management > use Dynamic
+There is an occasional exception to the rule of minimizing the number of shuffles or More or An extra shuffle can be advantageous to performance when it increases parallelism****************
+YARN node manager memories can be inc or dec (least impor)
+Perform Tuning > whatever we discussed above
+-Types of partitions are Hash and Range********
+-Types of operation, that can be applied on RDD is Transformation and action
+Diff between Kaffa and Lambda Architecture
+	

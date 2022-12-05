@@ -429,3 +429,26 @@ Cluster Name :
 S3 Folder Location : 
 Launch Mode : Cluster Execution
 Software Configuration : 
+
+===============================================================
+
+Windows - Follows Proxy kind of file system:
+-When file copy pasted from one location to other, the file will not be re-created in new location, instead a meta data update will happen with respect to the new location of the file where it is copied, so next time we can just go to new location and it will be available.
+
+S3 - It's not a Proxy type of filesystem:
+-It's object storage, here copy paste is not same as windows, it's a two step process, file needs to be copied from one location to other location. whenever we do do move or copy and later the initial location from where it is copied needs to be deleted. Hence, below three properties are set:
+spark.conf.set('spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version','2')
+spark.conf.set("spark.hadoop.fs.s3a.multiobjectdelete.enable", "false")
+spark.conf.set("spark.hadoop.fs.s3a.fast.upload", "false")
+
+spark.conf.set('spark.speculation','false') >> The task is running for a longtime then Spark will transform that task to other executors, it should be always false because if the file size is big obviously it will take time and Spark shouldn't misunderstand it to be a speculated task and launch one more in parallel, therefore default it should be false.
+
+spark.conf.set('spark.hadoop.parquet.enable.summary-metadata','false')
+
+spark.conf.set('spark.sql.parquet.mergeSchema','false') >> Imagine we're moving or getting data from one table to S3, yesterday it was 10 columns in the source and today I'm adding new colum to query the data from source, therefore there is new column if that has to be reflected in S3, merge schema needs to be set to true, automatically schema will be updated and changes will be taken care in the Parquet file format.
+
+spark.conf.set('spark.sql.parquet.filterPushdown','true') >> This works on the metadata information of the file like min and max value.
+
+spark.conf.set("spark.sql.sources.partitionOverwriteMode", "dynamic") >> To overwrite the particular partition and not the entire data to be overwritten in the S3 location
+
+

@@ -1,0 +1,274 @@
+Which version do companies are using in real time?
+Task slots
+https://docs.google.com/spreadsheets/d/1Ua9WkA2oC1ZQyJ566rNlb8mOKbVDCFgwUGo4m1ihmfo/edit#gid=0
+
+-We Use Hive for better performance,
+-Hive is ETL, don't get confused with ELT > Which is from Hadoop point of view.
+	Extarct > HDFS
+	Transform > Execution engine via MR,TEZ,Spark based on Business Req & considering performance
+	Load > HDFS
+-What is S3? > Check in Google(May be related to Amazon).
+
+-Tables are of 3 types Internal(managed table), External table & Temporary table.
+	-While creating internal table, internal keyword is not mandatory.
+	-While creating external table, external keyword is mandatory.
+	-While creating temporary table, temporary keyword is mandatory.
+	-When you drop table, Data + Meta data is removed > Internal table.
+	-When you drop table, only Meta data is removed > External table.
+	-Temporary table is session oriented, when we come out of session it is deleted.
+	-Internal table default location is WareHouse location, configured in Hive-site.xml,nowadays it is updated 
+	 to app/hive/warehouse, so better to check once once you start working in real time.(dev will have read access so we can check and confirm).
+	-describe table we get details.
+	-Based on project the location/directory will be given by hadoop admin for external table and more or less it is Global not user specific.
+	-Internal table data/details is local, specific to user.
+	-External table data/details is Global, can be seen by PIG and MR user.
+
+-Real Time:
+	-14 columns -> 1 year back
+	-Add 5 more columns today
+	-Which table is suitable for above scenario > External Table
+	-Because 1 year data will be there, I can drop metadata, create new schema and point back to same data location.
+	-99% in real time we use only external table.
+	-We can still go with alter table command along with managed table, but performance decreases, data movement will happen.
+
+-When we create tables we have two accounts user and service account.
+	-User is for us
+	-Service is cluster access, it will have all data, user will have read access, create access and not drop etc, more details stay tuned.
+
+-Alter table <table_name> set TBLPROPERTIES('EXTERNAL'='TRUE') > Converting Internal to External.
+-Alter table <table_name> set TBLPROPERTIES('EXTERNAL'='FALSE') > Converting Internal to External.
+-Only DB (DVS) and table name(DVS1), I need table creation script > show create table DVS1.DVS;
+-Describe formatted table (To get in detail info) & Describe Extended.
+
+-Real Time>
+	-Before I leave yesterday DVS table has 1000
+	-Morning I came DVS table has 1002
+	-How to know who has done it ? Show create table or show describe formatted table
+
+-We have Dev,Testing & Production (Concept is same as BMW > Dev-Teaser, Testing-Trailer & Production-Cinema)
+
+-Metastore:
+	-It consists of table related information.
+	-In real time which is metastore used > MySQL
+	-Properties of default stuff for hive,warehouse > Hive XML
+	-Remote metastore > Real time we use this and any RDBMS(Mention MySQL) can be used, more than one user (100 or 200 etc)can access hive at a time.
+	-Derby metastore > Me and DVS working in same project both can't execute same query at a time in Hive.
+
+-Optimization Techniques or Performation Tuning:
+	-How much time is taken for a particular query?
+	-Storage formats
+	-Bucketing
+	-Partition
+	-Map join
+	-SMB (Sort Merge Bucket)
+	-Stream table
+	-Convert join
+	-Increasing mapper size,reducer size and container size
+	-vectorization
+
+-Partitions:
+	Static and Dynamic.
+	Real time we use Dynamic
+	-*****Dividing the data based on the column which RDBMS team will share.
+	-*****If they don't give or not available, then go with time stamp i.e. (CURRENT_DATE / CURRENT_TIMESTAMP)
+	-Static and Dynamic
+	-Table India with 32 states.
+		Need COVID 19 from AP,KA,Del on daily basis> Go with Static
+	-Walmart has 50 states in USA,
+		Need Tx and Cal transaction on daily basis > Go with static again.
+	-India with 30 states today then in future if it increases to 32 in Dynamic it also gets updated.
+	-Base table > Reporting Table is generated based on Bus Req
+	-Base table (Central updating data on COVID 19), I'm creating Reporting table with Dynamic and later provide it to Down Stream
+	-****Real time we go with Dynamic
+	-*****What columns will be provide by RDBMS if not provided go with time stamp.
+	-Properties to be enabled while working for partitions
+	-Static = Nothing is required
+	-Dynamic = set hive.exec.dynamic.partition = true; (By default dynamic feature is not displayed, let's enable)
+		   set hive.exec.dynamic.properties.mode = nonstrict;(To make even the remaining columns apart from partition column as dynamic)
+	-When loading data from base table to reporting table(partition) here an impact is made hence we got to use above set commands, it is session oriented.
+	-just use set; > to know the options
+	-insert overwrite table DVS1 partition(STATE) select * from BASE;
+		data mismatch will be there because partition column will be the last column in the select statement
+		Therefor use insert overwrite table DVS1 partition(STATE) select DISTRICT,STATE from BASE;
+	-In real time partition table > External
+		/user/dvs/dvs/state=AP/file
+		/user/dvs/dvs/state=KA/file
+		Above data is created 1 year back.
+		My dev removed AP directory today morning,
+		I added one more partition directory in (HDFS) 
+			select * from dvs what data will be checked? MSCK needs to be done
+-MSCK repair table <table_name> > Needs to be ran only then in hive console regarding AP is removed or one more partition is added.
+
+*****MSCK > Meta Store Check
+
+Ex: In the below example I've deleted the partition for year=1980 under the directory 'Summer_Olympics', so I ran the MSCK query I get below response
+
+hive (started)> select * from partitionhql where type ='Summer_Olympics' and year=1980;
+OK
+Time taken: 0.342 seconds
+hive (started)> MSCK REPAIR TABLE partitionhql;
+OK
+Partitions missing from filesystem:	partitionhql:type=Summer_Olympics/year=1980
+Time taken: 1.265 seconds, Fetched: 1 row(s)
+
+Ex: I added a new partition year=2030, when I perfom MSCK i get below response.
+
+hive (started)> MSCK REPAIR TABLE partitionhql;
+OK
+Partitions not in metastore:	partitionhql:type=Summer_Olympics/year=2030
+Partitions missing from filesystem:	partitionhql:type=Summer_Olympics/year=1980
+Repair: Added partition to metastore partitionhql:type=Summer_Olympics/year=2030
+Time taken: 3.171 seconds, Fetched: 3 row(s)
+
+- Partition table state
+<file>
+*****in the file whether we will have partition column - No (cross check, correct it is not present)
+
+-If you're not setting strict to non-strict what will happen? it will consider everytime as static partition, and any changes occurs in base table it won't reflect in reporting table.
+10 states
+1000 > 10 states
+1Lakh > 10 states
+
+Setting strict to nonstric, changes in Base gets updated in Reporting table
+3 > 3 states
+5 > 5 states
+1000 > 1000 states
+
+-**********As a developer we got to concentrate on Storage and Processing
+
+-I/O operations takes less time i.e bucketting provides better performance over partition
+Bucketing > Silk Board to Marathalli > Less time
+/user/dvs/dvs1/<state=>==/file--partition
+/user/hive/dvs/dvs1/<file> > Bucketing
+
+-If your client is saying to use primary key as optimization column or what ever column which you want to use as part of partition has more uniques columns then best partition is bucketing.
+
+-INDIA table to be created and aadhaar as a partition column how many sub directories > Then 130 crore will be created, then no use.
+	we can use buckets here instead, just give 30 buckets game over
+		set hive.enforce.bucketing = true;
+
+-If I'm 20 buckets data then if you give 30 buckets, how it is getting stored?
+	partition and bucketing store the data in hash mod n
+	n = partition, hash = column value
+	n = number of buckets, hash = value of bucketing
+
+****************-How to decide how buckets are needed?
+	The buckets used is for increasing load performance and based on Task slots
+	
+-Task Slots? > At a time how many tasks can be ran parallely.
+Cluster has 40 task slots then we can use 40 buckets, this will be informed by Admin.
+In backened it will call distribute by 40 buckets
+******Whatever query we run in real time we run it on service account(actual cluster) not using our personal account, if service account has 400 and 10 personal user accounts then 40 task slots.
+
+-Vectorization? > It will never impact any thing on storage and only impacts process.
+	In Hive we are using vectorization to get data from HDFS
+	At a time if we want to scan 1024 rows instead of 1 row (it is set as 1024 in config file), even here we have buckets in backend.
+	hive.vectorized.execution.enabled = true;
+	Operators supporting vectorization is select,filter and group by > All these will give 100% vectorization feature.
+	Earlier vector supported in text file, now we get supporting for ORC as well not for AVRO, parquet.
+
+-ACID
+A > Atomicity > Transaction should complete successfully or else it should fail completely i.e. it should not be left partially.
+c > Consistency > This ensures that any transaction will bring the database from one valid state to another state.
+I > Isolation > It states that every transaction should be independent of each other i.e. one transaction should not affect another.
+D > Durability > It states that if a transaction is completed, it should be preserved in the database even if the machine state is lost or a system failure might occur.
+
+Below 3 things impact on ACID or are the operation point of view and everything is done on row level transactions
+ACID properties are supported for Hive version 0.14 on-wards
+Insert
+Delete
+Update
+
+In Hive Update and Delete was not possible prior to 0.14 version, after that ACID was introduced, hence we can do it now, but 1 row at a time.
+
+When creating the table and firing query we got to enable ACID to achieve atomicity,consistency,isolation and durability
+-Make transactional = True;
+ hive.support.concurrency = True;
+ set txn.manager = org.apache.hadoop.hive
+
+Above stuffs needs to be set before using insert,update and delete
+
+-Can we update, delete multiple rows using ACID properties > No, only one at a time
+-Update <table_name> set id = 10 where id = 1;
+-Delete from <table_name> where id = 10;
+
+******************ACID properties supports only Partition and Bucketing tables.
+
+
+dvs Training
+
+#############Hive interview questions##################################
+
+-->Basic
+-->intermediate 
+-->Complex 
+-->Hive (To better performance )
+
+ETL 
+
+Extract---HDFS
+Tranform--->
+Exceution engine 
+MR,
+TEZ,
+Spark
+-->Business requirmnet
+Performance 
+Load --->HDFS,s3
+
+-->Internal(managed) vs External 
+
+-->Internal --Internal --No need
+-->External -->External mandatory
+
+-->When u drop the table 
+-->DATa + Metadata -->Hive --->Internal 
+
+When u drop the table
+Data--->Persistence
+Metadata-->Removed---External 
+
+
+-->Location 
+
+internal --Warehouse location --->Hive-site.xml (read permissionm)
+
+/user/hive/warehiuse
+/app/hive/warehiuse/<database>/<table>-->hive user  
+
+
+Location
+/tmp/
+
+-->DVS 
+
+/DVS1/interview/-->
+/DVs2/interview/
+
+
+-->LOCAL -->HIVE 
+
+-->Global ---
+
+--Real time 
+--->table which has 14 columns -->1 year back 
+
+-->5 columns ==19 columns
+
+
+which table is suitable ?
+
+External 
+
+
+insert -->19 
+14  --metadata 
+
+-->
+
+user--naresh
+service--dvs1_Service
+
+
+-->Internal -->external
+-->external -->interenal 

@@ -1,0 +1,133 @@
+package com.securitytools.hadoop.support
+
+import java.sql.{ Connection, DriverManager, ResultSet, Statement }
+import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.SaveMode
+import org.apache.spark.SparkContext
+import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.functions._
+//import org.apache.spark.sql.DataFrame
+
+
+/** * This is the class created to handle database tasks. */
+
+class Database(readProperties: ReadProperties)
+
+{
+ /**	*Refresh Impala tables.	*/
+ 
+def refreshTable()	{
+ refreshTable(readProperties.getEnvProperty("jdbcConnection")) }
+ 
+/**	* This is to invalidate the Hive Metadata. You should execute this method after inserting data in Impala table.	*/
+
+
+def refreshTable(connectionUrl: String)	{
+
+println("Connection String	:::	"	+	connectionUrl)
+
+//dfCircPathElmInstByID.saveas
+
+val JDBCDriver = "com.cloudera.impala.jdbc41.Driver"
+
+ class.forName(JDBCDriver).newInstance
+ val con = DriverManager.getConnection(ConnectionUrl)
+ 
+val stmt = con.createStatment()
+ stmt.executeUpdate("INVALIDATE METADATA")
+ stmt.close()
+ con.close()
+ }
+ 
+ /**	* This is to refresh table partition after loading data to that partition. 
+ *actioKey	:	partition column name.	*actionValue	:	partition value	*/
+ 
+ def refreshPartition(
+ tableName:	String,
+ actionKey:	String,
+ actionValue:	Integer)
+ 
+ {
+ val connectionUrl = readProperties.getEnvProperty("jdbcConnection")
+ println("refreshPartition :: COnnection String ::: " + connectionUrl)
+ 
+ //dfCircPathElmInstByID.saveas
+ 
+ val JDBCDriver = "com.cloudera.impala.jdbc41.Driver"
+ 
+ class.forName(JDBCDriver).newInstance
+ val con = DriverManager.getConnection(connectionUrl)
+ val stmt = con.createStatment()
+ 
+ //String to refresh the table.
+ 
+val refreshString = "REFRESH " + tableName + "PARTITION (" + actionKey + '='+"'"+actionValue + "');"
+refreshString	:::::::: " + refreshString)
+cuteUpdate(refreshString)
+e()
+() 
+}
+
+/**	* Delete all existing records before adding new records. Thismethod also create	partition.*/
+def overwriteDataFrameInTable(df: DataFrame, tableName: String){
+ 
+ df.write.mode(SaveMode.Overwrite).insertInto(tableName)
+ }
+ 
+ /**	* Append records.	*/
+ 
+ def appendDataFrameInTable(df: DataFrame, tableName: String) {
+ 
+ df.write.mode(SaveMode.Append).insertInto(tableName)
+ 
+ }
+ 
+ /**	* Append the data in table. Ths method also create partition.	*/
+ 
+ def appendDataFrameInTable(df: DataFrame, partitionBy1: String, partitionBy2: String, tableName: String){
+ 
+ df.write.mode(SaveMode.Append).partitionBy(partitionBy1, partitionBy2).insertInto(tableName)
+ 
+ }
+ 
+ /**	* If Index is 0 then override otherwise append.	*/
+ 
+ def appendOroverwriteDataFrameInTable(df: DataFrame, index: Integer, tableName: String) {
+ if(index == 0) {
+ overwriteDataFrameInTable(df, tableName)}
+ 
+ else{
+ 
+ appendDataFrameInTable(df, tableName)
+ }
+ }
+ 
+ /**	*	Read Infovista table.	*/
+ def readRDBMS(sqlContext: SQLContext, tableName: String): DataFrame = {
+ val jdbcDF = sqlContext.read.format("jdbc".option("url","jdbc:oracle:thin:hadoop_ro/SecureIV2@//69")
+ 
+ return jdbcDF
+ }
+ 
+ /**	* Read Infovista data from Oracle. This will split a sql to multiple sqls.	*	* noOfPartitions - 
+ def readRDBMS(sqlContext: SQLContext, tableName: String, noOfPartitions: Integer,partitionColumn: String)
+ val url = readProperties.getCommonProperty("InfovistaOracleUrl")
+ 
+ val jdbcdf = sqlContext.read.format(“jdbc”)
+.option(“url”,"jdbc:mysql://db1.zaloni.com/customer")
+.option(“driver”,”com.mysql.jdbc.driver”)
+.option(“dbtable”,tableName)
+.option(“user”,”ngoel”)
+.option(“password”,”xxxxxx”)
+.option(“lowerBound”, 0)
+.option(“upperBound”,10000)
+.option(“numPartitions”, 4)
+.option(“partitionColumn”, noOfPartitions.toString())
+.load()
+
+return jdbcDF
+}
+
+}
+
+Note:

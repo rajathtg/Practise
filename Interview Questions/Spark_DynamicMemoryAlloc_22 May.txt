@@ -1,0 +1,60 @@
+-Memory allocation :
+	Static and Dynamic allocation
+	When data is Dynamic how to change executors Automatically?
+	Check the screenshot.not req for 
+	In Dynamic allocation we have two things:
+		Scale Up(Inc Executors) and Scale Down(Dec Executors)
+
+To enable dynamic allocation:
+	-spark.dynamicAllocation.enabled = true;
+	-spark.shuffle.service.enabled=true;(We have to do his for YARN and not req for Mesos)
+We can use Spark Submit, Spark conf(using spark conf is not recommended) and third way is Spark-Defaults
+****Real time is always Spark Submit with Dynamic allocation
+
+Once we finalise the initial executors we can give rough count for Dynamic, no need to calculate like how we do for Static.
+Note : Do follow the principle of giving the 1 to YARN like static even for the dynamic allocation.
+We can also partitions here as parameters
+
+
+-->Dynamic Allocation comes with the policy of scaling executors up and down as follows:
+Scale Up Policy requests new executors when there are pending tasks and increases the number of executors exponentially since executors start slow and Spark application may need slightly more.
+Scale Down Policy removes executors that have been idle for spark.dynamicAllocation.executorIdleTimeout seconds.
+
+1)spark.dynamicAllocation.enabled =true 
+2)spark.shuffle.service.enabled= true as  spark application is running on YARN
+
+1)From Spark submit with --conf <prop_name>=<prop_value>
+spark-submit --master yarn-cluster \
+    --driver-cores 2 \
+    --driver-memory 2G \
+    --num-executors 10 \
+    --executor-cores 5 \
+    --executor-memory 2G \
+    --conf spark.dynamicAllocation.minExecutors=5 \
+    --conf spark.dynamicAllocation.maxExecutors=29 \
+    --conf spark.dynamicAllocation.initialExecutors=10 \ # same as --num-executors 10
+    --class com.spark.sql.jdbc.SparkDFtoOracle2 \
+    Spark-hive-sql-Dataframe-0.0.1-SNAPSHOT-jar-with-dependencies.jar
+
+Diff Yarn client and yarn cluster**** > https://stackoverflow.com/questions/41124428/spark-yarn-cluster-vs-client-how-to-choose-which-one-to-use
+Will diff the  
+Driver client will run client master, 
+Client application to master,remaining will be taken care by application master
+
+Spark job with 4 jobs...
+2 are done 3rd one is not at all running for 2hrs....what is the reason
+Skewness can be one of the reason, what else???
+Multiple issues are there copy the url by Gangadhar.
+
+
+Oozie interview Questions:
+Cordinators
+job.properties
+serial and parallel
+sub work flows
+param passing
+Control M
+
+*********Spark Hive Sqoop and Oozie pakka asked in the interviews
+
+

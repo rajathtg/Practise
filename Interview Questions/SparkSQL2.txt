@@ -1,0 +1,113 @@
+-->Spark sql 
+
+-->catalyst optimizer--query - Data Frame and Data Set have this
+-->Tungeten  engine==CPU ,memory  - Only the DataSet have this
+
+
+-->select * from table where id =2;==Dataset
+
+Catalyt optimizer follows two rules:
+-Rule based > Determines ways to execute to query
+-Cost based > After getting ways to execute it will find which is bext
+*******They expect us to tell above rules, concentrate on this.
+Column pruning is similar to partition prunings.
+column pruning helps in eliminating unwanted ways from the code.
+
+log4j.logger.org.apache.spark.sql.execution.SparkOptimizer=TRACE
+
+/ the business object
+case class Person(id: Long, name: String, city: String)
+
+// the dataset to query over
+val dataset = Seq(Person(0, "Jacek", "Warsaw")).toDS
+
+// the query
+// Note that we work with names only (out of 3 attributes in Person)
+val query = dataset.groupBy(upper('name) as 'name).count
+
+ query.explain(extended = true)
+
+TRACE SparkOptimizer:
+=== Applying Rule org.apache.spark.sql.catalyst.optimizer.ColumnPruning ===
+ Aggregate [upper(name#126)], [upper(name#126) AS name#160, count(1) AS count#166L]   Aggregate [upper(name#126)], [upper(name#126) AS name#160, count(1) AS count#166L]
+!+- LocalRelation [id#125L, name#126, city#127]                                       +- Project [name#126]
+!                                                                                        +- LocalRelation [id#125L, name#126, city#127]
+...
+== Parsed Logical Plan ==
+'Aggregate [upper('name) AS name#160], [upper('name) AS name#160, count(1) AS count#166L]
++- LocalRelation [id#125L, name#126, city#127]
+
+== Analyzed Logical Plan ==
+name: string, count: bigint
+Aggregate [upper(name#126)], [upper(name#126) AS name#160, count(1) AS count#166L]
++- LocalRelation [id#125L, name#126, city#127]
+
+Real time question:
+C1
+("1:ganga")
+("2:ganga1")
+("3:ganga2")
+("4:ganga3")
+
+From above C1 column separate it to C1 and C2
+key  value
+1  ganga
+2  ganga1
+3  ganga2
+Ue below code.
+select key,value from table3 lateralview explode(C1) dummy as key,value;
+Learn diff between explode and lateralview explode.
+
+Tungsten engine? > Concentrates more on CPU and Memory
+	Need of it? Prior to Tungsten valcano iterative model use to be used.
+
+select count(*) from sales where id=2;
+scan(sales) >> filter(id=2) >> project >> aggregation(count(*))
+Above was the process happening previously i.e. volcano iterative model.
+scan(sales)+filter(id=2)+project+aggregation(count(*))
+Next came the Whole code generation like above in short it happens.
+
+Now whole generation helps us to optimised query plan and speed up query execution(vectorised way of scan of bulk rows), Tungsten follows the same.
+To enable tungsten optimise model:
+	spark.sql.tungsten.enable=true; //helps in running whole code generation
+
+Filter early concept from Pig is taken and used here as catalyst optimiser
+
+Project will have four layers:
+Source > We can call it as a UpStream
+Ingestion > Sqoop,flume,kafka
+Processing > OLAP or OLTP; scheduling Oozie and CRON job
+Reporting > DownStream
+
+As a developer I'll involve in Ingestion and Processing.
+UpStream is from where we get the data
+DownStream is where data is finally sent to after processing more involved in Reporting
+
+Cumulative Sum in Hive? //uber interview > you tube GK Code labs
+Consider we have the following columns:
+1,jan2019,100
+2,jan2019,200
+3,feb2019,300
+4,mar2019,150
+5,mar2019,150
+Code : sum(price) over(partition by month order by serial)
+
+https://spoddutur.github.io/spark-notes/second_generation_tungsten_engine.html
+
+https://databricks.com/blog/2015/04/13/deep-dive-into-spark-sqls-catalyst-optimizer.html
+
+Pending Topics:
+Ingestion of Data
+Incremental Load
+Data validation b4 copying to HDFS
+Project explaination
+
+Dateformats, regex explaination, Hive and Spark
+In Spark we handle incremental load through Spark Core not using Hive
+windowing partitions rownum concept to eliminate the duplicates data from 5GB of same data getting every day
+******Dept wise second lowest sal??
+
+Enivronments Setups:
+Dev is Teaser
+Testing is Trailer
+Production is Action Movie

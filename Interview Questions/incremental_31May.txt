@@ -1,0 +1,109 @@
+To acj
+We handle incremental load:
+	Update > Current
+	New > 1 to 2days
+	Old > More than decent number of days
+-How to handle incremental data?
+	We can handle in two ways with and without timestamp 
+	Hive Logic > with timestamp // less questions in Interview
+	Full outer join > without TimeStamp // Always asked in Interview
+	Note: We should need primary key for without timestamp
+-Refer the GoTo meeting screenshot
+	Created using PySpark
+****Note: line 28// Coalesce is diff from SQL and Spark
+
+abc > Old
+xyz > New
+cde > Updated
+
+We always show sensitive data, based on req and in realtime we take sensitive columns:
+
+Note:
+Coalesce returns non null value in the list
+
+Look into screenshot:
+Input > List(A,B,C,D,E,F)
+Output > List((A,B),(C,D),(E,F)) > Using Scala/Python
+
+Citi Bank:
+Input > ABCDEFGHI
+Output > abcdE@F@G@H@I@
+
+Main usage of openCostINbytes in Spark? Hint: Comes under Optimization
+To open each and every file, what is the amount of bytes taken while opening the file either small or large file
+conf.set("spark.files.opencostinbytes","")
+
+Anyref vs Anyvalue
+Nil,c,null,none diff
+
+cloudera part 1 and cloudera part2
+
+Medium Blog for Spark to know more about Spark 3.0
+
+	
+
+list1 = [(1, 'abc'),(2,'def')]
+olddf = spark.createDataFrame(list1, ['id', 'value'])
+olddf.show();
+ +---+-----+
+ | id|value|
+ +---+-----+
+ |  1|  abc|--old
+ |  2|  def|
+ +---+-----+
+list2 = [(2, 'cde'),(3,'xyz')]
+newdf = spark.createDataFrame(list2, ['id', 'value'])
+newdf.show();
++---+-----+
+| id|value|
++---+-----+
+|  2|  cde|--updated
+|  3|  xyz|--New
++---+-----+
+
+
+
+
+19:34
+
+Mutra
+
+-->we can handle two ways-->without timestamp(full outer join)  -->with timestamp (rank or row_number)
+-->Update
+-->New
+-->Old 
+
+
+
+
+19:34
+
+Mutra
+
+from pyspark.sql.functions import *
+ df = olddf.join(newdf, olddf.id == newdf.id,'full_outer').
+ select(coalesce(olddf.id,newdf.id).alias("id"),coalesce(newdf.value,olddf.value).alias("value"))
+df.show();
++---+-----+
+| id|value|
++---+-----+
+|  1|  abc|
+|  3|  xyz|
+|  2|  cde|
++---+-----+
+
+7090834667 > Gangadhar Number
+Prepare 
+Source > Type of format, freq
+Ingestion > Ques how to handle without primary key > boundary query min and max > give boundary query explicity to avoid perfo drop
+--sqoop where/condition?
+--leader?follower?option, consumer group,producer asks=0 or all?? > In Kafka
+--Types of channels,stream or normal stream or aggre > In Flume
+--properties file mainly? sunwork flow, so oozie is important for us
+--Log.4j used for analysing the logs to understand the exact issue
+--How to handle Data Skew? and when do we get data skew issue???Can be avoid using shuffles********
+--Shell scripts and Spark important asked in TechMahindra
+status of shell, how to get 
+Linux,kafka,sqoop,oozie, hive spark
+windowing function implement in Hive, samething used in SparkSQl
+Destination

@@ -1,0 +1,115 @@
+Storage File Format:
+-Text File
+-Sequence
+-RC
+-ORC
+-Parquet
+-Avro
+
+-Real Time > Hive table Structures, consider we have 
+
+Base1	Base2	Base3	Base4 - Level 0
+
+Stage1(using Base1&2)	Stage2(Base3&4) - Level 1
+
+Using Stage1&2 > Reporting table is generated > Sent for Downstreams(End Users) - Level 2
+
+-Question > For Which layer we use which format?
+	    In which level we are going to work more?
+
+Level 0 > Flush and Fill
+Level 1 > Flush/Fill
+Level 2 > Incremental > Append/Update
+
+Based on below mentioned req we consider which file formats to use?
+	Storage
+	Analysis
+	Processing
+
+Textfile:
+-Let's have 1GB text file is there and on top of that I create table for that in Hive, it will be again 1GB only, so unable to compress(hampers storage)/ optimize it (0% compression).
+-Again it will cost more time for processing as well.
+-Level 0 point of you we won't do any operation/analysis only flush and fill, that is inputing hell of data, hence we can go for text file.
+-Unless and until we're using it for longer period / permanently, we shouldn't use thi.
+-If it is just addition and deletion then very suitable, i.e. shorter period time.
+*******-Default file format in HDFS is always Text File.
+create table DVS(c1 int) > Then it will be text file.
+
+Sequence File:
+-To handle binary data this is useful
+-Not used in Real time
+-Storage and Processing similar to Text File.
+
+****Diff between RC ORC Parquet AVRO for interview
+
+RC > Record Columnar
+-Storage > 14% compression (For 100GB then compression upto 86GB)
+-Processing > 100GB > Consider it will take 35 minutes
+-If we're using store as RC format in background by default it will compress by 14% (14% is standard and not done by developer).
+
+ORC > Optimized Record Columnar
+-Storage > compress by 78% > for 100GB it will stored as 22GB
+-Processing > for 100GB it will take 10 minutes
+
+Parquet:
+-Storage > 62%
+-Processing > 17 minutes
+
+AVRO:
+-Suitable for few use cases.
+-Similar to text file
+
+Schema Evolution and Compression and Splitability:
+-Plays major role in selecting file formats post storage & processing.
+
+Schema evolution:
+-Column is created 10 columns, after few days 4 columns more, then 5 more
+-Here column is Dynamic (keeps changing) / Dynamic Metdata
+-Based on data how metadata is changing without developer intervention.
+-How The metadata handles changes automatically is called Schema Evolution
+-For Base tables only.
+-Best is AVRO, AVRO - 100% supporting (No loss, full data is received)
+-ORC - 50% (here data mismatch will happen, loss of data)
+
+Compression:
+-Storage point of you, based on what way it will happen?
+ORC > GZIP
+Parquet > SNAPPY
+
+Splitability:
+-Hive stores data on HDFS, it has to split the data(backend it stores based on block size), hence Hive uses splitability.
+-What all are the file sizes based on what way it stores data, type of compression, if GZIP is used whether it supports the splitability?
+
+-deflate/zlib - .deflate - Doesn't support splitability
+GZIP - .gz - No supprt splitability
+BZIP2 - .bz2 - Supports splitability (we can control splits)
+LZO - .lzo - No support to splitability
+LZ4 - .lz4 - No again
+snappy - .snappy - No again
+
+AVRO supports most of them GZIP,BZIP2....
+
+RC.java file, ORC. java file > we can check this, taken care by developers not for us
+
+*****ORC backend takes GZIP by default, but we can still update to GZIP2, ORC & GZIP2 is best option.
+
+Base tables doesn't require splitability
+Compression and Splitability is must for reporting table.
+
+Read & Write; Column/Row/Both column and row oriented:
+-AVRO > Good for Write > Row oriented file format (From Base table if we're working on row filtering means very good to store file in the form of AVRO)
+-Parquet and ORC Good for Read > Column (From Base table if we're working on column filtering means very good to store file in the form of Parquet & ORC)
+-RC (Supports both ROW & Column but storage 14% hence it is not recommended)
+-For Reporting people it is good to give file formats in the form Parquet/ORC since read performance is good.
+
+******No of splitability is equal to no of mappers splits.
+
+Base layer > Text File
+Stage Layer > RC
+Reporting > ORC (Spark and Hive)
+
+-Analysis (similar to Reporting):
+RC > Supports Analysis, not concentrates on Performance
+ORC > Supports Analysis, also concentrates on Performance
+
+*********http://www.programmersought.com/article/164850886/ (To learn about compressions)

@@ -1,0 +1,48 @@
+In case of hadoop cluster we submit spark application to YARN, YARN has Resource Manager to which our Spark App will be submitted.
+
+When Spark Application is launched then 2 programs are created that is Driver and Executor.
+This will be common across any cluster YARN, Standalone etc...
+Driver > Acts as Master
+Executor > Will act as Slave
+
+*********Note: Driver and executor acts as Master and Slave with respect to application and will be created when Spark App are submitted, where in YARN and Stadnalone also has master and slave architecture with respect to cluster as seen below, please don't get confused.
+
+YARN > Master: Resource Manager, Slave: Node Manager, MasterPort: 8088
+StandAlone > Master: Spark Master, Slave: Spark Worker, MasterPort: 7077
+
+Stages and Tasks belongs to Driver and executor and not to YARN / Standalone.
+
+SparkApp submitted then > HDFS Blocks will have Node Manager> Node Manager will provide resources to get processed > Partitions are created > Now we've partitions, to process partition logic/operations is provided by "Driver Program".
+Execution of partitions with given logic will be carried out by "Executors".
+
+Stage > Execution of sequence of narrow transformation.
+New Stage > New stage gets created for a wide transformation.
+No.of stages = No.of wide transformations + 1.
+
+Executor > It's a program which processes the partition and no.of executors equal to number of partitions (Partitions are created from Blocks).
+
+No of executors = No of Partitions = No of tasks (tasks is a partition under execution).
+Executor > Program
+Partition > Data
+Task > State of execution
+
+Task > A partition under execution.
+No.of Tasks = No.of Executors.
+
+Driver > Which monitor state of executors and same time supplies logic and it nevers performs process. In general it controls supply of logic and maintains executors.
+
+Additional Notes:
+RDD, DataFrame and DataSet all three are the data objects API's present in Spark.
+******RDD is like MR and DF & DS is like PIG and Hive
+RDD is low level programming
+DF and DS are asbstracted objects of RDD
+We can directly work with RDD or abstracted objects.
+RDD > Spark Core programming > We use Spark Context Component.
+DF and DS > Spark SQL programming > We use sql/Hive context.
+
+If Data is Semi or Structured > We can go with DF
+If Data is Unstructured > We can go with RDD/DataSet
+*****From Spark 2.x we can do everything with DataSet, no need of DF or RDD.
+
+Python is not compile-time type safe, so it throws runtime exceptions when classes are instantiated with invalid arguments. The Dataset API cannot be added to PySpark because of this Python language limitation.
+Therefore PySpark doesn't support Datasets

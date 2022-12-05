@@ -1,0 +1,166 @@
+-Spark SQL:
+	How we are going to store data in Spark SQL
+	RDD vs DF vs DataSets?
+	Ways to create DF
+	Operations on DF
+	How to add column
+	How to add collections like seq or map to a column
+	How to drop duplicates from DF
+	How to rename column name
+	How to rename dynamically
+	How to add constant column values to the newly added column to the DF
+
+**********Language Main Abstraction
+Scala > Dataset[T] & DataFrame (alias for Dataset[Row])
+Java > Dataset[T]
+Python* > DataFrame
+R* > DataFrame
+Note: Since Python and R have no compile-time type-safety,we only have untyped APIs, namely DataFrames.
+
+RDD > RDD is a fundamental data structure of Spark, It is an immutable distributed collection of objects. Each dataset in RDD is divided into logical partitions, which may be computed on different nodes of the cluster.
+
+DataFrames > DataFrame is a distributed collection of data organized into named columns. It is conceptually equivalent to a table in a relational database or a data frame in R/Python, but with richer optimizations under the hood. DataFrames can be constructed from a wide array of sources such as: structured data files, tables in Hive, external databases, or existing RDDs.
+
+DataSet > Datasets in Apache Spark are an extension of DataFrame API which provides type-safe, object-oriented programming interface. Dataset takes advantage of Spark’s Catalyst optimizer by exposing expressions and data fields to a query planner.
+
+RDD is without schema
+DF and DataSet is with schema
+Performance wise Dataset > RDD but DataSet performance less than DF******
+-Typed vs UnTyped w.r.t DF and DataSet?
+	RDD does not have metadata, hence it neaither typed nor untyped.
+	DF is UnTyped, bec it will check which datatype the column has and this will happen during run time or also called checking type safety.
+	Data set is Typed, bec it checks at Compile Time.
+	First is compile time later comes run time.
+
+-Ways to create DataFrame (Data + Metadata):
+Rdd to DF > toDF()
+	To give metadata to DF when creating DF from RDD is CaseClass and StructType.
+	caseclass > when columns less than 21*******************
+	StructType > when columns greater than 21 (check once)
+	Now we're creating directly using createdataframe, i.e.
+		-spark.read.csv
+		-read.json
+		-read.parquet
+	While creating DF from RDD, what all are the things we need to worry?
+		-We need to worry about column names and datatypes
+		-In technical way > Type Conversion and Type Safety
+From RDBMS > There is data in RDBMS and we got to create DF while taking data from RDBMS
+		-spark.read.jdbc
+
+-Ways to add columns to DFs
+	-withcolumn
+	-Req is I have c1,c2,c3 here I want to add one more column c4 and value of c4 should be 1
+		c1,c2,c3,c4
+		1   2  3  1
+		3  4   5  1
+	-Addition of column can be achieved using lit.
+	-Diff b/w typed lit vs lit (check once)
+	Typed lit > List,seq,MAP (can handle parameterised datatypes )
+	Lit > except complex data types and instead we use dvs,int, char etc
+
+-Methods to remove duplicates from DF:
+	drop duplicates
+	even distinct can be use
+
+-renaming the columns
+	How to rename 1 or 2 column or upto 4 we can go with column
+	How to rename 50 columns Dynamically? using col() function to automatically rename functiom check screenshots....
+	Gangadhar sir has done for 420 columns
+	val old_columns is for dynamically
+
+code:
+val data = Seq(Row(Row("James ","","Smith"),"36636","M",3000),
+  Row(Row("Michael ","Rose",""),"40288","M",4000),
+  Row(Row("Robert ","","Williams"),"42114","M",4000),
+  Row(Row("Maria ","Anne","Jones"),"39192","F",4000),
+  Row(Row("Jen","Mary","Brown"),"","F",-1)
+)
+
+
+val schema = new StructType()
+  .add("name",new StructType()
+    .add("firstname",StringType)
+    .add("middlename",StringType)
+    .add("lastname",StringType))
+  .add("dob",StringType)
+  .add("gender",StringType)
+  .add("salary",IntegerType)
+  
+val df = spark.createDataFrame(spark.sparkContext.parallelize(data),schema)
+df.printSchema()
+
+val data = Seq(Row(Row("James ","","Smith"),"36636","M",3000),
+  Row(Row("Michael ","Rose",""),"40288","M",4000),
+  Row(Row("Robert ","","Williams"),"42114","M",4000),
+  Row(Row("Maria ","Anne","Jones"),"39192","F",4000),
+  Row(Row("Jen","Mary","Brown"),"","F",-1)
+)
+
+
+val schema = new StructType()
+  .add("name",new StructType()
+    .add("firstname",StringType)
+    .add("middlename",StringType)
+    .add("lastname",StringType))
+  .add("dob",StringType)
+  .add("gender",StringType)
+  .add("salary",IntegerType)
+  
+val df = spark.createDataFrame(spark.sparkContext.parallelize(data),schema)
+df.printSchema()
+
+
+-How to change datatype od DF in Spark:
+	-using cast
+
+-How to convert DF to DS?
+	using encoder
+	DS as[]
+
+-How to remove null values?
+	-isnull if columns are 1 or 2
+	-Use UDF if columns are in 100s 
+
+-selectExpr:?
+	used while changing datatypes from int to str similar to cast
+	Ex: val df1 = df2.selectExpr("cast(age as int) age","cast(sex as string)sex")
+
+-There is DF, in the DF I want to take only top 5 rows...we can use take()
+
+-collect vs take vs show
+	collect > 
+	take > only prints the selected rows we want > comes under action
+	show > only the results we want > comes under action
+	show(5) and take(5) is diff
+	take(5) prints first 5 rows always, but show prints 5 diff results each time query is fired.
+
+-DataFrame > 10 columns > c1,c2,c3,c4,c5,c6,c7,c8,c9,c10
+	Later I want DF like c6,c7,c8,c9,c10,c1,c2,c3,c4,c5
+	But not manually, we got to do it Dynamically...(Home Work)
+	We have fold left, fold right, but there is exact code please to R and D
+
+-I have c1,c2,c3,c4 > task is c4 should display True if c3 value is T
+	1,2,T,True
+	1,2,F,False
+	We can use when otherwise...
+	Nowadays they req to write code, do R and D
+	withColumn(c4,when (col=).otherwise(1))
+	ex: .withCoulmn(c4, When("T", "True").Otherwise("False"))
+
+-case when otherwise would be better to go when we have below query
+	c1 is ID
+	c2 is State
+	create c3 column where for each state enter the capital city
+
+-Req is like using purely sparksql function not using Hive like that > get the data like who is the employee earning highest salary in the company
+	use window
+	partitionby
+***Not using > select *from(select e.*,dense_rank()over(order by sal desc)rank from emp) where rank=1);
+
+Correct code:
+	val windowSpec  = Window.partitionBy("departmentid").orderBy("salary")
+    empDF.withColumn("rank",dense_rank().over(windowSpec)).where(col("rank")===1).show()
+
+-When to go for caseclass, scala case class > this comes during pattern matching...we can go for caseclass in real time.
+
+-PySpark > named tuple...

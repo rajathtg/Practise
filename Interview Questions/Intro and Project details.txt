@@ -1,0 +1,53 @@
+Well, Good Morning :) Once again, as you already know my name is Rajath, born and brought up in Bangalore, until my graduation I studied here in Bangalore. I'm a graduate of The Oxford College of Engineering located at Bommanahalli i.e. on the way to Electronic City. I was one among my batch mates to get recruited to NTT DATA during campus placements. I on boarded NTT DATA as fresher in the year 2016 and was trained as a SQL Developer for about a month. Post training I was allocated to Se2 project which is a Insurance domain, Se2 being a US company runs its business by providing service to companies which provide Life Insurance and Annuity across different states of US. My responsibility was to retrieve the data from MySQL database which consists of names and rates of the different life insurance and annuity plans, perform a Data cleaning and profiling later forward it to testing team, post testing deployment used to happen. If a client is deploying rates on bi-weekly/monthly basis I used to write a Adhoc queries to fetch data for such changes and for clients deploying rates on  daily basis I used to run a stored procedure with a small tweak.
+Post completion of Se2 project and with 2+ years of experience in SQL I was recommended to Mckesson project, as they were in search of resources who could write Spark-SQL codes in Scala. It took me about 1.5months to start working on tasks individually after KT,training and shadowing peers. Mckesson is into Healthcare Services, Pharmaceuticals and Medical Technology. My work is related to Pharmaceuticals which is Retail domain, here Mcksesson acts as a platform which connects the biopharma companies/medical related product manufacturers with the customer/pharmacies/home health care companies etc. 
+1. Highest Sold product for the day and it's availability for next one week?
+2. Least Sold product and is it a priority to maintain in stock?
+3. Regular customers purchase trend(less or high) by Comparing price chart of last month purchase of regular customer to this month.
+5. Heads up on out of stock of frequently bought products.
+6. Feedbacks
+7. Alternatives opted?
+8. Preparing list of customers who would stop buying products in near future through their recent purchase trend analysis and later marketing team will take care of giving them vouchers/freebies etc.
+9. Preparing list of customers who were regular but didn't make a purchase in last few weeks, and later marketing team will take care of sending out reminders.
+
+Transactional data is retrieved for analyzing only twice a week i.e. on Monday and Wednesday.
+Date > State > Cust,HHA,pharmacy > product > 
+23 Columns, 
+Size of the data Mon 3.5 to 4 GB and on Wed 1.5 to 2 GB
+1. S#
+2. Producer
+3. Producer ID
+4. Product
+5. Units
+6. Product ID
+7. Price
+8. Consumer
+9. Consumer ID
+10. Medicare fcaility availed
+11. Alternative
+12. Feedbacks
+
+Stock Details:
+1. S#
+2. Product ID
+3. Product Description
+4. Price
+5. Warehouse location
+6. Available Units
+
+Producer Details:
+1. Producer
+2. Producer ID
+3. Producer Address
+4. Producer State
+5. Producer Zip Code
+6. Producer Email
+7. Producer Mobile
+
+Consumer Details:
+1. Consumer
+2. Consumer ID
+3. Consumer Address
+4. Consumer State
+5. Consumer Zip Code
+6. Consumer Email
+7. Consumer Mobile

@@ -1,0 +1,73 @@
+7 questions are based on Spark and around 3 on Scala
+It's tough(check in Dzone link below), if not understood better go with Sqoop as of now...
+***********While using sqoop we have vertex failure issues, hence we gor for Spark...
+Nowadays we're using Spark hence better to use Spark
+https://forums.databricks.com/questions/13746/can-spark-sql-replaces-sqoop-for-data-ingestion.html
+
+https://dzone.com/articles/read-data-from-oracle-database-with-apache-spark > Basics and it's good
+https://medium.com/dataops-playbook/apache-spark-vs-sqoop-engineering-a-better-data-pipeline-ef2bcb32b745
+https://medium.com/@gkadam2011/automating-spark-jobs-with-oozie-spark-action-a7fae2a42515 > Oozie + Spark Ingestion
+
+https://medium.com/cuelogic-technologies/analyzing-data-streaming-using-spark-vs-kafka-bcfdc33ac828 > Streaming Basics
+
+Agenda:
+Sqoop replacing with Spark
+Spark how to run it from Oozie
+Incremental if time permits
+
+>How to connect with RDBMS using Spark APIs instead of Sqoop?
+>How to load DF into partition table?
+
+Look into the GoTo meeting screenshot:
+>We have the impala table
+We are refreshing the impala table using Invalidate the Metadata
+
+It is automated code.
+2 // Pulling only what is required from SQL
+13 // read properties used get parameters
+19 // which environment Dev or Testing (to be mentioned in place of jdbc connection)
+34 // Used to connected to any thing using Driver manager
+39 // To close the statement ()
+
+Created Hive table, based on the date, one partition I manually added > Until we do MSCK it will not reflect
+Similarly we have to do partition in Spark using code > starting from 42
+
+*****Note: U can do it directly from spark by using a single line only by giving Tablename and partition name dynamically....why we need so many code
+(Answer : Above question is answered at the last post 120 line code)
+
+Upto 103 is all about refreshing, invalidate MetData, Partition etc...
+Post 120 is the reading
+
+How u r getting numpartitions value in spark jdbc?
+Bydefault #partition will be approximatly equal to #cores for your current Application.
+or could be #blocks = #partition for huge data in case of on premise cluster
+Here numpartitions equal to number of connections?
+@Smruti: Correct it can be configrable at the side of RDBMS in case if you are reading from the RDBMSs
+
+https://dzone.com/articles/the-right-way-to-use-spark-and-jdbc
+
+How to run the above code using Oozie, depends we can also use ControlM
+when running oozie on spark what is the tag we're using? > class,jar,spark-opts
+For Hive what is the tag used in Oozie? > /script
+In Oozie workflow tag used for sqoop > /command
+Refer the screenshot...
+
+https://www.tutorialspoint.com/apache_oozie/apache_oozie_workflow.htm > This is good
+https://support.acquia.com/hc/en-us/articles/360004224494-Cron-time-string-format > CRON Job time format
+
+https://www.edureka.co/blog/apache-oozie-tutorial/ > To explore
+https://www.guru99.com/learn-oozie-in-5-minutes.html > Quick Glance
+https://medium.com/edureka/apache-oozie-tutorial-d8f7bbbe1591 > Edureka Repeatation
+https://medium.com/@abhilashasharmagupta/apache-oozie-an-introduction-d0f899e2a99b > Real time
+https://medium.com/datadriveninvestor/recipe-for-a-oozie-coordinator-job-with-python-ee2da73cae22 > Real Time 2
+
+15 // what is the arg tag? > spark -- we're calling using arg
+
+job.properties
+workflow.xml > Used in the above code for xml
+co-ordinator.xml > related to when to start, end, frequency
+
+https://databricks.com/session/sqoop-on-spark-for-data-ingestion
+
+Consider there is a List = [1,2,3,5,8,10,13]
+want only even index numbers and I want even number in that even

@@ -1,0 +1,18 @@
+Introduction:
+Power BI:
+-It's completely a tool(no programming language involved).
+-It's a Reporting tool.
+-It's also a Visualisation tool.
+-It's a Memory tool (It will use internal memory(RAM))
+-Product of MicroSoft
+
+Modules available in Power BI:
+-Power BI Desktop - It is a Free Desktop Application, can be downloaded for free.
+-Power BI Service - It is a cloud based Web Application(Paid Service). > Can be seen in powerbi.com
+-Power BI Mobile App
+-DAX-Data Analysis Expressions(Heart of the Power BI), it's similar to excel formulas.
+-Power BI Licensing Modeling(Pro & Premium)
+	-There are 2 typpes 
+	-Power BI Pro/Developer License > Only that user can use it
+	-Power BI Premium License > Annual Subscription
+-Power BI Embedded

@@ -1,0 +1,587 @@
+SparkSession or SparkContext > It is the Entry point for the application and it is a class.
+SparkDriver > It is central point and entry point for spark shell, The driver program runs the main () function of the application and is the place where the Spark Context is created.
+Compile > To transform a program written in a high-level programming language from source code into object code.
+Debug > The process of detecting and removing of existing and potential errors (also called as 'bugs') in a software code that can cause it to behave unexpectedly or crash.
+A language is statically-typed if the type of a variable is known at compile-time instead of at run-time, Scala is a statically-typed.
+
+====================================================================================================================================================
++++++++++
+Mu-sigma:
++++++++++
+1.10 nodes,16 cores, 48 gb, how many executors required?
+
+Basic Idea > Worker/Node(Executor(Tasks or Cores(Partitions)))
+5 tasks or Cores per executor is always required for better Throughput of HDFS
+1 Core per node for YARN/Hadoop Daemons
+1GB + 1 Executor for Application Master
+
+https://spoddutur.github.io/spark-notes/distribution_of_executors_cores_and_memory_for_spark_application.html > Refer the third approach in the above URL
+
+http://site.clairvoyantsoft.com/understanding-resource-allocation-configurations-spark-application/ > Sounds Logical and please go through each cases at end
+
+******Note: A good rule of thumb is that the number of partitions should be larger than the number of executors on your cluster, potentially by multiple factors depending on the workload.
+Tasks: Stages in Spark consist of tasks. Each task corresponds to a combination of blocks of data and a set of transformations that will run on a single executor. If there is one big partition in our dataset, we will have one task. If there are 1,000 little partitions, we will have 1,000 tasks that can be executed in parallel. A task is just a unit of computation applied to a unit of data (the partition). Partitioning your data into a greater number of partitions means that more can be
+executed in parallel. This is not a panacea, but it is a simple place to begin with optimization.
+
+# Run on a YARN cluster
+export HADOOP_CONF_DIR=XXX
+./bin/spark-submit 
+  --class org.apache.spark.examples.SparkPi 
+  --master yarn (#For local we can mention local[4 or *])
+  --deploy-mode cluster (# can be client for client mode) (Note: Cluster mode is the most common way used for execution)
+  --executor-memory 20G 
+  --num-executors 50 
+  /path/to/examples.jar 
+  1000
+
+2. What happens when a spark submit is done?
+https://medium.com/@luminousmen/spark-anatomy-of-spark-application-41f0c3e86692 > Perfect 16 steps at the end and also refer for different modes from PDF
+
+https://www.analyticsvidhya.com/blog/2021/08/understand-the-internal-working-of-apache-spark/#:~:text=Once%20you%20do%20a%20Spark,initiated%20by%20the%20driver%20program. > Last section gives complete picture
+
+https://www.edureka.co/blog/hadoop-yarn-tutorial/#:~:text=Apache%20Hadoop%20YARN%20Architecture%20consists,on%20every%20single%20Data%20Node > Look into YARN execution pics (two pics are there, simple and efficient)
+
+https://data-flair.training/blogs/how-apache-spark-works/ > Apache job execution pic is good
+
+3.Difference between createTempView (or more appropriately createOrReplaceTempView) / createGlobalTempView / registerTempTable?
+https://forums.databricks.com/questions/11323/what-is-the-difference-between-createtempview-crea.html > Quick Theory
+https://stackoverflow.com/questions/42774187/spark-createorreplacetempview-vs-createglobaltempview > With Code
+
+4.what are the deamons available in the Hadoop
+https://www.quora.com/What-are-the-various-Hadoop-daemons-and-their-roles-in-a-Hadoop-cluster
+In abov URL last answer pic is better explaining by Silvi Priya
+
+To know about YARN > https://www.edureka.co/blog/hadoop-yarn-tutorial/#:~:text=Apache%20Hadoop%20YARN%20Architecture%20consists,on%20every%20single%20Data%20Node
+
+There are basically 5 daemons available in Hadoop,
+Name Node
+Data Node
+Secondary Name Node
+Job Tracker [In version 2 it is called as Node Manager]
+Task Tracker [In version 2 it is called as Resource Manager.
+
+Apache Hadoop HDFS Architecture follows a Master/Slave topology where a cluster comprises a single NameNode (Master node or daemon) and all the other nodes are DataNodes (Slave nodes or daemons). Following daemon runs in HDFS cluster:
+NameNode: It is the master daemon that maintains and manages the data block present in the DataNodes.
+DataNode: DataNodes are the slave nodes in HDFS. Unlike NameNode, DataNode is a commodity hardware, that is responsible of storing the data as blocks.
+Secondary NameNode: The Secondary NameNode works concurrently with the primary NameNode as a helper daemon storing the edit logs at a given checkpointing.
+FS Image = Compressed form of all Edit Logs.
+
+For processing , we use YARN(Yet Another Resource Negotiator). The daemons of YARN are ResourceManager and NodeManager.
+ResourceManager: It is a cluster level (one for each cluster) component and runs on the master machine. It manages resources and schedule applications running on top of YARN.
+NodeManager: It is a node level component (one on each node) and runs on each slave machine. It is responsible for managing containers and monitoring resource utilization in each container. It also keeps track of node health and log management. It continuously communicates with ResourceManager to remain up-to-date.
+
+JobHistoryServer: JobHistoryServer is responsible for servicing all job history related requests from client.
+
+5.word count program in both Scala and spark separately?
+Using Scala:
+val list = List(“Anish is working on BigData Technologies”,”Hello Anish”,”BigData”)
+val words = list.flatMap(line => line.split(” “))
+val keyData = words.map(word => (word,1))
+val groupedData = keyData.groupBy(_._1)
+val result = groupedData.mapValues(list=>{
+list.map(_._2).sum
+})
+result.foreach(println)
+
+Output:
+scala> result.foreach(println)
+(working,1)
+(BigData,2)
+(is,1)
+(Technologies,1)
+(Anish,2)
+(on,1)
+(Hello,1)
+
+Using Spark:
+import org.apache.spark.SparkContext
+import org.apache.spark.SparkContext._
+import org.apache.spark.SparkConf
+
+object SparkWordCount {
+  def main(args: Array[String]) {
+    // create Spark context with Spark configuration
+    val sc = new SparkContext(new SparkConf().setAppName("Spark Count"))
+
+    // get threshold
+    val threshold = args(1).toInt
+
+    // read in text file and split each document into words
+    val tokenized = sc.textFile(args(0)).flatMap(_.split(" "))
+
+    // count the occurrence of each word
+    val wordCounts = tokenized.map((_, 1)).reduceByKey(_ + _)
+
+    // filter out words with fewer than threshold occurrences
+    val filtered = wordCounts.filter(_._2 >= threshold)
+
+    // count characters
+    val charCounts = filtered.flatMap(_._1.toCharArray).map((_, 1)).reduceByKey(_ + _)
+
+    System.out.println(charCounts.collect().mkString(", "))
+  }
+}
+
+
+6.what is speculative execution in spark?
+The Speculative task in Apache Spark is task that runs slower than the rest of the task in the job.It is health check process that verifies the task is speculated, meaning the task that runs slower than the median of successfully completed task in the task sheet. Such tasks are submitted to another worker. It runs the new copy in parallel rather than shutting down the slow task.
+checkSpeculatableTasks(minTimeToSpeculation: Int): Boolean
+https://mallikarjuna_g.gitbooks.io/spark/spark-taskschedulerimpl-speculative-execution.html > For more info
+
+7.what is currying with example?
+Currying is used to transform multiple-argument function into single argument function by evaluating incremental nesting of function arguments.
+https://www.geeksforgeeks.org/currying-functions-in-scala-with-examples/#:~:text=Currying%20in%20Scala%20is%20simply,widely%20in%20multiple%20functional%20languages
+
+8.higher order function with example?
+A function is called Higher Order Function if it contains other functions as a parameter or returns a function as an output i.e, the functions that operate with another functions are known as Higher order Functions. It is worth knowing that this higher order function is applicable for functions and methods as well that takes functions as parameter or returns a function as a result. This is practicable as the compiler of Scala allows to force methods into functions.
+
+Some important points about Higher order functions:
+The Higher order functions are possible, as Scala programming language acts towards the functions as first-class values, which implies that analogous to some other values, functions can even be passed as a parameter or can be returned as an output, which is helpful in supplying an adjustable method for writing codes.
+It is beneficial in producing function composition where, functions might be formed from another functions. The function composition is the method of composing where a function shows the utilization of two composed functions.
+It is also constructive in creating lambda functions or anonymous functions. The anonymous functions are the functions which does not has name, though perform like a function.
+It is even utilized in minimizing redundant lines of code from a program.
+
+https://www.geeksforgeeks.org/higher-order-functions-in-scala/
+https://www.scala-exercises.org/scala_tutorial/higher_order_functions
+
+9.how will you improves the performance in hive?
+https://www.quora.com/What-are-the-ways-to-improve-hive-query-performance-other-than-Impala-Spark-and-Tez > First Answer(Shiv Kanaojiya)
+https://data-flair.training/blogs/hive-optimization-techniques/
+https://www.tutorialspoint.com/difference-between-normalization-and-denormalization#:~:text=Normalization%20is%20used%20to%20remove,it%20can%20be%20queried%20quickly.
+
+10.use of index in hive? Is index a physical storage?
+https://acadgild.com/blog/indexing-in-hive
+https://data-flair.training/blogs/hive-view-hive-index/ > Storage related answer - Check not sure
+
+11.how the data stored in hive partitions? With directory wise?
+https://data-flair.training/blogs/apache-hive-partitions/ or DVS material
+
+12. Diff between hive and Oracle sql?
+https://www.geeksforgeeks.org/difference-between-hive-and-oracle/
+https://www.quora.com/What-is-the-difference-between-Hive-and-Oracle > First Ans for theory
+https://link.springer.com/chapter/10.1007/978-3-319-60618-7_14#:~:text=Apache%20Hive%20expedites%20for%20reading,for%20running%20queries%20and%20scripts. > Not sure
+
+13.diff between primary key and unique key?
+https://www.geeksforgeeks.org/difference-between-primary-key-and-unique-key/#:~:text=Primary%20key%20will%20not%20accept,generates%20the%20non%2Dclustered%20index
+
+14.can we create 2 crore columns in Oracle tabel?
+Max limit is 1000 columns
+Max limit is 4096 columns MySQL(v8.0)
+
+15.project flow
+Think about it Properly Dude
+
+16.2nd max salary from emp table
+https://www.geeksforgeeks.org/find-nth-highest-salary-table/ > This sounds good if needed google it out for more.
+https://javarevisited.blogspot.com/2016/01/4-ways-to-find-nth-highest-salary-in.html
+
+17.use of secondary name node?
+http://hadooptutorial.info/secondary-namenode-in-hadoop/#:~:text=Secondary%20NameNode%20in%20hadoop%20is,checkpoints%20namenode's%20file%20system%20namespace.
+
+18. Can both NN and Job tracker can be in the same system?
+As per DVS - It's not rec since we're willing to overload it's work - do check once.
+https://www.quora.com/What-is-the-difference-between-Namenode-+-Datanode-Jobtracker-+-Tasktracker-Combiners-Shufflers-and-Mappers+Reducers-in-their-technical-functionality-and-physically-ie-whether-they-are-on-the-same-machine-in-a-cluster-while-running-a-job
+
+19.what is JT and TT
+https://www.edureka.co/blog/introduction-to-hadoop-job-tracker/#:~:text=The%20job%20tracker%20is%20the,multiple%20jobs%20on%20data%20nodes.&text=The%20task%20tracker%20is%20the,job%20on%20the%20data%20node.
+
+20.scala features?
+https://docs.scala-lang.org/overviews/scala-book/scala-features.html
+-It’s a modern programming language created by Martin Odersky (the father of javac), and influenced by Java, Ruby, Smalltalk, ML, Haskell, Erlang, and others.
+-It’s a high-level language.
+-It’s statically typed.
+-It has a sophisticated type inference system.
+-Its syntax is concise but still readable — we call it expressive.
+-It’s a pure object-oriented programming (OOP) language. Every variable is an object, and every “operator” is a method.
+-It’s also a functional programming (FP) language, so functions are also variables, and you can pass them into other functions. You can write your code using OOP, FP, or combine them in a hybrid style.
+-Scala source code compiles to “.class” files that run on the JVM.
+-Scala also works extremely well with the thousands of Java libraries that have been developed over the years.
+-A great thing about Scala is that you can be productive with it on Day 1, but it’s also a deep language, so as you go along you’ll keep learning, and finding newer, better ways to write code. Some people say that Scala will change the way you think about programming (and that’s a good thing).
+-A great Scala benefit is that it lets you write concise, readable code. The time a programmer spends reading code compared to the time spent writing code is said to be at least a 10:1 ratio, so writing code that’s concise and readable is a big deal. Because Scala has these attributes, programmers say that it’s expressive.
+
+21. Scala is what kind of language?
+https://codersera.com/blog/what-is-scala-used-for-a-brief-overview/
+
+22.use of views?
+Views are used for security purposes because they provide encapsulation of the name of the table. Data is in the virtual table, not stored permanently. Views display only selected data.
+Create View Viewname As  Select Column1, Column2  From Tablename Where (Condition) Group by (Grouping Condition) having (having Condition)
+
+23. Tell me few tags in the sqoop?
+Hint: It can be the Oozie workflow tags in general we use 'command'.
+https://stackoverflow.com/questions/22797104/executing-sqoops-using-oozie
+Didn't get exact answer may be just meaning of Tag is,
+In information systems, a tag is a keyword or term assigned to a piece of information (such as an Internet bookmark, digital image, database record, or computer file). This kind of metadata helps describe an item and allows it to be found again by browsing or searching.
+
+24. How to decide number of mappers in MR?
+https://data-flair.training/forums/topic/how-one-can-decide-for-a-job-how-many-mapper-reducers-are-required/#:~:text=It%20depends%20on%20how%20many,1000%20Mappers%20in%20a%20Cluster.
+https://data-flair.training/forums/topic/how-to-calculate-number-of-mappers-in-hadoop/
+
+25. What kind of files will be handled by Hadoop? More small files or bigger less files?
+It's undoubtedly less number of bigger files. Do have a look at the below answers on how to deal with more number of smaller files:
+https://community.hitachivantara.com/s/article/working-with-small-files-in-hadoop-part-2#:~:text=I%20defined%20a%20small%20file,memory%20usage%20and%20MapReduce%20performance.
+https://www.linkedin.com/pulse/3-solutions-big-datas-small-files-problem-kumar-chinnakali
+https://blog.cloudera.com/small-files-big-foils-addressing-the-associated-metadata-and-application-challenges/
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
++++++++++
+Wipro
++++++++++
+1.what is the difference between trait and abstract class in Scala?
+https://www.geeksforgeeks.org/difference-between-traits-and-abstract-classes-in-scala/
+https://medium.com/swlh/the-practical-difference-between-abstract-classes-and-traits-in-scala-4e2fb8e03be
+-An abstract class is constructed using the abstract keyword. It contains both abstract and non-abstract methods and cannot support multiple inheritances.
+-Traits can have methods(both abstract and non-abstract), and fields as its members. Traits are just like interfaces in Java. But they are more powerful than the interface in Java because in the traits we are allowed to implement the members.
+
+2.what is tail recursive in Scala?
+https://www.geeksforgeeks.org/tail-recursion-in-scala/#:~:text=function%20in%20Scala-,Tail%20Recursion%20in%20Scala,can%20be%20optimized%20by%20compiler.
+-Recursion is a method which breaks the problem into smaller subproblems and calls itself for each of the problems. That is, it simply means function calling itself. The tail recursive functions better than non tail recursive functions because tail-recursion can be optimized by compiler. A recursive function is said to be tail recursive if the recursive call is the last thing done by the function. There is no need to keep record of the previous state.
+
+3.which version of cloudera your using?
+Do check once > 6.2.1
+
+4.query to find employee getting more than 3000 after giving 25% increment?
+SELECT * FROM employees WHERE (1.25*salary) > 3000;
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
++++++++++++
+CenturyLink:
++++++++++++
+1. What is beeline and difference with hive?
+https://docs.cloudera.com/HDPDocuments/HDP2/HDP-2.6.5/bk_data-access/content/beeline-vs-hive-cli.html#:~:text=%E2%80%8BBeeline%20versus%20Hive%20CLI&text=The%20primary%20difference%20between%20the,requires%20access%20to%20only%20one%20.
+
+2. Difference between hive and Impala
+https://www.educba.com/hive-vs-impala/
+
+3. Touple and list examples
+https://www.javacodegeeks.com/2011/09/scala-tutorial-tuples-lists-methods-on.html
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
++++++++++
+Iqvia:
++++++++++
+1. How to connect hive through spark?
+https://stackoverflow.com/questions/39997224/how-to-connect-to-remote-hive-server-from-spark
+
+2.what is the difference between hive metastore and local store?
+https://www.quora.com/What-are-the-different-types-of-metastores-that-Hive-provides > Look into first answer
+I guess they're asking diff between metastore and local store
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
++++++++++
+Wipro:
++++++++++
+
+1.what are challenges you faced in spark?
+It's a mixture, do google once and come up with solution
+
+2.how will apply the joins?
+Check it
+
+3.how will you create the spark driver?
+Check it
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Infosys
+1.project architecture?
+
+2.explain about sort merge join?
+https://data-flair.training/blogs/hive-sort-merge-bucket-join/#:~:text=What%20is%20Sort%20Merge%20Bucket,or%20partition%20or%20table%20join.
+
+3.buckting and partitions? > Done
+
+4.can we create buckting without partitions? Yes
+https://stackoverflow.com/questions/21678828/hive-bucketing-without-partitions#:~:text=before%20you%20insert%20data.,to%20join%202%20large%20tables.)&text=Bucketing%20can%20also%20be%20done%20even%20without%20partitioning%20on%20Hive%20tables.
+
+5.which file format will you suggest for unstructured data in hive?
+https://www.quora.com/Can-we-process-unstructured-data-using-Apache-Hive > Generally aagalla anthaare, do try using SerDe
+https://nxtgen.com/hadoop-file-formats-when-and-what-to-use ******************* Good Article
+https://acadgild.com/blog/apache-hive-file-formats
+
+6.performance optimization techniques in hive > DVS Notes
+
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
++++++++++
+Mindtree:
++++++++++
+1.what is resource allocation ?
+https://www.justanalytics.com/blog/technical-know-how/tuning-resource-allocation-in-apache-spark#:~:text=Hadoop%20Spark&text=Resource%20Allocation%20is%20an%20important,execution%20of%20any%20spark%20job.&text=The%20focus%20area%20is%20how,cores%20for%20a%20Spark%20Job.
+
+2.what is fork and join ?
+https://stackoverflow.com/questions/2538224/difference-between-fork-join-and-map-reduce
+https://www.edureka.co/community/48997/what-fork-keyword-oozie-join-keyword-related-each-other-oozie#:~:text=Basically%2C%20when%20we%20want%20to,child%20of%20a%20single%20fork.
+
+3.who will create the DAG?
+https://medium.com/@goyalsaurabh66/spark-basics-rdds-stages-tasks-and-dag-8da0f52f0454
+https://data-flair.training/blogs/dag-in-apache-spark/
+
+4.how the catalyst works? Done
+
+5.how to read more lines with minimum times other than Map transformation? Check it once
+
+6.Dynamic allocation in haddop and spark?
+https://stackoverflow.com/questions/40200389/how-to-execute-spark-programs-with-dynamic-resource-allocation
+The, SparkConf is replaced in Spark2.0 (due to SparkSession) > https://dzone.com/articles/introduction-to-spark-session
+We set the dynamic alloction values in .config in SparkSession
+
+7.How to make incremental load in sqoop? > Done
+
+8.map reduce architecture > Done
+
+9.how to read more than one line in map reduce > Not interested
+
+10.diff between rdd, data frame,data set and which is performance effective > Done
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
++++++++++
+Sapient:
++++++++++
+
+1.How to merge 2  parquet files in spark?
+https://stackoverflow.com/questions/45668860/merge-two-parquet-files-using-dataframe-in-spark-java
+
+2.how to merge 2 text files in spark?
+https://sparkbyexamples.com/apache-spark-rdd/spark-read-multiple-text-files-into-a-single-rdd/
+
+3.array with 10 size and 2 values are blank, what will be the output if we use map and flatmap? > Try it on console
+scala> val a = sc.parallelize(Array(1,2,3,4,,6,7,,9,10))
+<console>:1: error: illegal start of simple expression
+       val a = sc.parallelize(Array(1,2,3,4,,6,7,,9,10))
+					    ^
+
+4.10 nodes and running 3 application with 10 executors.1 app took 7 and 2 took 5, when first is done 2 will be occupied with free executors, this is dynamic allocation, we need to set in config > Okay!, it has self answered.
+
+5.can you execute the file more than my executors memory?
+https://stackoverflow.com/questions/44961602/how-spark-handle-data-larger-than-cluster-memory
+Other questions on memory which indirectly answers above question:
+https://www.quora.com/How-does-Apache-Spark-process-data-that-does-not-fit-into-the-memory
+https://www.quora.com/Can-I-process-1TB-of-data-with-64GB-of-memory-in-Apache-Spark-If-yes-then-how-does-Spark-work-with-it-internally
+
+6.How to add few columns into data frame dynamically?
+https://stackoverflow.com/questions/48114167/how-to-add-multiple-columns-in-a-spark-dataframe-using-scala
+https://sparkbyexamples.com/spark/spark-add-new-column-to-dataframe/ > This is good
+
+7.how to apply dynamic partition on data frame and save output to Hdfs?
+https://stackoverflow.com/questions/31341498/save-spark-dataframe-as-dynamic-partitioned-table-in-hive
+https://www.edureka.co/community/29817/how-save-spark-dataframe-dynamic-partitioned-table-in-hive
+
+8.how to load the files with , and ! Symbols to data frame? > I guess it is |(pipe symbol) and not !
+https://community.cloudera.com/t5/Support-Questions/Conversion-of-a-file-with-pipe-comma-and-inverted-commas/td-p/81330
+https://www.edureka.co/community/52034/spark-scala-load-custom-delimited-file
+
+9. To Merge schema of existing table > Check it
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+++++++++++
+Sapient 2:
+++++++++++
+
+1. What is data ingestion in Spark?
+https://dzone.com/articles/ingesting-data-from-files-with-spark-part-1
+We can also use Gangadhar sir's method.
+
+2.how to process the data in Spark?
+https://dzone.com/articles/3-ways-make-spark-data-processing-faster > Sounds good, explore it
+
+3.what is the pipeline you used in the Spark?
+https://spark.apache.org/docs/latest/ml-pipeline.html
+https://rstudio.github.io/bigdataclass/spark-pipelines.html
+
+4.how will you update,delete the data in hive?
+https://www.hdfstutorial.com/blog/update-delete-hive-tables/
+https://www.edureka.co/community/34818/hive-update-and-delete-limitations
+https://stackoverflow.com/questions/17810537/how-to-delete-and-update-a-record-in-hive#:~:text=Hive%20doesn't%20support%20updates,rows%20to%20an%20existing%20table.&text=Delete%20has%20been%20recently%20added,is%20the%20link%20from%20Apache%20. > Look into last answers, they say we can do using ORC file format.
+
+5.have you used sqoop > Done
+
+6. How will you use hive from spark > Done
+
+7.can we use multiple columns when creating bucketing > Done
+
+8.when you use hive and when you use spark sql?
+https://www.educba.com/apache-hive-vs-apache-spark-sql/ > Again decision is on us.
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
++++++++++
+Iqvia:::
++++++++++
+
+1.how linear graph and DAG working together and the difference? > Done
+Better look into Orielly
+
+2.RDD is a immutable. Data frame also immutable then how we can add a new column?
+https://stackoverflow.com/questions/53374140/if-dataframes-in-spark-are-immutable-why-are-we-able-to-modify-it-with-operatio > Answer by Neeraj is satisfactory.
+
+3.how to find the string with maximum length. Print string along with size?
+https://stackoverflow.com/questions/56091524/how-to-find-the-max-string-length-of-a-column-in-spark-using-dataframe
+
+4.what is spark context and driver difference?
+Spark Context > Done
+Spark Driver > The Spark driver is used to orchestrate the whole Spark cluster, this means it will manage the work which is distributed across the cluster as well as what machines are available throughout the cluster lifetime.
+https://www.quora.com/What-is-a-Spark-Driver; https://www.edureka.co/community/51154/what-is-spark-driver; https://blog.knoldus.com/understanding-the-working-of-spark-driver-and-executor/
+
+5.what is stage > Done
+
+6.What is data wrangling?
+https://bigdataldn.com/intelligence/what-is-data-wrangling/#:~:text=Data%20wrangling%20is%20the%20process%20where%20individuals%20manually%20convert%20and,it%20more%20accessible%20and%20usable.&text=But%20getting%20ahead%20now%20and,the%20short%20and%20long%20term.
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
++++++++++
+Lumiq.ai:
++++++++++
+
+1. Hive and Hive metastore. Metastore have some issues. How can you solve this problem.
+   Table has 2 partitions, but when query the table it's giving only once partition data.
+   How to repair metasore? > Again MSCK
+
+2. What is the command for refreshing the matadata of a particular table? > It's msck repair
+
+3. What is the syntax for the MSCK command? > Done
+
+4. I have a oracle database, having one table city. having city_id as String, city_name as String, city_description as CLob. I need to query the data from this table from Hive. How can I do this.
+First to get the data from oracle and push it hdfs and second this, how can you create the table on top of it?**************** Please check this
+CLOB > Stands for "Character Large Object." A CLOB is a data type used by various database management systems, including Oracle and DB2. It stores large amounts of character data, up to 4 GB in size
+
+5.What is map column type in Hive? > I guess it is Map data type in Hive Done
+
+6.I have one csv file in local. How Can I move to HDFS? > It's normal copyFromLocal command
+
+7.Do you know kafka? > Done
+
+8.What kind of database you have used? MySQL > Look into related questions
+
+9.What is the listagg function in oracle?
+https://www.oracletutorial.com/oracle-aggregate-functions/oracle-listagg/#:~:text=The%20Oracle%20LISTAGG()%20function%20is%20an%20aggregation%20function%20that,separated%20by%20a%20specified%20delimiter.
+
+10.I have one table in oracle database which contails city table. Here we have duplicate records.
+No primary key is there in table. tell me the query how can you remove the duplicate records.
+https://www.quora.com/How-can-I-delete-duplicate-records-in-a-table-with-no-primary-key#:~:text=Use%20the%20SET%20ROWCOUNT%20command,and%20then%20SET%20ROWCOUNT%200.&text=DELETE%20Duplicate%20Records%20Using%20ROWCOUNT.
+
+11.Diff between RDD and DataSet in spark? > Done
+
+12.What is the transformation and action in Spark? Orielly pdf
+
+13.I have one csv file contains 10 gb of data, but my spark cluster is 5 gb memory. So, this csv can be read by spark? - Yes
+https://stackoverflow.com/questions/55429266/will-spark-load-data-into-in-memory-if-data-is-10-gb-and-ram-is-1gb
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
++++++++++
+Capgemini:
++++++++++
+
+1.what is partially applied function?
+https://www.geeksforgeeks.org/scala-partially-applied-functions/
+
+2.what is currying? > Already answered
+
+3.what is higher order function? Already answered
+
+4.what is implicits in Scala?
+http://baddotrobot.com/blog/2015/07/03/scala-implicit-parameters/#:~:text=There%20are%20three%20categories%20of,code%20wouldn't%20otherwise%20compile
+Better check once in Orielly text book.
+
+5.what is closure in Scala?
+https://www.geeksforgeeks.org/scala-closures/#:~:text=Scala%20Closures%20are%20functions%20which,a%20parameter%20of%20this%20function.&text=A%20free%20variable%20is%20not,function%20with%20a%20valid%20value.
+
+6.what is anonymous function in Scala?
+https://www.geeksforgeeks.org/anonymous-functions-in-scala/#:~:text=In%20Scala%2C%20An%20anonymous%20function,to%20create%20an%20inline%20function.
+
+7.what is the difference between rdd, dataframe and dataset?
+https://data-flair.training/blogs/apache-spark-rdd-vs-dataframe-vs-dataset/#:~:text=Spark%20Dataframe%20APIs%20%E2%80%93%20Unlike%20an,immutable%20distributed%20collection%20of%20data.&text=Spark%20Dataset%20APIs%20%E2%80%93%20Datasets%20in,%2C%20object%2Doriented%20programming%20interface.
+
+8.what is rdd and lineage graph?
+https://www.edureka.co/community/7065/lineage-graph-in-spark#:~:text=RDD%20Lineage%20(aka%20RDD%20operator,parent%20RDDs%20of%20an%20RDD.&text=An%20RDD%20lineage%20graph%20is,an%20action%20has%20been%20called. > Third Answer
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
++++++++++++++++++
+Capgemini--Ankita:
++++++++++++++++++
+
+1)Tell me about your Project.
+
+2)What kind of transformation you are doing in your Spark project.
+https://sparkbyexamples.com/apache-spark-rdd/spark-rdd-transformations/ > Mainly everyone use map and flatmap
+
+3)Why you are using DataFrame not DataSet in your code?
+Simple reason clients use pyspark and for now we can't play around with Dataset in PySpark.
+Note: Since Python and R have no compile-time type-safety, we only have untyped APIs, namely DataFrames.
+https://databricks.com/blog/2016/07/14/a-tale-of-three-apache-spark-apis-rdds-dataframes-and-datasets.html
+
+3)Given some sample columns like empid, dept, empname ....how will you write code by using DataFrame to build the schema? Tell line by line code from beginning.
+May be check once in Sriram Sir's material
+
+4)How you will do the aggregation operation...give some example?
+https://sparkbyexamples.com/spark/spark-sql-aggregate-functions/ > sum,count,max,min etc...
+
+5)You have to calculate dept wise how many employees are there.Tell me the code?
+Try this > https://stackoverflow.com/questions/36407565/find-the-number-of-employees-in-each-department-sql-oracle
+
+6)How you will save the data in Hive ? Tell me the code for creating table in Hive through Spark.
+Check the practise code.
+
+7)How you will build your Spark job in IDE in Windows machine?
+Currently doing the same.
+
+8)How to Submit the Job from Spark.(What are the parameters we can define in Spark- submit commands)
+As simple as Spark-Submit bro!
+
+9)What are the real time errors you have faced in your project?
+https://medium.com/@adirmashiach/apache-spark-5-performance-optimization-tips-4d85ae7ac0e3 > Initiator
+https://medium.com/analytics-vidhya/apache-spark-optimization-techniques-3e984444ea07 > Columnar format
+https://medium.com/inspiredbrilliance/spark-optimization-techniques-a192e8f7d1e4 > Predicate Pushdown
+https://towardsdatascience.com/easy-fixes-for-sparksql-performance-ad4166792e6e
+https://medium.com/@ch.nabarun/apache-spark-optimization-techniques-54864d4fdc0c
+
+Good practise to set spark.sql.shuffle.partitions after every successful shuffles, because by default it is 200
+Join a smaller DataFrame with a big one, by broadcasting the smaller joins.
+Use Coulumnar DataFormats such as ORC/Parquet.
+I have tried to use UDFs as less as possible.
+Predicate Pushdown.
+Avoid Shuffling common point.
+Usage of Dynamic Allocation.
+Look into Fetchsize (but for Oracle :() > https://venkatsadasivam.com/2009/02/01/jdbc-performance-tuning-with-optimal-fetch-size/ > Fetch size explaination
+
+10)What are the Scala topics you are using in your project while writing code?
+I didn't find what exactly topic is, is he talking about different topics like objects, collections, classes etc.,
+https://www.geeksforgeeks.org/scala-programming-language/
+
+11)What are the collection you are using in your code from scala?
+https://intellipaat.com/blog/tutorial/scala-tutorial/scala-collections/
+https://www.geeksforgeeks.org/scala-programming-language/ > Good as well
+
+12)What is lamda function?
+https://www.geeksforgeeks.org/lambda-expression-in-scala/#:~:text=Parameters%20In%20Scala-,Lambda%20Expression%20in%20Scala,be%20used%20in%20one%20place.
+
+13)What is Option?
+https://www.geeksforgeeks.org/scala-option/#:~:text=The%20Option%20in%20Scala%20is,single%20object%20or%20a%20null.
+
+14)What is Case Class?
+A Scala Case Class is like a regular class, except it is good for modeling immutable data, helps in reducing boiler plate code and this also serves useful in pattern matching.
+This class by default has few methods,
+a. apply() method which handles object construction.
+b. toString()
+c. hashCode()
+d. equals()
+
+15)How you will write Map function in Scala?
+def mapfn(a: Int) : Int = {
+  a * 2
+}
+
+def map4 = {
+  val list = List(1, 2, 3)
+  val doubles = list.map(mapfn)
+  println(doubles)
+} // Output List(2, 4, 6)

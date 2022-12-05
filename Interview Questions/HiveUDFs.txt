@@ -1,0 +1,153 @@
+-Why we need udf in hive? > Whenever we are trying to achieve any Bus Req, is not able to achieve by using inbuilt operators.
+
+-Uses:
+ >To convert UTF data to ISO data - We don't have any in built command in hive, then we go for UDFs....
+
+-Real-Time Questions:
+ >Types of UDFs
+ >Ways to implement UDF
+ >Classes extends and methods overide
+ >How to call UDF in Hive
+ >How to create temporary funcion and permanent function in hive by using sUDFS
+*****>Very rarely they'll ask you to write codes for UDF because we already have Spark, in general they'll ask above questions.
+ >We apply logics on row using UDFs.
+
+-Types of UDFs:
+ >UDF - User Defined Functions
+ >UDAF - User Defined Aggregative Functions
+ >UDTF - User Defined Tabular Functions
+
+UDF (1 row input > 1 row output) Ex:lenght,size,sqrt,trim,ltrim or rtrim
+UDAF (many rows input > 1 row output) Ex: sum,max,min
+UDTF (1 row as input > many rows as output) Ex:explode,json_tuple,parse_url_tuple
+
+****Ways to implement UDFs:
+ >We can use any IDE (Eclipse or IntelliJ)
+ >From scratch to running that UDF on hive.
+ >Required classes to extend w.r.t UDF and overide the method?
+	-We need to extend UDF class
+	-We need to overide evaluate method
+ >w.r.t UDAF (extend UDAF class and overide initialize(),iterate(),terminatePartial(),merge(),terminate())
+ >w.r.t UDTF (extend UDTF class and overide initialize(),process(),close())
+
+-Steps to implement UDF's:
+ >Need to develop code on eclipse or intelliJ
+ >Create the JAR on eclipse
+ >Copy the jar from windows to Linux local or edge node local (using software winscp we copy from windows to edge node)
+**Note: Don't ever say Putty, you'll loose job ;)
+ >Add jar <jar>
+ >Create temporary function or permanent or global function using class name package.classname.
+ >Implement the temporary function on hive query.
+
+Ex:
+-Create UDF.jar
+-using WINSCP copied to Edge local
+-From local to hadoop fs -put jar /dvs/
+-Hive> add jar /dvs/dvs.jar
+       create temporary function 'DVS_Hadoop' as DVS.UTFTOISO (DVS_Hadoop is the function, to apply global function remove temporary and just use function)
+       select DVS_Hadoop(INDIA) from DVS; (the function DVS_Hadoop is applied on INDIA column)
+
+*******Usage of UDFs in real time is less, we have Spark Dude!!!!, just know the concept well.
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+-Hive Logs:
+ > When we submit Hive query at the backend logs are getting generated and 
+ 	stderr > 
+	stdout >
+	syslog >
+ > stderr and stdout are standard errors and cluster level
+ > ****syslog > is the place where to check where there is an error related to code.
+ > hive > job id (when hive job is submitted) > give job id to hadoop admin > copy id to yarn url > these logs are generated stderr,stdout,syslog > click on sys logs and check the issues.
+ > hue or cloudera manager it totally depends on domain better to go with above method.
+
+****Note:How to update/insert/delete the data in hive table apart from changing the table property Transactional to true? Asked this question in many interviews ?
+	 Need answer :(
+
+-LLAP > Live Long and Process > Hive 2.0v onwards LLAP is been introduced.
+	This will help to boost hive query,
+	caching
+	pre-fetching - Pre-requisite is fetched before running query.
+	access control - comes into picture when we don't have service account.
+-Once HIVE job is submitted and I've to run it for every 3seconds, then we can go for caching and below all this will come into picture.
+-CPU memory,hard disk memory.
+-We have to fetch min - max container size
+-mapper size and reducer size and store all this in memory
+-LLAP doesn't help in performance tuning
+-By default after 2.0 LLAP is enabled, but if needed we can use properties which are available to look into the LLAP related.
+
+YARN plays major role when it comes to SPARk and HIVE
+
+SMB, MAP JOIN and Stream Table (Imp here is Map Join)
+
+-Under optimizatiom techniques we come under Joins related stuff
+ >In general when we do join both map and reducer phase is used.
+ >If we don't want reducer phase then go for map join and before starting executing query it will copy the small table data mentioned in mapjoin() in all worker nodes.
+ >hive.auto.convert.join=true; > to enable map join, by default it will be enabled at cluster.
+ >ex: consider there are 2 tables of 1GB and 10MB, when we perform map join use below query.
+ >********We're passing it has comments even the stream table as well.
+	>/*+MAPJOIN(2)*/
+
+-In stream table we will highlight the large table data, unlike map join were we use small table data like above.
+
+-Sorted Merge Bucket > 
+ Ex: There are 5 tables,all are big tables.
+     The table must be bucketed, doesn't apply on partitioning table.
+     1=10buckets, 2=20, 3=30 and 4 = 40 > SMB doesn't work.
+     All the tables must have same number of buckets.
+     Adv of SMB on using BUcketed table because we do bucketing for joins and SMB makes life easier
+
+
+Memory related:
+vertex failure issue (due to ? check it once)
+GC overide (Garbage collection)	
+
+Properties to boost Mappers,Reducer and Containers we have
+
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+SparK:
+=====
+
+Real Time Questions: 
+-Ingestion of Data
+-Spark Core
+-Driver Architecture
+-Spark context vs Spark Session
+-Spark Context is class or object
+-Why RDD is immutable
+-Types of RDDs
+-Operations on RDD > actions and transformations
+-DAG vs LLG (Lineage something...)
+-How Spark will create stages? JOB > Stages > Tasks
+-Three lines will be given and how many stages are created at the backend??
+-Colesce vs repartition
+-cache vs persistence
+-can we have two spark sessions
+-I have two spark applications I created one RDD can I use that RDD in the another application?
+-I have 3 files 
+	file 1 > data
+	file 2 > data
+	file 3 > data
+	Output req > Club all the three files and 
+			File 1 as row from file1
+			File 2
+-Check Process
+-Block Manager
+-Memory Management
+-Storage level default
+-Partitions w.r.t. spark core > They will give one file and ask how many partitions, can we increase partitions by using colesece.
+-YARN Cluster vs YARN Client
+
+********Note: Just knowing theoritical is not enough, giving real time touch is important.
+
+-Spark CORE and SPARK SQL is important******Memory management is important
+-What are diff stages and it will split******
+
+https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/
+
+
+
+
+		     

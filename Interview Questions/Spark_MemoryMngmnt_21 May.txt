@@ -1,0 +1,118 @@
+-Shared Variables.
+-How to tune the spark applications (optimisation tech).
+	-Not respect to memory
+	-Need to use Right Operators
+-Memory management(Static and Dynamic)
+
+-Shared varibles are similar to cache.
+	These are of two types Broadcast variables and Accumulators.
+	Broadcast variables vs cache? > https://stackoverflow.com/questions/38056774/spark-cache-vs-broadcast#:~:text=cache()%20or%20persist(),to%20be%20used%20across%20operations.&text=Broadcast%20variables%20allow%20the%20programmer,dataset%20in%20an%20efficient%20manner.
+
+https://sparkbyexamples.com/spark/spark-accumulators/
+https://sparkbyexamples.com/spark/spark-broadcast-variables/
+https://medium.com/analytics-vidhya/persistence-vs-broadcast-625265320bf9 ************Really Good one
+https://medium.com/@lavishj77/spark-fundamentals-part-2-a2d1a78eff73 > Last bit is good
+	
+-Once job is submitted > stages > tasks
+-Logic is run on task level and shared variables are part of tasks.
+-Primary responsibility of developer is to reduce number of task.
+-Generally, data is distributed on cluster when transformation / action is submitted.
+
+we have rdd1 vs rdd2
+sc.broadcast(rrd2) > It is copying all data of rdd2 on all the nodes on cluster, rdd2 data is read only, read only is one of the advantages of broad cast.
+
+Ex:
+val rdd1 = sc.textFile()
+val rdd2 = rdd1.transfor
+sc.broadcast(rrd2)
+val rdd3 = rdd2.transform
+val rdd4 = rdd2.trans
+rrd4.action
+we have 4 rdds and rdd2 is used more no of times and rdd2 has huge amount of data, so before starting operation on rdd2 we can broadcast it.
+Diff b/w LLG vs Broadcast.
+LLG  is B to T to B
+Broadcast > Here data is copied in all data nodes prior to any action or prior to LLG.
+Cache > Just loads data inmemory.
+Broadcast is based on executors and cahe copies data i.e worker inmemory.
+Realtime?
+	What is Broad and Accumulat
+	What is Broad and adv?
+Even though rdd is distributd and immutable but still we use BroadCast variable is too overcome unecessary I/O operations and increase the performance.
+*********We can broad cast only collection elements and not rdds, serialisation needs to be done to send data across network and deserialisation has to happen from memory to disk and again to memory.
+The number of broadcast variables which can be done depends 
+
+https://spoddutur.github.io/spark-notes/distribution_of_executors_cores_and_memory_for_spark_application.html 
+
+Cache > BD is global variables, i have BD var and lookup data is sent and in work node 10 there will be multiple cores and it can multip RDDs and for all these mulpt threads is starting and it will ava for all...
+Whenever we write data to HDFS it is broken into piesec it will be cached into multiple systems(multiple worker nodes in memory).
+*****All systems communicate via SSH internally.
+
+Accumulators:
+	Used when we want to do aggregation(commutative law and other laws) we can go for this.
+	MapRed we have file sys counters and one more thing I/O operation counters, so best option is accumulators.
+var dvs:Int = 0
+sc.textFile("dvs",4).foreach(line => if(line.lenght()==0)dvs +=1)
+Genearlly in above variable i want to inc, driver will print 0, it will see 0  and it will become local and gets updatrdc in local, then we came up with accumilat, to accumulate and it helps to increase the value. if it is not accum then driver won't have proper ref to increase.
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+*******Memory Management:
+-We should learn how I can use the node actively, I should know the data like below.
+	10 nodes
+	16 cores per nodes
+	64GB RAM per nodes
+-We got to also concentrate on:
+	Driver Memory
+	Executor Memory
+	No. of executors per node
+	Cores per executors
+-Later based on above theorictal concept we can give proper commands in sparkconf.
+-Static(Ex: 3 executors is fixed and we got to mention memory allocation like this for static) and but for Dynamic(min,max like 3,5 we got to mention the range).
+While calculating exector memory or while allocating memory we should also give some memory and not disturb below applications.
+-hadoop/yarn/os
+	While calculating number of executors - 1 ccore per node we need to leave it to all the nodes or daemons
+-yarn application
+	In total leave 1 executor for YARN - 1024mb
+-HDFS throughput > 5 tasks per executors
+
+-To calculate executor memory > (memory per node) / (number of executor)
+Tiny(one executor per core)
+	16 executors
+	64GB/16 = 4GB
+	executor cores = 1
+Drawbacks Tiny:
+	No space for Hadoop,YARN etc
+	Cache/share/broadcast -> Everything copies/duplicates 16 times
+Fat(one executor per node)
+	Overall cluster 16 nodes
+	16 cores
+	64GB/1 = 64GB
+Drawbacks of fat:
+	We get execessive Garbage results
+	No space for other Daemons, Hadoop, YARN
+balance between FAT vs Tiny gives better results, this is used in real times.
+	Based on the recommendations mentioned above, Let’s assign 5 core per executors => --executor-cores = 5 (for good HDFS throughput)
+	Leave 1 core per node for Hadoop/Yarn daemons => Num cores available per node = 16-1 = 15
+	So, Total available of cores in cluster = 15 x 10 = 150
+	Number of available executors = (total cores/num-cores-per-executor) = 150/5 = 30
+	Leaving 1 executor for ApplicationManager => --num-executors = 29
+	Number of executors per node = 30/10 = 3
+	Memory per executor = 64GB/3 = 21GB
+	Counting off heap overhead = 7% of 21GB = 3GB. So, actual --executor-memory = 21 - 3 = 18GB
+	So, recommended config is: 29 executors, 18GB memory each and 5 cores each!!
+-Above stuff is all about static, when we go for Dynamic then we got to mention min and max
+
+Real Time:
+
+File1.txt
+File2.txt
+File3.txt
+----
+I want output like 1st row from file1, next two rows from file2, last row is file 3....
+file1,<>
+File2,<>
+File2,<>
+File3,<>
+Solution:
+val allRDD = sparkContext.wholeTextFiles(dirToProcess, 10).flatMapValues(y => y.split("\n")) //Then, split the each file and add filename to each line.
+Above code 10 is the number of files
+
+Realtime> Executor memory is important, compare to driver memory

@@ -1,0 +1,64 @@
+1. SELECT * FROM table WHERE date_column >= '2014-01-24' AND date_column <= '2015-01-30';
+
+2. SELECT * FROM table WHERE date_column BETWEEN '2014-01-10' AND '2015-01-01';
+
+3. SELECT * FROM events WHERE event_date BETWEEN '2018-01-01 12:00:00' AND '2018-01-01 23:30:00';
+
+4. SELECT now();  -- date and time
+
+5. SELECT curdate(); --date
+
+6. SELECT curtime(); --time in 24-hour format
+
+7. -- returns 1-7 (integer), where 1 is Sunday and 7 is Saturday
+SELECT dayofweek('2018-12-12');
+
+8. -- returns the string day name like Monday, Tuesday, etc
+SELECT dayname(now());
+
+9. SELECT year(now()); -- or month(), day(), hour(), minute(), second()
+
+val df = spark.read.format(“jdbc”)
+.option(“url”,”jdbc:mysql://db1.zaloni.com/customer”)
+.option(“driver”,”com.mysql.jdbc.driver”)
+.option(“dbtable”,”customerProfile”)
+.option(“user”,”ngoel”)
+.option(“password”,”xxxxxx”)
+.option(“lowerBound”, 0) > LowerBound and UpperBound define the min and max range of primary key
+.option(“upperBound”,10000)
+.option(“numPartitions”, 4) > lets Spark parallelize the data extraction by dividing the range into multiple tasks and tells number of concurrent jdbc connections made
+.option(“partitionColumn”, customer_id) > Patition column similar to split by
+.load()
+
+https://www.dezyre.com/article/how-data-partitioning-in-spark-helps-achieve-more-parallelism/297
+
+val df = spark.read.format(“jdbc”)
+.option(“url”,”jdbc:mysql://db1.zaloni.com/customer”)
+.option(“driver”,”com.mysql.jdbc.driver”)
+.option(“query”, “select * from customer.CustomerProfile where state = ’WA’”)
+.option(“user”,”ngoel”)
+.option(“password”,”xxxxxx”)
+.load()
+
+spark-submit --master yarn-cluster \
+    --driver-cores 2 \
+    --driver-memory 2G \
+    --num-executors 10 \
+    --executor-cores 5 \
+    --executor-memory 2G \
+    --conf spark.dynamicAllocation.minExecutors=5 \
+    --conf spark.dynamicAllocation.maxExecutors=29 \
+    --conf spark.dynamicAllocation.initialExecutors=10 \ # same as --num-executors 10
+    --class com.spark.sql.jdbc.SparkDFtoOracle2 \
+    Spark-hive-sql-Dataframe-0.0.1-SNAPSHOT-jar-with-dependencies.jar
+
+Spark can run 1 concurrent task for every partition of an RDD (up to the number of cores in the cluster). If you’re cluster has 20 cores, you should have at least 20 partitions (in practice 2–3x times more). From the other hand a single partition typically shouldn’t contain more than 128MB and a single shuffle block cannot be larger than 2GB (see SPARK-6235).
+DF.partitionby("column names")
+
+Resilient Distributed Datasets (RDD) is a fundamental data structure of Spark, It is an immutable distributed collection of objects. Each dataset in RDD is divided into logical partitions, which may be computed on different nodes of the cluster.
+
+BroadCast > store the data in the executor in the working memory and broadcasting happens even before RDD Lineage
+Broadcast variables are read-only shared variables that are cached and available on all nodes in a cluster in-order to access or use by the tasks. Instead of sending this data along with every task, spark distributes broadcast variables to the machine using efficient broadcast algorithms to reduce communication costs.
+
+Persist/Cache > store the data in the executor in the storage memory
+Spark Cache and Persist are optimization techniques to improve the performance of the RDD jobs that are iterative and interactive.
