@@ -1,0 +1,175 @@
+-SparkSQL is not a database.
+-The data objects in Spark are RDD API.
+-Spark SQL is a library to process Spark data objects, using SQL select statments.
+-Even Spark SQL follows mysql based SQL syntaxes(~90%).
+-In mapred we use context objects to capture config info and at the same time to save results on disk we use 
+ context objects.
+-Similarly we have two context objects for Spark
+	-SQL Context - we can process spark objects using select statements.
+	-Hive Context - We can integrate, Hive with Spark.Hive, is data warehouse environment in hadoop framework.
+			so total is stored and managed at Hive tables, hence using HiveContext we can access entire
+			hive env (i.e. hive tables) from Spark.
+			******In hadoop when hive statement is submitted it uses MR job to process, but when integrated 
+			with Spark, it uses DAG and In memory computing models with persisting features which is more 
+			faster than MR.
+-We also have other two context called as
+	-Spark Context for Core purpose
+	-Spark Streaming for streaming
+
+-import org.apache.spark.sql.sqlContext
+ val sqlCon = new sqlContext(sc) -> here sc is mandatory and it is Spark Context.
+
+***Note: From 1.6 onwards sqlContext is by default available in SparkShell hence no need to create it.
+-Spark SQL is applicable only for structured text if data is unstructured it needs to be processed with Spark core's rdd
+ api and Spark MLlib,nlp algorithms. (nltk(Natural language Tool Kit, it's Python module) is best compatible with 
+ Spark MLlib > Available Spark 2.0 onwards)
+***:)Note: Most of the enterprise data is structured and here we can play with Spark SQL itself.
+
+-To convert rdd's into dataframes we need one more thing i.e.
+import sqlcontext.implicits._
+
+-import org.apache.spark.sql.hive.HiveContext.
+ val hc = new HiveContext(sc)
+
+-Steps to work with SQL Context:
+
+Step1: Load data into rdd taking a sample file.
+	val data = sc.'FileName'("Path of the file")
+Now what happens > each line is a string.
+
+Step2: Provide schema to the rdd i.e. create case class for the data.
+	case class Rec(a:Int,b:String,c:Int) > here Rec is case class name.
+
+Step3: Create a function to convert raw line into a case object (function to provide schema).
+	Here entire line is each element and we will split each line and each line in the data is a rdd.
+	def makeRec(x:String):Rec={	(Here case class name :Rec is mentioned and it acts as return type and in scala return type is not mandatory)
+		val w = x.trim().split(",") (we split each line) (Using trim is good practise if there are any left and right spaces they're cut off)
+		val a = w(0).toInt (putting first field into a)
+		val b = w(1) (putting first field into b)
+		val c = w(2).toInt (putting first field into c)
+		val r = Rec(a,b,c) (Here case object is created, whenever case object is applied we have schema)
+		r (Return the case object created in previous step)
+		}
+***Note: If the data type is String then no need to mention it explicitlty as in above example for 'b'.
+- How to access elements in case object? using .fieldname.
+- Concept is similar to SQL, to access data using query provided there is some schema.
+
+Step 4: Transform each record into case object/case class. (whatever function we had created previously we're calling that function)
+	val recs = data.map(x => makeRec(x)) (here x is each element and I'm applying it to makeRec function and now on 
+						each element is a case object and it has schema)
+
+Step 5: Convert rdd into data frame.
+	val df = recs.toDF
+****Note: Data Frame introduced after Spark 1.3
+
+Step 6: Create temporary table instance for the dataframe.
+	df.registerTempTable("samp")
+
+Step 7: Apply our select statement of SQL on temp table.
+	val r1 = sqc.sql("select a+b+c as tot from samp") (here sqc is SQLContext)
+	r1
+	-----
+	tot (new column name)
+	----
+	600
+	900
+***Note:We're encouraged to use only select statements and no other operations such as DDL,TCL etc are allowed.
+	Whenever we apply select statement on temp table the returned object is not a temp table it's data frame.
+	hence to apply SQL statement on result set(returned object or r1) we need to register it again as temp
+	table and apply logic.
+	If we're not using r1 again then no need to convert it.
+
+Step 8: r1.registerTempTable(samp1)
+****Note: Since r1 is data frame we're again registering it.
+
+Step 9: To persist table we can write > r1.persist
+
+Above everything is in SQL
+=======================================================================================================================
+Below everything is in HQL
+
+If data is in Hive and we need to access it sitting in Spark:
+
+*****first copy hive-site.xml file into /user/spark/conf (This integration is done to make spark understand at which location my metastore is available)
+If .xml is not copied then spark can't understand hive metastore location
+
+Step 1: import org.apache.spark.sql.hive.HiveContext
+	val hc = new HiveContext(sc)
+****Note: spark 1.6 onwards hive context needs to be imported explicitly but not to worry with SQL Context.
+
+Step 2: hc.sql("create database mydb") > DB is created under user/hive/warehouse
+	hc.sql("use mydb")
+	hc.sql("create table result(dno int,tot int)")
+	hc.sql("insert into table result select dno, sum(sal) from default.emp group by dno")
+
+****Note: Default metastore for hive is derby, it is light weighted hence for performance we prefer oracle
+	  or other better RDBMS
+
+==========================================================================================================
+Combination of SQL context and Hive Context:
+
+val r1 = sqc.sql("........")
+val r2 = hc.sql(".......")
+****Here object type of both r1 and r2 is dataframe
+
+r1.registerTempTable("res1")
+r2.registerTempTable("res2")
+*****After converting both the tables to TempTable we can easily apply reqiured operations like joins,unions etc
+
+=============================================================================================================
+
+Working with JSON using sqlContext:
+
+****Note: Using sqlContext the process is very simple for JSON hence we prefer this over Hive
+
+consider Json1 (Generally key and value pair):
+----------------------------------------------
+{"name":"ravi","age":20,"sex":"M"}
+{"name":"savi","city":"hyd","sex":"F"} > If we see both the records schema is different and such type available in Json and XML
+Old enterprise data is in xml and nowadays everything is into Json.
+If when we call some webservice returned response or data is in Json.
+Even the logs are Json.
+Consider this file is available in Hdfs.
+If this was normal text file we need to apply regular exp and risky process.
+---------------------------------------------------
+
+Let's go with SQL Context i.e.
+
+val jdf = sqlContext.read.json("/user/json1") > After this automatically we get dataframe and even it will have
+					 schema and data. Even no need of case class. But prior to that data should 
+					 be horizontally placed using Spark core or MR
+jdf----> df is created
+----------------------------
+name  age  city  Sex
+ravi  20   null  M
+vani  null hyd   F
+---------------------------
+If we want to play sql register as temp table and work around.
+---------------------------------------------------------------------
+
+How to work with xml?
+There are two ways:
+	-One is 3rd party library Ex: Databricks
+	-Hive has good source to play with XML, hence through integartion.
+		we can apply xml parses such as xpath(),xpath_string,xpath_int ..etc
+consider the below xml data:
+<rec>
+<name>Ravi</name>
+<age>25</age>
+</rec>
+
+Convert above data into horizontal using spark core technique, once converted as horizontal data is ready for Hive
+<rec><name>Ravi</name><age>25</age></rec>
+<rec><name>Rani</name><sex>F</sex></rec>
+
+By using hive context:
+hc.sql("use mydb")
+hc.sql("create table raw(line string)")
+hc.sql("load data local inpath 'xml' into table raw")
+hc.sql("create table info(name string,age int,sex string)row format delimited fields terminated by','")
+hc.sql("insert overwrite table info select xpath_string(line,'rec/name')
+					   xpath_int(line,'rec/age')
+					   xpath_string(line,'rec/sex')
+					   from raw")
+Check this above example in practical session
+-----------------------------------------------------------------------------------------

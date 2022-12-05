@@ -1,0 +1,309 @@
+-Upto now we know Spark data objects as RDD.
+-Later in spark sql we came to DF > after that temp table > we're playing around with SQL
+using SQL context.
+-Same to play with Hive we use Hive Context.
+-But SparkSQL provides two types of Data objects i.e.
+		-DataFrame
+		-Datasets
+-Let's see what are the basic differences between
+RDD:
+-RDD has RDD API
+-Can't acees DF API and DS API
+-uses In-memory computing which is faster than traditional disk computing.
+
+DataFrame
+-Can't access RDD API and DS API
+-Has DF API
+-Additionally it can use catalyst optimizer during execution
+-These are faster than RDD's due to catalyst optimizer
+-uses In-memory computing which is faster than traditional disk computing.
+
+Dataset
+*****-Can access RDD API and it's own API
+-Can't access DF API
+-This also uses catalyst optimizer and new model Tungsten optimizer.
+-DS are fasterthn RDD's and DF's because of Catalyst and Tungsten optimizer
+-Tungsten uses CPU caches, along with In-memory computing, which is much more better 
+ and faster than In-memory computing(by 50%), caches are such as l1,l2,l3 and l4 etc.
+
+Note: Speed of CPU cache(DS) > Speed of In memory(RDD and DF) > Speed of disk computing(Map Reduce)
+
+scala> import sqlContext.implicits._
+import sqlContext.implicits._
+
+scala> case class Sample(a:Int, b:Int)
+defined class Sample
+
+scala> val rdd = sc.parallelize(List(Sample(10,20),
+     | Sample(1,2),Sample(5,6),
+     | Sample(100,200),
+     | Sample(1000,2000))
+     | )
+rdd: org.apache.spark.rdd.RDD[Sample] = ParallelCollectionRDD[0] at parallelize at <console>:32
+
+scala> rdd.collect.foreach(println)
+[Stage 0:>                                                          (0                                                                        
+Sample(10,20)
+Sample(1,2)
+Sample(5,6)
+Sample(100,200)
+Sample(1000,2000)
+
+scala> val df = rdd.toDF
+df: org.apache.spark.sql.DataFrame = [a: int, b: int]
+
+scala> df.show()
++----+----+
+|   a|   b|
++----+----+
+|  10|  20|
+|   1|   2|
+|   5|   6|
+| 100| 200|
+|1000|2000|
++----+----+
+
+scala> df.printSchema()
+root
+ |-- a: integer (nullable = false)
+ |-- b: integer (nullable = false)
+
+-To perform aggregations using RDD API it is through group by key, reduce by key etc this are as part of RDD API....
+-Above RDD API functions are not supported by DF API
+
+scala> df.select("a")
+res3: org.apache.spark.sql.DataFrame = [a: int]
+
+scala> df.select("a").show()
++----+
+|   a|
++----+
+|  10|
+|   1|
+|   5|
+| 100|
+|1000|
++----+
+
+scala> df.select("a","b").show()
++----+----+
+|   a|   b|
++----+----+
+|  10|  20|
+|   1|   2|
+|   5|   6|
+| 100| 200|
+|1000|2000|
++----+----+
+
+To apply arthimetic operations on any columns
+scala> df.select(df("a"),df("b")+100).show()
++----+---------+
+|   a|(b + 100)|
++----+---------+
+|  10|      120|
+|   1|      102|
+|   5|      106|
+| 100|      300|
+|1000|     2100|
++----+---------+
+
+How we have where class we can use filter over here:)
+
+scala> df.filter(df("a")>=100)
+res9: org.apache.spark.sql.DataFrame = [a: int, b: int]
+
+scala> df.filter(df("a")>=100).show()
++----+----+
+|   a|   b|
++----+----+
+| 100| 200|
+|1000|2000|
++----+----+
+
+scala> df.groupBy("a").count().show()
+[Stage 13:>                                                         (0 
+[Stage 13:>                                                         (0                                                                        
+[Stage 16:============================>                         (106 + 
+[Stage 16:=====================================>                (139 + 
+[Stage 16:=============================================>        (169 +                                                                        
++----+-----+
+|   a|count|
++----+-----+
+| 100|    1|
+|1000|    1|
+|   1|    1|
+|   5|    1|
+|  10|    1|
++----+-----+
+
+
+scala> df.groupBy("a","b").count().show()
+[Stage 20:==========================================>           (156 +                                                                        
++----+----+-----+
+|   a|   b|count|
++----+----+-----+
+|  10|  20|    1|
+|   5|   6|    1|
+|1000|2000|    1|
+|   1|   2|    1|
+| 100| 200|    1|
++----+----+-----+
+
+Scala> val data = sc.textFile("sqlLab/spark")
+data: org.apache.spark.rdd.RDD[String] = sqlLab/spark MapPartitionsRDD[27] at textFile at <console>:30
+
+scala> data.collect.foreach(println)
+101,aaa,10000,m,11
+102,bbb,20000,f,12
+103,ccc,30000,m,13
+104,ddd,40000,f,11
+105,eee,50000,m,12
+106,fff,60000,f,13
+107,ggg,70000,m,11
+108,hhh,80000,f,12
+
+scala> val emp = data.map{x =>
+     | val w = x.split(",")
+     | Emp(w(0).toInt,
+     | w(1),w(2).toInt,w(3),w(4).toInt)}
+emp: org.apache.spark.rdd.RDD[Emp] = MapPartitionsRDD[28] at map at <console>:34
+ 
+scala> emp.foreach(println)
+Emp(106,fff,60000,f,13)
+Emp(107,ggg,70000,m,11)
+Emp(108,hhh,80000,f,12)
+Emp(101,aaa,10000,m,11)
+Emp(102,bbb,20000,f,12)
+Emp(103,ccc,30000,m,13)
+Emp(104,ddd,40000,f,11)
+Emp(105,eee,50000,m,12)
+
+scala> val empdf = emp.toDF
+empdf: org.apache.spark.sql.DataFrame = [id: int, name: string, sal: int, sex: string, dno: int]
+
+scala> empdf.show()
++---+----+-----+---+---+
+| id|name|  sal|sex|dno|
++---+----+-----+---+---+
+|101| aaa|10000|  m| 11|
+|102| bbb|20000|  f| 12|
+|103| ccc|30000|  m| 13|
+|104| ddd|40000|  f| 11|
+|105| eee|50000|  m| 12|
+|106| fff|60000|  f| 13|
+|107| ggg|70000|  m| 11|
+|108| hhh|80000|  f| 12|
++---+----+-----+---+---+
+
+scala> empdf.groupBy(empdf("sex")).count.show()
++---+-----+
+|sex|count|
++---+-----+
+|  f|    4|
+|  m|    4|
++---+-----+
+
+To check the total salary
+scala> empdf.groupBy(empdf("sex")).agg(sum("sal"))
+res19: org.apache.spark.sql.DataFrame = [sex: string, sum(sal): bigint]
+
+scala> empdf.groupBy(empdf("sex")).agg(sum("sal")).show()
++---+--------+
+|sex|sum(sal)|
++---+--------+
+|  f|  200000|
+|  m|  160000|
++---+--------+
+
+Scala> empdf.groupBy(empdf("sex")).agg(sum("sal"),max("sal"),min("sal")).show()
++---+--------+--------+--------+
+|sex|sum(sal)|max(sal)|min(sal)|
++---+--------+--------+--------+
+|  f|  200000|   80000|   20000|
+|  m|  160000|   70000|   10000|
++---+--------+--------+--------+
+
+scala> empdf.groupBy(empdf("dno"),empdf("sex")).agg(sum("sal"),max("sal"),min("sal")).show()
++---+---+--------+--------+--------+
+|dno|sex|sum(sal)|max(sal)|min(sal)|
++---+---+--------+--------+--------+
+| 11|  m|   80000|   70000|   10000|
+| 12|  f|  100000|   80000|   20000|
+| 12|  m|   50000|   50000|   50000|
+| 13|  f|   60000|   60000|   60000|
+| 13|  m|   30000|   30000|   30000|
+| 11|  f|   40000|   40000|   40000|
++---+---+--------+--------+--------+
+
+*****Note: During this aggregation I need to apply the filter, generally in select query we apply grouping filter into the
+	   having clause right, but here we don't have having clause therefore first apply the filter then apply the groupby that's it.
+
+*************Above all functions(most of them) were for DF if you find it difficult to remember then register as temp table and
+	     play around with select statement that's it. mande bisi beda marre.
+		Provided data is structured / Enterprise data for both DF and SQl.
+=============================================================================================================================
+
+But when speed is important then go with DataSet:
+
+scala> val ds = Seq(1,2,3).toDS()
+ds: org.apache.spark.sql.Dataset[Int] = [value: int]
+
+-Let's apply functionality similar to rdd for ds and it works much quicker than rdd, because it uses
+tungsten and catalyst optimizer that to In-memory.
+scala> ds.map( x => x+10)
+res0: org.apache.spark.sql.Dataset[Int] = [value: int]
+
+scala> ds.map( x => x+10).collect
+[Stage 0:>                                                          (0 +
+[Stage 0:>                                                          (0 +
+[Stage 0:===================>                                       (1 +                                                                        
+res1: Array[Int] = Array(11, 12, 13)
+
+scala> ds.map( x => x+10).show()
+[Stage 1:>                                                          (0 +                                                                        
++-----+ 
+|value|
++-----+
+|   11|
+|   12|
+|   13|
++-----+
+
+scala> case class Person(name: String, age: Long)
+defined class Person
+
+scala> val ds = Seq(Person("Andy",32),Person("abc",45)).toDS()
+ds: org.apache.spark.sql.Dataset[Person] = [name: string, age: bigint]
+
+scala> ds.collect
+res3: Array[Person] = Array(Person(Andy,32), Person(abc,45))
+
+scala> ds.show()
++----+---+
+|name|age|
++----+---+
+|Andy| 32|
+| abc| 45|
++----+---+
+
+-Let's work with DF now,
+[cloudera@quickstart ~]$ cat sampjson
+{"name":"Hari","age":30}
+{"name":"Latha","age":25}
+{"name":"Mani","age":23}
+[cloudera@quickstart ~]$ hadoop fs -copyFromLocal sampjson sqlLab
+
+scala> val info = sqlContext.read.json("/user/cloudera/sqlLab/sampjson") 
+info: org.apache.spark.sql.DataFrame = [age: bigint, name: string]
+
+-Above is a DataFrame, let's convert into DS
+-We already have schema i.e. case class person is there then,
+scala> val info2 = sqlContext.read.json{"sqlLab/sampjson"}.as[Person]
+info2: org.apache.spark.sql.Dataset[Person] = [name: string, age: bigint]
+
+-Now DataSet is created, we can go ahead and apply rdd API
+
+-Let's look into word count example of Dataset: Kindly check this example.
+
+

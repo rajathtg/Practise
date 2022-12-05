@@ -1,0 +1,332 @@
+Multiple Aggregation:
+====================
+
+-We used to use ReduceBy key, but we can't use it all places.
+-We can use grouping for that.
+
+scala> val data = sc.textFile("Sparks/emp")
+data: org.apache.spark.rdd.RDD[String] = Sparks/emp MapPartitionsRDD[27] at textFile at <console>:27
+
+scala> val arr = data.map(x => x.split(","))
+arr: org.apache.spark.rdd.RDD[Array[String]] = MapPartitionsRDD[28] at map at <console>:29
+
+scala> val pair1 = arr.map(x => (x(3),x(2).toInt))
+pair1: org.apache.spark.rdd.RDD[(String, Int)] = MapPartitionsRDD[29] at map at <console>:31
+
+scala> pair1.collect
+res24: Array[(String, Int)] = Array((m,70000), (f,90000), (m,10000), (m,40000), (f,70000), 
+(f,80000), (m,90000), (f,10000), (m,30000), (f,60000), (m,90000), (m,10000))
+
+scala> val grp = pair1.groupByKey()
+grp: org.apache.spark.rdd.RDD[(String, Iterable[Int])] = ShuffledRDD[31] at groupByKey at <console>:33
+
+scala> grp.collect.foreach(println)
+(f,CompactBuffer(90000, 70000, 80000, 10000, 60000))
+(m,CompactBuffer(70000, 10000, 40000, 90000, 30000, 90000, 10000))
+
+*****Note: In the statement no need to mention key to group, by default it will consider first element as key
+	   and grouping will happen based on that.
+	   We will get tuples as output as seen above
+
+scala> val res = grp.map{x=>
+     |       val sex = x._1
+     |       val cb = x._2
+     |       val tot = cb.sum
+     |       val cnt = cb.size
+     |       val avg = tot/cnt
+     |       val max = cb.max
+     |       val min = cb.min
+     |       val r = sex+","+tot+","+cnt+","+avg+","+max+","+min
+     |       r
+     |       }
+res: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[32] at map at <console>:35
+
+******Note: The result is RDD, datatype is array and each element is a string.
+
+scala> res.collect.foreach(println)
+f,310000,5,62000,90000,10000
+m,340000,7,48571,90000,10000
+
+scala> res.collect.foreach(println)
+f,310000,5,62000,90000,10000
+m,340000,7,48571,90000,10000
+
+scala> res.saveAsTextFile("Sparks/res100")
+[Stage 46:> 
+
+[cloudera@quickstart dvs]$ hadoop fs -cat Sparks/res100/part-00000
+f,310000,5,62000,90000,10000
+
+=======================================================================
+Multi grouping with multiple aggregations:
+-We want ((dno,sex) and sal) combinations:
+
+scala> val pair2 = arr.map(x => ((x(4),x(3)),x(2).toInt))
+pair2: org.apache.spark.rdd.RDD[(String, String, Int)] = MapPartitionsRDD[34] at map at <console>:31
+
+scala> pair2.collect
+res31: Array[((String, String), Int)] = Array(((12,m),70000), ((12,f),90000), ((11,m),10000), 
+((12,m),40000), ((13,f),70000), ((13,f),80000), ((14,m),90000), ((14,f),10000), ((11,m),30000), 
+((14,f),60000), ((15,m),90000), ((15,m),10000))
+
+scala> val grp2 = pair2.groupByKey()
+grp2: org.apache.spark.rdd.RDD[((String, String), Iterable[Int])] = ShuffledRDD[36] at groupByKey at <console>:33
+
+scala> grp2.collect
+res32: Array[((String, String), Iterable[Int])] = Array(((14,m),CompactBuffer(90000)), ((14,f),CompactBuffer(10000, 60000)), 
+((12,f),CompactBuffer(90000)), ((15,m),CompactBuffer(90000, 10000)), ((13,f),CompactBuffer(70000, 80000)), ((12,m),CompactBuffer(70000, 40000)), 
+((11,m),CompactBuffer(10000, 30000)))
+
+scala> grp2.collect.foreach(println)
+[Stage 52:>                                                                                                                             
+((14,m),CompactBuffer(90000))
+((14,f),CompactBuffer(10000, 60000))
+((12,f),CompactBuffer(90000))
+((15,m),CompactBuffer(90000, 10000))
+((13,f),CompactBuffer(70000, 80000))
+((12,m),CompactBuffer(70000, 40000))
+((11,m),CompactBuffer(10000, 30000))
+
+scala> val res2 = grp2.map{x =>
+     |       val k = x._1 // Here we are selecting key part first
+     |       val dno = k._1 // Key part 1st element
+     |       val sex = k._2 // Key part 2nd element
+     |       val cb = x._2 //Value
+     |       val tot = cb.sum
+     |       val cnt = cb.size
+     |       val avg = tot/cnt
+     |       val max = cb.max
+     |       val min = cb.min
+     |       (dno,sex,tot,cnt,avg,max,min)
+     |      }
+res2: org.apache.spark.rdd.RDD[(String, String, Int, Int, Int, Int, Int)] = MapPartitionsRDD[37] at map at <console>:35
+
+scala> res2.collect.foreach(println)
+(14,m,90000,1,90000,90000,90000)
+(14,f,70000,2,35000,60000,10000)
+(12,f,90000,1,90000,90000,90000)
+(15,m,100000,2,50000,90000,10000)
+(13,f,150000,2,75000,80000,70000)
+(12,m,110000,2,55000,70000,40000)
+(11,m,40000,2,20000,30000,10000)
+
+===============================================================
+We need to perform below aggregations i.e. complete column aggregations:
+	select sum(sal) from emp;
+	select sum(sal),count(*),max(sal),min(sal) from emp;
+
+scala> data.collect
+res35: Array[String] = Array(101,aaaa,70000,m,12, 102,bbbb,90000,f,12, 103,cccc,10000,m,11, 
+104,dddd,40000,m,12, 105,cccc,70000,f,13, 106,dede,80000,f,13, 107,ioio,90000,m,14, 108,yuyu,10000,f,14, 
+109,popo,30000,m,11, 110,aaaa,60000,f,14, 123,djdj,90000,m,15, 122,asas,10000,m,15)
+
+scala> arr.collect
+res36: Array[Array[String]] = Array(Array(101, aaaa, 70000, m, 12), Array(102, bbbb, 90000, f, 12), 
+Array(103, cccc, 10000, m, 11), Array(104, dddd, 40000, m, 12), Array(105, cccc, 70000, f, 13), Array(106, dede, 80000, f, 13), 
+Array(107, ioio, 90000, m, 14), Array(108, yuyu, 10000, f, 14), Array(109, popo, 30000, m, 11), Array(110, aaaa, 60000, f, 14), 
+Array(123, djdj, 90000, m, 15), Array(122, asas, 10000, m, 15))
+
+-Let's only select salary column from the data
+
+scala> val sals = arr.map(x => x(2).toInt)
+sals: org.apache.spark.rdd.RDD[Int] = MapPartitionsRDD[38] at map at <console>:31
+
+
+
+scala> sals.collect
+res37: Array[Int] = Array(70000, 90000, 10000, 40000, 70000, 80000, 90000, 10000, 30000, 60000, 90000, 10000)
+
+scala> val tot = sals.sum
+tot: Double = 650000.0
+
+********(or) reduce(_+_) is available with both scala and RDD, but reduceByKey is available with only RDD
+
+scala> val tot = sals.reduce(_+_)
+tot: Int = 650000
+
+Note: Both .sum & reduce (_+_) gave same results but what is the difference between them???
+      Answer for diff between .sum & reduce(_+_) is give below after few scrolls, have a look....
+
+scala> val cnt = sals.count
+cnt: Long = 12
+
+scala> val avg = tot/cnt
+avg: Long = 54166
+
+scala> val avg:Int = tot/cnt
+<console>:37: error: type mismatch;
+ found   : tot.type (with underlying type Int)
+ required: ?{def /(x$1: ? >: Long): ?}
+Note that implicit conversions are not applicable because they are ambiguous:
+ both method int2long in object Int of type (x: Int)Long
+ and method int2float in object Int of type (x: Int)Float
+ are possible conversion functions from tot.type to ?{def /(x$1: ? >: Long): ?}
+         val avg:Int = tot/cnt
+                       ^
+<console>:37: error: overloaded method value / with alternatives:
+  (x: Int)Int <and>
+  (x: Char)Int <and>
+  (x: Short)Int <and>
+  (x: Byte)Int
+ cannot be applied to (Long)
+         val avg:Int = tot/cnt
+                          ^
+
+scala> val avg:Int = (tot/cnt).toInt
+avg: Int = 54166
+
+scala> val max = sals.max
+max: Int = 90000
+
+scala> val min = sals.min
+min: Int = 10000
+
+*******(or)Better way to analyse is:
+
+scala> val max = sals.reduce(Math.max(_,_))
+max: Int = 90000
+
+scala> val min = sals.reduce(Math.min(_,_))
+min: Int = 10000
+
+Theory:
+Consider, val lst = sc.parallelize(List(10,20,30,40,50,60,40,20,10),2) // Explicitly we have requesting for 2 partitions
+
+RDD --> lst
+
+Has two partitions:
+	Partition 1 --> List(10,20,30,40,50)
+	Partition 2 --> List(20,30,40,40,50)
+
+When we req for lst.sum --> All partitions data will be collected into local, hence sum executed at local & there is no
+			    parallel process.
+Instead let's go for lst.reduce(_+_) --> This operation executed at cluster separately for each partition, later the independent
+					 results of partitions will be collected by anyone slave of spark cluster, then final
+					 operation will happen. Then this result will be submitted to client. 
+
+scala> val res = (tot,cnt,avg,max,min)
+res: (Int, Long, Int, Int, Int) = (650000,12,54166,90000,10000)
+
+scala> val r = List(tot,cnt,avg,max,min).mkString("\t")
+r: String = 650000	12	54166	90000	10000
+
+-Later above result can be saved in HDFS.
+====================================================================================================================
+
+Till now we performed aggregations on scala local objects in Scala ,let's perform above transformations in Spark (i.e.RDD).
+
+val res = data.map{x =>
+      val w = x.trim().split(",")
+      val id = w(0)
+      val name = w(1).toLowerCase
+      val fc = name.slice(0,1).toUpperCase
+      val rc = name.slice(1,name.size)
+      val sal = w(2).toInt
+      val grade = if(sal >= 70000) "A" else
+      if(sal >=50000) "B" else
+      if (sal>=30000) "C" else "D"
+      val dno = w(4).toInt
+      val dname = dno match{
+      case 11 => "Marketing"
+      case 12 => "Hr"
+      case 13 => "Finance"
+      case other => "Others"
+      }
+      var sex = w(3).toLowerCase
+      sex = if(sex=="f") "Female" else "Male"
+      val Name = fc+rc
+      List(id,Name,w(2),grade,sex,dname).mkString("\t")
+      }
+
+scala> val res = data.map{x =>
+     |       val w = x.trim().split(",")
+     |       val id = w(0)
+     |       val name = w(1).toLowerCase
+     |       val fc = name.slice(0,1).toUpperCase
+     |       val rc = name.slice(1,name.size)
+     |       val sal = w(2).toInt
+     |       val grade = if(sal >= 70000) "A" else
+     |       if(sal >=50000) "B" else
+     |       if (sal>=30000) "C" else "D"
+     |       val dno = w(4).toInt
+     |       val dname = dno match{
+     |       case 11 => "Marketing"
+     |       case 12 => "Hr"
+     |       case 13 => "Finance"
+     |       case other => "Others"
+     |       }
+     |       var sex = w(3).toLowerCase
+     |       sex = if(sex=="f") "Female" else "Male"
+     |       val Name = fc+rc
+     |       List(id,Name,w(2),grade,sex,dname).mkString("\t")
+     |       }
+res: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[41] at map at <console>:29
+
+scala> res.collect.foreach(println)
+101	Aaaa	70000	A	Male	Hr
+102	Bbbb	90000	A	Female	Hr
+103	Cccc	10000	D	Male	Marketing
+104	Dddd	40000	C	Male	Hr
+105	Cccc	70000	A	Female	Finance
+106	Dede	80000	A	Female	Finance
+107	Ioio	90000	A	Male	Others
+108	Yuyu	10000	D	Female	Others
+109	Popo	30000	C	Male	Marketing
+110	Aaaa	60000	B	Female	Others
+123	Djdj	90000	A	Male	Others
+122	Asas	10000	D	Male	Others
+====================================================================
+-Let's work on filter > select sum(sal) from emp where sex = "m"
+
+scala> def isMale(x:String) = {
+     | val w = x.split(",")
+     | val sex = w(3).toLowerCase
+     | sex=="m"
+     | }
+isMale: (x: String)Boolean
+
+scala> val males = data.filter(x => isMale(x))
+males: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[42] at filter at <console>:31
+
+scala> males.collect.foreach(println)
+101,aaaa,70000,m,12
+103,cccc,10000,m,11
+104,dddd,40000,m,12
+107,ioio,90000,m,14
+109,popo,30000,m,11
+123,djdj,90000,m,15
+122,asas,10000,m,15
+
+-Now task is to extract the salary:
+
+scala> val sals = males.map(x => x.split(",")(2).toInt) 
+sals: org.apache.spark.rdd.RDD[Int] = MapPartitionsRDD[43] at map at <console>:33
+
+scala> sals.collect
+[Stage 69:>                                                                                                                             
+res43: Array[Int] = Array(70000, 10000, 40000, 90000, 30000, 90000, 10000)
+
+scala> sals.reduce(_+_)
+res44: Int = 340000
+
+-To check for females let's use Ismales function !(negation):
+
+scala> val fems = data.filter(x => !isMale(x))
+fems: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[45] at filter at <console>:31
+
+scala> fems.collect.foreach(println)
+102,bbbb,90000,f,12
+105,cccc,70000,f,13
+106,dede,80000,f,13
+108,yuyu,10000,f,14
+110,aaaa,60000,f,14
+
+scala> val m = fems.map(x => x.split(",")(2).toInt).reduce(Math.max(_,_))
+m: Int = 90000
+
+-In this way we can apply scala techniques in Spark RDD
+-It doesn't mean everything can be applied, all scala techniques can be applied
+ within map, filter and flat map.
+-If it is RDD, then RDD has few special APIs some scala functions are equivalent to like reduce
+reduce,reduceByKey, countfor RDD
+reduce,size is for Scala 

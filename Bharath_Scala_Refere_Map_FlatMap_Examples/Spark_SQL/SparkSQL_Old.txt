@@ -1,0 +1,192 @@
+Spark SQL:
+
+Load data to RDD > Define Schema > then convert it into DataFrames > Register DF as Temp Table > Start applying SQL concepts
+
+***To start spark shell type > spark-shell
+
+-The objective of this section is to learn basic concept of SparkSQL and try to learn and follow the steps to solve
+the practical examples of SparkSQL.
+-Spark SQL is a spark module for structured data processing.
+-One use of Spark SQL is to execute SQL queries using a basic SQL syntax.
+-There are several ways to interact with Spark SQL including SQL, the DataFrames API and the Datasets API.
+-The backbone for all these operations is DataFrames and SchemaRDD.
+**DataFrames:
+A DataFrame is a distributed collection of data organised into named columns.It is conceptually equivalent to a table
+in a relational database.
+**schema RDD:
+SchemaRDDs are mode of row objects along with the metadata information.
+Using this meta data we can easily get data in easier and faster manner from Spark
+
+-Spark SQL needs SQLContext object, which is created from existing SparkContext.
+
+Follow the below steps for creating dataframes,ShemaRDD and performing some operations using
+the sql methods provided by sql context:
+
+-Start the spark shell by using the following command > ./bin/spark-shell
+
+-Import the package > SQLContext entry point for working with structured data:
+	val sqlContext = new org.apache.spark.sql.SQLContext(sc)
+
+*****This is used to implicitly convert an RDD to a DataFrame.
+import sqlcontext.implicits._
+
+Import Spark SQL data types and Row.
+
+-Load the data into a new RDD
+val data = sc.textFile("Your file name") > Here sc means spark context and not SQL context
+
+-Define the schema according to your dataset using a case class.
+For example your dataset contains product id, product name and product rating then your schema should be defined as:
+case class Product(productid: Integer, product_name:String, product_rating: Integer)
+
+-->If you want to check your schema you can use printShema(), it Prints the schema to the console in a tree format.
+ 
+create an RDD of Product objects
+To covert data into normal format, we got to create schema, let's manipulate using map and dividing eacha and every row interms of column
+separated values using split method, later mapping the words to respected values.
+
+val productData = data.map(.split(",")).map(p => Product(p(0).toInt,p(1),p(2).toInt))
+
+-Change productData RDD of product objects to a DataFrame.
+
+A DataFrame is a distributed collection of data organised into named columns.Spark SQL supports automatically converting an RDD containing case
+classes to a DataFrame with the metod toDF():
+val product = productData.toDF()
+
+-Explore and query the product data with Spark DataFrames
+DataFrames provide a domain-specific language for structured data manipulation in Scala,Java and Python.Check the basic practical of 
+SparkSQL for examples.
+**SqlContext:
+
+-Register the DataFrame as a temp table
+For Ex: product.registerTempTable("product")
+
+****Temp table is created to facilitate that all my data is available to perform SQL operation.
+
+Now execute the Sql Statement
+
+Ex: val results =sqlContext.sql("Select*fromProduct");
+results.show()
+
+
+Steps to execute statements:
+
+******Start all the nodes first:
+
+1. Start spark, we're using Scala here, we can also go by using python:
+	spark-shell
+
+2. Import the package > SQLContext entry point for working with structured data:
+	val sqlContext = new org.apache.spark.sql.SQLContext(sc)
+
+3. Create a Case Class:
+	case class Person(name:String,age:Int)
+
+4. Create an RDD of Product objects and later convert it into Data Frames all in single step:
+To covert data into normal format, we got to create schema, let's manipulate using map and dividing eacha and every row interms of column
+separated values using split method, later mapping the words to respected values. finally converting it into DataFrames
+
+	val people = sc.textFile("/home/cloudera/dvs/people.txt").map(_.split(",")).map(p=>Person(p(0),p(1).trim.toInt)).toDF()
+
+5. Let's create temprorary table with table name people and it will be similar to RDBMS table.
+	people.registerTempTable("people")
+
+6. Let's start applying actual sql queries to get results:
+	val c1=sqlContext.sql("select * from people where age>18")
+	c1.collect
+
+	val c2=sqlContext.sql("select * from people")
+	c2.collect
+
+	val c3=sqlContext.sql("select * from people where age>20")
+	c3.collect
+
+7. Add some content to data stored in c3:
+	c3.map(x=>"Name: "=x(0)+" Age: "+x(1)).collect().foreach(println)
+
+	output:
+	Name: Williams Age: 70
+	Name: Hill Age: 80
+	........	
+8. To get output interms of map(here map is part of scala function), but we want interms of
+key value pair:
+	c3.map(_.getValuesMap[Any](List("name","age"))).collect().foreach(println)
+
+	Output:
+	Map(name -> Williams, age -> 59)
+	Map(name -> Hill, age -> 75)
+	...
+
+9. In above to examples if we don't use foreach(i.e remove "foreach(println)") the output got changes instead of getting displayed
+interms of separate row it will be in the form of array, give a try.
+
+
+********************************************************************************************************************************************************
+
+Spark SQL:
+
+Creating Dataset:
+
+Creating a class 'Employee' to store name and age of an employee.
+	case class Employee(name: String, age: Long)
+
+Assigning a Dataset 'caseClassDS' to store the record of Andrew.
+	val caseClassDS = Seq(Employee("Andrew", 55)).toDS()
+
+Displaying the Dataset 'caseClassDS'
+	caseClassDS.show()
+
+Creating a primitive Dataset to demonstrate mapping of Dataframes into Datasets
+	val primitiveDS = Seq(1, 2, 3).toDS()
+
+Assigning the above sequence into an array.
+	primitiveDS.map(_+ 1).collect()
+
+To Create Dataset - Reading File:
+
+Setting the path to our JSON file 'employee.json'
+	val path = "/home/cloudera/dvs/emp.json"
+
+Creating a Dataset and from the file
+	val employeeDS = spark.read.json(path).as[Employee]
+
+Displaying the contents of "employeeDS" Dataset
+	employeeDS.show()
+
+Difference between DS and DF:
+
+DS is similar to DataFrames, DS also has name columns and etc, it was introduced lately in 1.6v and later. DS has encoder mechanism
+which makes it work faster during deserialisation / reading data, in general performance wise DS is better than DF. 
+
+***********************************************************************************************************************************************
+
+Adding Schema to RDD:
+
+Datasets are similar to RDDs, however, instead of using Java Serialization or Kryo they use a specialized Encoder to serialize the objects
+for processing or transmitting over the network.
+
+Importing Expression Encoder for RDDs, Encoder library and implicits class into the shell:
+	import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder
+	import org.apache.spark.sql.Encoder
+	import spark.implicits._
+
+Creating an 'employeeDF' DataFrame from 'employee.txt' and mapping the columns based on delimiter comma',' into a temporary view 'employee'
+	val employeeDF=spark.sparkContext.textFile("/home/cloudera/dvs/emp.json").map(_.split(",")).map(attributes=>Employee(attributes(0),attributes(1).trim.toInt).toDF()
+
+Creating the temporary view 'employee'
+	employeeDF.createOrReplaceTempView("employee")
+
+Defining a DataFrame 'youngstersDF' which will contain all the employees b/w the ages 18 and 30
+	val youngsterDF = spark.sql("Select name,age from employee where age between 18 and 30")
+
+Mapping the names from the RDD into 'youngstersDF' to display the names of youngsters.
+	youngstersDF.map(youngster => "Name: "+youngster(0)).show()
+
+Converting the mapped names into string for transformations:
+	youngsterDF.map(youngster => "Name: "+ youngster.getAs[String]("name")).shoe()
+
+Using the mapEncoder from implicits class to map the names to the ages.
+	implicit val mapEncoder = org.apache.spark.sql.Encoders.kryo[Map[String, Any]]	
+
+Mapping the names to the ages of our 'youngsterDF' Dataframe. The result is an array with the names mapped to their reapective ages.
+	youngsterDF.map(youngster => youngster.getValuesMap[Any](List("name","age"))).cpllect()

@@ -1,0 +1,434 @@
+scala> import sqlContext.implicits._
+import sqlContext.implicits._
+
+scala> case class Samp(a:Int,b:Int,c:Int)
+defined class Samp
+
+scala> val s1 = Samp(10,20,30)
+s1: Samp = Samp(10,20,30)
+
+scala> val s2 = Samp(1,2,3)
+s2: Samp = Samp(1,2,3)
+
+scala> val s3 = Samp(100,200,300)
+s3: Samp = Samp(100,200,300)
+
+scala> val s4 = Samp(1000,2000,3000)
+s4: Samp = Samp(1000,2000,3000)
+
+scala> val data = List(s1,s2,s3,s4)
+Here the data is in local since s1,s2,s3,s4 are all collection of locals.
+To make local object into rdd is by using sc.parallelize
+
+scala> val data = sc.parallelize(List(s1,s2,s3,s4))
+data: org.apache.spark.rdd.RDD[Samp] = ParallelCollectionRDD[0] at parallelize at <console>:40
+Here type is array, data is rdd and each element is Samp object.
+
+scala> data.collect
+[Stage 0:>                                                          (0 
+[Stage 0:>                                                          (0                                                                        
+res0: Array[Samp] = Array(Samp(10,20,30), Samp(1,2,3), Samp(100,200,300)
+, Samp(1000,2000,3000))
+
+To extract column a from each samp object, no need to worry about position of a since schema is already 
+been provided.
+
+scala> val x = data.map(v => v.a).collect
+x: Array[Int] = Array(10, 1, 100, 1000)
+here v is each element and fetch 1st element using v.a
+
+scala> val x = data.map(v => v.a+v.b+v.c).collect
+x: Array[Int] = Array(60, 6, 600, 6000)
+
+Once rdd with schema is available then let's convert into DF.
+Once we have DF we have three benefits
+	-Execution point of you we have catalyst optimizer
+	-DF specialised simplified API we can use
+	-We can turn this DF>TempTable>play sql stuffs
+***Note: SQL is totally based on mysql and we can only use select statements.
+
+scala> val df = data.toDF
+df: org.apache.spark.sql.DataFrame = [a: int, b: int, c: int]
+
+scala> df.show() > these commands are from DF Api
++----+----+----+
+|   a|   b|   c|
++----+----+----+
+|  10|  20|  30|
+|   1|   2|   3|
+| 100| 200| 300|
+|1000|2000|3000|
++----+----+----+
+Here it presents in the form of structured way and each record is SQL format.
+
+scala> df.printSchema() > these commands are from DF Api
+root
+ |-- a: integer (nullable = false)
+ |-- b: integer (nullable = false)
+ |-- c: integer (nullable = false)
+
+scala> df.registerTempTable("df")
+Successfuly registered as Temptable
+
+scala> sqlContext.sql("select * from df")
+res10: org.apache.spark.sql.DataFrame = [a: int, b: int, c: int]
+Whenever we play select statement on TempTable it returns again DataFrame on
+
+scala> val df2 = sqlContext.sql("select a,b from df")
+df2: org.apache.spark.sql.DataFrame = [a: int, b: int]
+
+scala> df2.show()
++----+----+
+|   a|   b|
++----+----+
+|  10|  20|
+|   1|   2|
+| 100| 200|
+|1000|2000|
++----+----+
+
+If we want to generate new column we need write few codes in rdd, but it's
+simple using DF API
+
+scala> val df3 = sqlContext.sql("select a,b,c,a+b+c as tot from df")
+df3: org.apache.spark.sql.DataFrame = [a: int, b: int, c: int, tot: int]
+
+scala> df3.show()
++----+----+----+----+
+|   a|   b|   c| tot|
++----+----+----+----+
+|  10|  20|  30|  60|
+|   1|   2|   3|   6|
+| 100| 200| 300| 600|
+|1000|2000|3000|6000|
++----+----+----+----+
+
+******************************Only limitation of DF is data should be structured.
+
+=======================================================================================
+[cloudera@quickstart dvs]$ cat spark
+101,aaa,10000,m,11
+102,bbb,20000,f,12
+103,ccc,30000,m,13
+104,ddd,40000,f,11
+105,eee,50000,m,12
+106,fff,60000,f,13
+107,ggg,70000,m,11
+108,hhh,80000,f,12
+
+[cloudera@quickstart dvs]$ hadoop fs -ls
+Found 4 items
+drwxr-xr-x   - cloudera cloudera          0 2018-12-14 10:17 .sparkStaging
+-rw-r--r--   1 cloudera cloudera          0 2018-07-09 11:00 abc.txt
+drwxr-xr-x   - cloudera cloudera          0 2019-12-27 01:34 sqlLab
+drwxr-xr-x   - cloudera cloudera          0 2018-12-06 02:44 xmlCsvData
+[cloudera@quickstart dvs]$ hadoop fs -copyFromLocal spark sqlLab
+
+scala> val raw = sc.textFile("sqlLab/spark")
+raw: org.apache.spark.rdd.RDD[String] = sqlLab/spark MapPartitionsRDD[14] at textFile at <console>:30
+
+scala> raw.count
+[Stage 9:>                                                          (0                                                                        
+res15: Long = 8
+
+scala> raw.take(2)
+res17: Array[String] = Array(101,aaa,10000,m,11, 102,bbb,20000,f,12)
+
+scala> raw.take(1)
+res18: Array[String] = Array(101,aaa,10000,m,11)
+
+scala> raw.take(4)
+res19: Array[String] = Array(101,aaa,10000,m,11, 102,bbb,20000,f,12, 103,ccc,30000,m,13, 104,ddd,40000,f,11)
+
+scala> case class Info(id:Int, name:String, sal:Int, sex:String, dno:Int)
+defined class Info
+
+***Now case class is created, but each element in raw is a string and I need to
+transform each line into case so that we provide schema to your RDD. It's done by creating function.
+
+-Function is defined to Info > def toInfo
+-Each element passed to this function is string > x:String
+-What are we expecting or return type?, but return type is not mandatory
+by default last expression is returned > :Info (we can mention or ignore it)
+-Let's split each line into array > val w = x.split(",")
+-Separate the required things, if it needed as any other datatype other than
+string, please mention it as explicitly then > val id = w(0).toInt
+-We need to create case object same as case class > val info = Info(id, name, sal, sex, dno)
+-mention the return type > info
+
+scala> def toInfo(x:String)= {
+     | val w = x.split(",")
+     | val id = w(0).toInt
+     | val name = w(1)
+     | val sal = w(2).toInt
+     | val sex = w(3)
+     | val dno = w(4).toInt
+     | val info = Info(id, name, sal, sex, dno)
+     | info
+     | }
+toInfo: (x: String)Info
+
+Let's test whether our function is correct or not.
+Let's create a dummy data rec.
+scala> val rec = "401,Amar,7000,m,12"
+
+scala> toInfo(rec)
+res22: Info = Info(401,Amar,7000,m,12)
+
+scala> val i = toInfo(rec)
+i: Info = Info(401,Amar,7000,m,12)
+
+scala> i.name
+res23: String = Amar
+
+scala> i.sex
+res24: String = m
+
+-Therefore the created function is working fine and this convert your raw
+record into case class or Info object.
+-Let's apply this function to each elememt of raw.
+-For each x element in raw be applied toInfo function.
+
+scala> val infos = raw.map(x => toInfo(x))
+infos: org.apache.spark.rdd.RDD[Info] = MapPartitionsRDD[15] at map at <console>:50
+
+Object type of raw is RDD, definitely infos will be RDD, but each element is a case
+
+scala> infos.foreach(println)
+[Stage 13:>                                                         (0 + 0) / 2]Info(106,fff,60000,f,13)
+Info(107,ggg,70000,m,11)
+Info(108,hhh,80000,f,12)
+Info(101,aaa,10000,m,11)
+Info(102,bbb,20000,f,12)
+Info(103,ccc,30000,m,13)
+Info(104,ddd,40000,f,11)
+Info(105,eee,50000,m,12)
+
+scala> infos.map(x => x.sal).sum
+res26: Double = 360000.0
+
+About two code belongs to RDD API, such a headache hence better to go with SQL via DataFrame
+
+Let's convert RDD to DF
+scala> val dfinfo = infos.toDF
+dfinfo: org.apache.spark.sql.DataFrame = [id: int, name: string, sal: int, sex: string, dno: int]
+
+scala> dfinfo.show()
++---+----+-----+---+---+
+| id|name|  sal|sex|dno|
++---+----+-----+---+---+
+|101| aaa|10000|  m| 11|
+|102| bbb|20000|  f| 12|
+|103| ccc|30000|  m| 13|
+|104| ddd|40000|  f| 11|
+|105| eee|50000|  m| 12|
+|106| fff|60000|  f| 13|
+|107| ggg|70000|  m| 11|
+|108| hhh|80000|  f| 12|
++---+----+-----+---+---+
+
+scala> dfinfo.printSchema()
+root
+ |-- id: integer (nullable = false)
+ |-- name: string (nullable = true)
+ |-- sal: integer (nullable = false)
+ |-- sex: string (nullable = true)
+ |-- dno: integer (nullable = false)
+
+-We can't apply SQL directly, we need to register it as Temp Table.
+scala> dfinfo.registerTempTable("dfinfo")
+
+scala> sqlContext.sql("select * from dfinfo where sex='m'").show()
++---+----+-----+---+---+
+| id|name|  sal|sex|dno|
++---+----+-----+---+---+
+|101| aaa|10000|  m| 11|
+|103| ccc|30000|  m| 13|
+|105| eee|50000|  m| 12|
+|107| ggg|70000|  m| 11|
++---+----+-----+---+---+
+
+scala> sqlContext.sql("select sex,sum(sal) as tot_sal from dfinfo group by sex").show()
+[Stage 19:>                                                         (0                                                                        
+[Stage 22:============================>                         (104 + 
+[Stage 22:=================================>                    (123 + 
+[Stage 22:==========================================>           (157 + 
+[Stage 22:=====================================================>(197 +                                                                        
++---+-------+
+|sex|tot_sal|
++---+-------+
+|  f| 200000|
+|  m| 160000|
++---+-------+
+
+scala> sqlContext.sql("select sex,sum(sal) as tot_sal,count(*) as cnt, avg(sal)as avg, max(sal) as max, min(sal) as min from dfinfo group by sex").show()
+[Stage 26:==========================>                            (97 + 
+[Stage 26:=================================>                    (122 + 
+[Stage 26:==============================================>       (172 + 
++---+-------+---+-------+-----+-----+
+|sex|tot_sal|cnt|    avg|  max|  min|
++---+-------+---+-------+-----+-----+
+|  f| 200000|  4|50000.0|80000|20000|
+|  m| 160000|  4|40000.0|70000|10000|
++---+-------+---+-------+-----+-----+
+
+To reuse the above result type val res = statement and output will be DF and to again continue reg it as temp table and play around
+scala> val res = sqlContext.sql("select dno,sum(sal) as tot_sal,count(*) as cnt, avg(sal)as avg, max(sal) as max, min(sal) as min from dfinfo group by dno").show()
+[Stage 30:================================================>     (179 +                                                                        
++---+-------+---+-------+-----+-----+
+|dno|tot_sal|cnt|    avg|  max|  min|
++---+-------+---+-------+-----+-----+
+| 11| 120000|  3|40000.0|70000|10000|
+| 12| 150000|  3|50000.0|80000|20000|
+| 13|  90000|  2|45000.0|60000|30000|
++---+-------+---+-------+-----+-----+
+
+This note which was not clear now cleared in raw2 result below****Note : Not so clear "Now res is a DF table, we need to register it as TempTable to play around with result."
+
+scala> sqlContext.sql("select dno, sex,sum(sal) as tot_sal,count(*) as cnt, avg(sal)as avg, max(sal) as max, min(sal) as min from dfinfo group by dno, sex").show()
++---+---+-------+---+-------+-----+-----+
+|dno|sex|tot_sal|cnt|    avg|  max|  min|
++---+---+-------+---+-------+-----+-----+
+| 11|  m|  80000|  2|40000.0|70000|10000|
+| 12|  f| 100000|  2|50000.0|80000|20000|
+| 12|  m|  50000|  1|50000.0|50000|50000|
+| 13|  f|  60000|  1|60000.0|60000|60000|
+| 13|  m|  30000|  1|30000.0|30000|30000|
+| 11|  f|  40000|  1|40000.0|40000|40000|
++---+---+-------+---+-------+-----+-----+
+
+[cloudera@quickstart dvs]$ cat spark2
+201,kiran,14,m,90000
+202,mani,12,f,10000
+203,giri,12,m,20000
+204,girija,11,f,40000
+
+[cloudera@quickstart dvs]$ hadoop fs -copyFromLocal spark2 sqlLab
+
+scala> val raw2 = sc.textFile("sqlLab/spark2")
+raw2: org.apache.spark.rdd.RDD[String] = sqlLab/spark2 MapPartitionsRDD[75] at textFile at <console>:30
+
+For each element of raw2 we need case class but it should as case class of raw.
+But we cannot call previous function because sal and dno positions are different.
+
+scala> val infos2 = raw2.map{ x =>
+     | val w = x.split(",")
+     | Info(w(0).toInt,
+     | w(1), w(4).toInt, w(3),w(2).toInt)}
+infos2: org.apache.spark.rdd.RDD[Info] = MapPartitionsRDD[76] at map at <console>:48
+**Note: If we notice the arrangement in table can be different but the svhema of 1st and this file is same
+
+Scala> infos.collect.foreach(println)
+Info(101,aaa,10000,m,11)
+Info(102,bbb,20000,f,12)
+Info(103,ccc,30000,m,13)
+Info(104,ddd,40000,f,11)
+Info(105,eee,50000,m,12)
+Info(106,fff,60000,f,13)
+Info(107,ggg,70000,m,11)
+Info(108,hhh,80000,f,12)
+
+scala> infos2.collect.foreach(println)
+Info(201,kiran,90000,m,14)
+Info(202,mani,10000,f,12)
+Info(203,giri,20000,m,12)
+Info(204,girija,40000,f,11) 
+
+scala> val dfinfo2 = infos2.toDF
+dfinfo2: org.apache.spark.sql.DataFrame = [id: int, name: string, sal: int, sex: string, dno: int]
+
+scala> dfinfo2.registerTempTable("dfinfo2")
+
+scala> val df = sqlContext.sql("select * from dfinfo union all select * from dfinfo2")
+df: org.apache.spark.sql.DataFrame = [id: int, name: string, sal: int, sex: string, dno: int]
+
+scala> df.show()
++---+------+-----+---+---+
+| id|  name|  sal|sex|dno|
++---+------+-----+---+---+
+|101|   aaa|10000|  m| 11|
+|102|   bbb|20000|  f| 12|
+|103|   ccc|30000|  m| 13|
+|104|   ddd|40000|  f| 11|
+|105|   eee|50000|  m| 12|
+|106|   fff|60000|  f| 13|
+|107|   ggg|70000|  m| 11|
+|108|   hhh|80000|  f| 12|
+|201| kiran|90000|  m| 14|
+|202|  mani|10000|  f| 12|
+|203|  giri|20000|  m| 12|
+|204|girija|40000|  f| 11|
++---+------+-----+---+---+
+
+scala> df.registerTempTable("df")
+
+scala> sqlContext.sql("select sex,sum(sal) as tot from df group by sex").show()
++---+------+
+|sex|   tot|
++---+------+
+|  f|250000|
+|  m|270000|
++---+------+
+
+*******Note: We had to register df again as Temp Table because we need to use the result of df(which is DF API)
+if it wasn't done then we can't apply select statement again on the """union all result""".
+The Optimize was taken care by optimizer catalyst internally.
+
+================================================================================================================
+
+[cloudera@quickstart dvs]$ vi sparkdept
+[cloudera@quickstart dvs]$ cat sparkdept
+11,marketing,hyd
+12,hr,del
+13,finance,hyd
+14,admin,del
+[cloudera@quickstart dvs]$ hadoop fs -copyFromLocal sparkdept sqlLab
+
+scala> val raw3 = sc.textFile("sqlLab/sparkdept")
+raw3: org.apache.spark.rdd.RDD[String] = sqlLab/sparkdept MapPartitionsRDD[100] at textFile at <console>:30
+
+scala> case class Dept(dno:Int, dname:String, loc:String)
+defined class Dept
+
+scala> val dept = raw3.map{ x =>
+     | val w = x.split(",")
+     | Dept(w(0).toInt,w(1),w(2))
+     | }
+dept: org.apache.spark.rdd.RDD[Dept] = MapPartitionsRDD[101] at map at <console>:48
+
+scala> dept.collect.foreach(println)
+Dept(11,marketing,hyd)
+Dept(12,hr,del)
+Dept(13,finance,hyd)
+Dept(14,admin,del)
+
+scala> val deptdf = dept.toDF
+deptdf: org.apache.spark.sql.DataFrame = [dno: int, dname: string, loc: string]
+
+scala> deptdf.registerTempTable("dept")
+
+scala> val res = sqlContext.sql("select loc,sum(sal) as tot from dfinfo l join dept r on (l.dno=r.dno) group by loc")
+res: org.apache.spark.sql.DataFrame = [loc: string, tot: bigint]
+
+scala> res.show()
+[Stage 67:===============>                                       (57 + 
+[Stage 67:========================>                              (88 + 
+[Stage 67:====================================>                 (134 + 
+[Stage 67:================================================>     (180 + 
+[Stage 67:=====================================================>(198 +                                                                        
+[Stage 72:=================================================>    (184 +                                                                        
++---+------+
+|loc|   tot|
++---+------+
+|del|150000|
+|hyd|210000|
++---+------+
+
+Bharatt Sreeram
+Email ID > sankara.deva2016@gmail.com
+WhatsApp > 7981638059
+
+
+
+
+

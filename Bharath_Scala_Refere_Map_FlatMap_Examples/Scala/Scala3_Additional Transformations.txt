@@ -1,0 +1,232 @@
+-Conditional Transformations:
+-----------------------------
+-Task is to find out which is above to average sal and which is below to average salary.
+scala> val lst = List(10000,30000,20000,60000,80000)
+lst: List[Int] = List(10000, 30000, 20000, 60000, 80000)
+
+scala> lst.avg
+<console>:28: error: value avg is not a member of List[Int]
+              lst.avg
+                  ^
+
+scala> lst.sum
+res36: Int = 200000
+
+scala> lst.size
+res37: Int = 5
+
+scala> val avg = lst.sum/lst.size
+avg: Int = 40000
+------------------------------
+Hint:
+scala> val a = 100
+a: Int = 100
+
+scala> val b = 230
+b: Int = 230
+
+scala> val big = if (a>b) a else b
+big: Int = 230
+-------------------------------
+
+val res = lst.map(x => if (x>=avg) "Above" else "Below")
+
+scala> val res = lst.map(x => if (x>=avg) "Above" else "Below")
+res: List[String] = List(Below, Below, Below, Above, Above)
+------------------------------------------------------------
+Nested Values:
+
+-Which is bigger among a,b & c:
+scala> a
+res38: Int = 100
+
+scala> b
+res39: Int = 230
+
+scala> val c = 300
+c: Int = 300
+
+scala> val big = if (a>b) {if (a>c) a else b} else {if(b>c) b else c}
+big: Int = 300
+--------------------------------------------------------------------------
+-To transform the list using nested if's:
+scala> val dnos = List(11,12,13,11,11,11,12,13,12,12,12,13,14,15,11)
+dnos: List[Int] = List(11, 12, 13, 11, 11, 11, 12, 13, 12, 12, 12, 13, 14, 15, 11)
+
+Task is to convert all the dnos to Dept names.
+scala> val dnames = dnos.map{ x =>
+     | if (x==11)"Marketing" else
+     | {if(x==12)"Hr" else
+     | {if(x==13)"Finance" else "others"}}
+     | }
+dnames: List[String] = List(Marketing, Hr, Finance, Marketing, Marketing, 
+Marketing, Hr, Finance, Hr, Hr, Hr, Finance, others, others, Marketing)
+
+Ex: On match statement.
+-Task is if sex ="m" then transform that as Male if not then it's female.
+scala> val sex = "m"
+sex: String = m
+
+scala> val res = (sex == "m") match {
+     | case true => "Male"
+     | case false => "Female"
+     | }
+res: String = Male
+
+****Note: Match is similar to switch statement in Java
+
+Same case with if:
+scala> val res = if (sex=="m")"Male"else"Female"
+res: String = Male
+
+scala> val res = sex match {
+     | case "m" => "Male"
+     | case "f" => "Female"
+     | case other => "Unknown" //Other is similar to Unknown in switch case
+     | }
+res: String = Male
+scala> lst
+res41: List[Int] = List(10000, 30000, 20000, 60000, 80000)
+
+scala> val r = lst.map{x =>
+      var grade = " "
+      if(x>=70000){grade="A"}
+      else
+      {if(x>=50000){grade="B"}
+      else 
+      {if(x>30000){grade="c"}
+      else
+      {grade="D"}
+      }}
+      }
+r: List[Unit] = List((), (), (), (), ())
+Since we didn't return any value output is blank.
+
+scala> val r = lst.map{x =>
+      var grade = " " //We're using this so that we can use in upcoming codes
+      if(x>=70000){grade="A"}
+      else
+      {if(x>=50000){grade="B"}
+      else 
+      {if(x>30000){grade="c"}
+      else
+      {grade="D"}
+      }}
+      grade
+      }
+r: List[String] = List(D, D, D, B, A)
+Note: If the options are 100, it's headache to go with nested if, then go match case.
+
+scala> val r1 = lst.map{x =>
+      var grade = " "
+      (x >= 70000) match {
+      case true => {grade = "A"}
+      case false => {(x>40000) match {
+      case true => {grade ="B"}
+      case false => {grade = "C"}}}}
+      grade
+      }
+r1: List[String] = List(C, C, C, B, A)
+
+-Let's consider match and if combination:
+scala> val r2 = lst.map{x =>
+     | (x>70000) match {
+     | case true => "A"
+     | case false => if(x>40000)"B"else"C"
+     | }
+     | }
+r2: List[String] = List(C, C, C, B, A)
+
+scala> val recs = List("101,AmAr,40000,m,11",
+      "102,aMala,80000,F,12",
+      "103,ManI,10000,m,13",
+      "104,Giri,45000,m,14",
+      "105,SuResh,60000,f,12",
+      "106,SiRI,90000,M,15")
+recs: List[String] = List(101,AmAr,40000,m,11, 102,aMala,80000,F,12, 
+103,ManI,10000,m,13, 104,Giri,45000,m,14, 105,SuResh,60000,f,12, 106,SiRI,90000,M,15)
+
+Task??
+-First char into Upper, remaining into Lower
+-Sal
+	Generate Tax,Hra,Net
+	Based on net ranges classify them into grades(A,B,C,D)
+-Sex > "m/M" > Male and "f/F" > Male
+-dno >  11 - "Marketing"
+	12 - "HR"
+	13 - "Finance"
+	remaining as others.
+
+val trans = recs.map{ x =>
+      val w = x.split(",")
+      val id = w(0)
+      val name = w(1).trim()
+      val sal = w(2).toInt
+      var sex = w(3)
+      val dno = w(4).toInt
+      val fc = name.slice(0,1).toUpperCase
+      val rc = name.slice(1,name.size).toLowerCase
+      val newName = fc+rc
+      sex = if(sex.toUpperCase == "M")"Male" else "Female"
+      val tax = sal *10/100
+      val hra = sal *20/100
+      val net = sal + hra - tax
+      var grade = " "
+      if (net >= 70000){grade = "A"} else {
+      if (net >= 50000){grade= "B"}
+      else{if(net >= 30000){grade="C"}
+      else{grade = "D"}
+      }}
+      val dname = dno match {
+      case 11 => "Marketing"
+      case 12 => "Hr"
+      case 13 => "Finance"
+      case other => "Others"
+      }
+      val newList = List (id,newName,sal.toString,hra.toString,tax.toString,net.toString,grade,sex,dno.toString,dname)
+      newList
+      }
+
+trans: List[List[String]] = List(List(101, Amar, 40000, 8000, 4000, 44000, C, Male, 11, Marketing), 
+List(102, Amala, 80000, 16000, 8000, 88000, A, Female, 12, Hr), List(103, Mani, 10000, 2000, 1000, 11000, D, Male, 13, Finance), 
+List(104, Giri, 45000, 9000, 4500, 49500, C, Male, 14, Others), List(105, Suresh, 60000, 12000, 6000, 66000, B, Female, 12, Hr), 
+List(106, Siri, 90000, 18000, 9000, 99000, A, Male, 15, Others))
+
+scala> trans.foreach(println)
+List(101, Amar, 40000, 8000, 4000, 44000, C, Male, 11, Marketing)
+List(102, Amala, 80000, 16000, 8000, 88000, A, Female, 12, Hr)
+List(103, Mani, 10000, 2000, 1000, 11000, D, Male, 13, Finance)
+List(104, Giri, 45000, 9000, 4500, 49500, C, Male, 14, Others)
+List(105, Suresh, 60000, 12000, 6000, 66000, B, Female, 12, Hr)
+List(106, Siri, 90000, 18000, 9000, 99000, A, Male, 15, Others)
+
+Awesome :) :)
+
+-Next task is to convert this.
+-If we want to write this into disk in spark tomorrow later this needs to be exported
+ using Sqoop into RDBMS, if this is List we can't export this into RDBMS via HDFS, since
+ Oracle doesn't have it.
+-However the original data is a string this needs to converted into single string.
+-Now look into below steps:
+Ex:
+scala> List(10,20,30).mkString("\t")
+res5: String = 10	20	30
+
+So in the big code next returned value newList let's mention mkString
+	newList.mkString(",")
+
+trans: List[String] = List(101, Amar, 40000, 8000, 4000, 44000, C, Male, 11, Marketing, 
+102, Amala, 80000, 16000, 8000, 88000, A, Female, 12, Hr, 103, Mani, 10000, 2000, 1000, 11000, D, Male, 13, Finance, 
+104, Giri, 45000, 9000, 4500, 49500, C, Male, 14, Others, 105, Suresh, 60000, 12000, 6000, 66000, B, Female, 12, Hr, 
+106, Siri, 90000, 18000, 9000, 99000, A, Male, 15, Others)
+
+scala> trans.foreach(println)
+101, Amar, 40000, 8000, 4000, 44000, C, Male, 11, Marketing
+102, Amala, 80000, 16000, 8000, 88000, A, Female, 12, Hr
+103, Mani, 10000, 2000, 1000, 11000, D, Male, 13, Finance
+104, Giri, 45000, 9000, 4500, 49500, C, Male, 14, Others
+105, Suresh, 60000, 12000, 6000, 66000, B, Female, 12, Hr
+106, Siri, 90000, 18000, 9000, 99000, A, Male, 15, Others
+
+If schema needs to provided, then we can use case class and do it.
+------------------------------------------------------------------------------------------------------------------------------------

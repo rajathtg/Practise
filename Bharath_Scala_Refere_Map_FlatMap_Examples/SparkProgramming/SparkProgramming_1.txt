@@ -1,0 +1,409 @@
+Three ways to create the RDD's(Resilient Distributed Datasets):
+1. When we parallelize local object, RDD will be created.
+2. When we perform some transformation/filter over existing RDD, returned object is also RDD. 
+3. When you read data from file, using sparkContext, RDD will be created.
+
+Some points on RDD:
+	-Spark data objects are called RDDs	
+	-RDD's are subdivided into partitions.
+	-By default only one partition will be created when we parallelize, later we have room to create multiple partitions
+	 based on our requirement.
+
+-Let's take simple list which has 10 elements:
+scala> val lst = List(10,20,30,40,12,23,45,23,12,34)
+lst: List[Int] = List(10, 20, 30, 40, 12, 23, 45, 23, 12, 34)
+
+scala> lst.size
+res36: Int = 10
+
+-In the above code lst is local object which resides in your client and yet to be distributed to the cluster.
+
+-Let's create the RDD and r1 is the RDD in the below code
+scala> val r1 = sc.parallelize(lst)
+r1: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[40] at parallelize at <console>:29
+
+-In the above code RDD r1 is just declared and not loaded into cluster, it will be loaded into cluster
+ whenever an action is performed on it.
+-On RDD's we can perform two things one is transformations and next is actions:
+	-Transformation > Each element transformations like map or flat map etc
+			  Aggregated Transformations like grouping.....
+			  Then we have Filters
+			  When these three things are done an additional RDD is created 
+	-Actions > When we perform action only then flow will be executed and during this flow execution
+		   RDD's will be loaded into RAM's of your spark cluster.
+
+-Let's perform some action on r1 which is a RDD,
+scala> r1.count
+res37: Long = 10
+
+scala> r1.size
+<console>:32: error: value size is not a member of org.apache.spark.rdd.RDD[Int]
+              r1.size
+****Note: Size becomes invalid here because it is for local object and not for RDD
+
+-When we use Collect RDD's partition data is collected into client machine.
+scala> r1.collect
+res39: Array[Int] = Array(10, 20, 30, 40, 12, 23, 45, 23, 12, 34) 
+***Note: When we collect returned object is local not RDD
+
+-Now we creating RDD for the local object lst with 3 partitions:
+scala> lst
+res40: List[Int] = List(10, 20, 30, 40, 12, 23, 45, 23, 12, 34)
+
+scala> val r2 = sc.parallelize(lst,3)
+r2: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[41] at parallelize at <console>:29
+**Note: Since we have created 3 partitions, therefore r2 will be ditributed into 3 diff RAMs or 3 different machines.
+
+-The Advantages of multiple Partition is:
+	-Biggest RDDs can be loaded into RAM
+	-Parallel execution is possible
+
+-To know how many partitions is there for my RDD:
+scala> r1.partitions.size
+res42: Int = 1
+
+scala> r2.partitions.size
+res43: Int = 3
+-----------------------------------------------------------------------------------
+2nd way of creating RDD:
+
+scala> val x = List(10,20,30,40,50,40,30,12,23,90)
+x: List[Int] = List(10, 20, 30, 40, 50, 40, 30, 12, 23, 90)
+
+scala> val y = x.map(x => x+100)
+y: List[Int] = List(110, 120, 130, 140, 150, 140, 130, 112, 123, 190)
+
+scala> val z = x.filter(x=>x>=50)
+z: List[Int] = List(50, 90)
+
+**Note: If we notice in the above example, x is a local object.
+	Later I applied transformation on x, return object y is also local object
+	Even z is also local object
+
+-Let's create an RDD of x i.e a in below example.
+ When we perform any transformation on a RDD returned value is also RDD i.e b in below example
+scala> val a = sc.parallelize(x)
+a: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[42] at parallelize at <console>:29
+
+scala> val b = a.map(x => x+100)
+b: org.apache.spark.rdd.RDD[Int] = MapPartitionsRDD[43] at map at <console>:31
+
+scala> b.collect
+res44: Array[Int] = Array(110, 120, 130, 140, 150, 140, 130, 112, 123, 190)
+
+scala> val c = a.filter(x => x>=30)
+c: org.apache.spark.rdd.RDD[Int] = MapPartitionsRDD[44] at filter at <console>:31
+
+scala> c.collect
+res45: Array[Int] = Array(30, 40, 50, 40, 30, 90)
+------------------------------------------------------------------------------
+3rd way creating RDD:
+
+[cloudera@quickstart dvs]$ cat comment
+I love spark
+I love hadoop
+I love hadoop and spark
+spark is super speed
+
+[cloudera@quickstart dvs]$ hadoop fs -copyFromLocal comment Sparks
+
+[cloudera@quickstart dvs]$ hadoop fs -cat Sparks/comment
+I love spark
+I love hadoop
+I love hadoop and spark
+spark is super speed
+
+scala> val comm = sc.textFile("Sparks/comment")
+comm: org.apache.spark.rdd.RDD[String] = Sparks/comment MapPartitionsRDD[46] at textFile at <console>:27
+
+scala> comm.collect
+res46: Array[String] = Array(I love spark, I love hadoop, I love hadoop and spark, spark is super speed)
+
+**Note: If we notice in the above example RDD is created when we read a file into spark cluster.
+	The datatype is an array and each element is a String
+
+scala> comm.collect.foreach(println)
+I love spark
+I love hadoop
+I love hadoop and spark
+spark is super speed
+
+============================================================================================================
+***Word Count Demo in Spark:
+
+scala> val data = sc.textFile("Sparks/comment")
+data: org.apache.spark.rdd.RDD[String] = Sparks/comment MapPartitionsRDD[48] at textFile at <console>:27
+
+scala> data.collect
+res48: Array[String] = Array(I love spark, I love hadoop, I love hadoop and spark, spark is super speed)
+
+-To perform Spark Aggregations the input should be PairRDD i.e. key & value format, Ex: Array (i,1),(love,1),(spark,1)
+
+scala> val arr = data.map(x => x.split(" "))
+arr: org.apache.spark.rdd.RDD[Array[String]] = MapPartitionsRDD[49] at map at <console>:31
+
+-Let's split based on the space delimiter. 
+
+scala> arr.collect
+res49: Array[Array[String]] = Array(Array(I, love, spark), Array(I, love, hadoop), Array(I, love, hadoop, and, spark), Array(spark, is, super, speed))
+
+-If we split based on the ',' delimiter.
+scala> array.collect
+res50: Array[Array[String]] = Array(Array(I love spark), Array(I love hadoop), Array(I love hadoop and spark), Array(spark is super speed))
+
+-Let's flatten array of the array(or nested array) into single array:
+-For us every word is important, hence we're using FlatMap:
+scala> val words = arr.flatMap(x => x)
+words: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[51] at flatMap at <console>:33
+
+scala> words.collect
+res53: Array[String] = Array(I, love, spark, I, love, hadoop, I, love, hadoop, and, spark, spark, is, super, speed)
+
+------------------------------------------------
+or we can go for ShortCut:
+
+scala> data.collect
+res54: Array[String] = Array(I love spark, I love hadoop, I love hadoop and spark, spark is super speed)
+
+scala> val w = data.flatMap(x => x.split(" "))
+words: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[52] at flatMap at <console>:31
+
+scala> w.collect
+res55: Array[String] = Array(I, love, spark, I, love, hadoop, I, love, hadoop, and, spark, spark, is, super, speed)
+
+-Let's transform into key-value pair:
+
+scala> val pair = w.map(x => (x,1))
+pair: org.apache.spark.rdd.RDD[(String, Int)] = MapPartitionsRDD[55] at map at <console>:33
+
+scala> pair.collect
+[Stage 77:>                                                                                                                           
+res58: Array[(String, Int)] = Array((I,1), (love,1), (spark,1), (I,1), (love,1), (hadoop,1), 
+(I,1), (love,1), (hadoop,1), (and,1), (spark,1), (spark,1), (is,1), (super,1), (speed,1))
+
+scala> pair.collect.foreach(println)
+[Stage 78:>                                                                                                                             
+(I,1)       
+(love,1)
+(spark,1)
+(I,1)
+(love,1)
+(hadoop,1)
+(I,1)
+(love,1)
+(hadoop,1)
+(and,1)
+(spark,1)
+(spark,1)
+(is,1)
+(super,1)
+(speed,1)
+
+-Let's apply reduceby key:
+val wc = pair.reduceByKey((a,b)=>a+b)
+Meaning of above expression is consider below array of elements:
+Array ((m,10),(f,20),(m,30),(f,30),(m,60)), let x be the RDD and if we say reduceByKey
+x.reduceByKey((a,b)=>a+b)
+	(i)Step > Internal grouping will happen i.e. 
+			(f,(20,30))
+			(m,(10,30,60))
+	(ii)Step > Aggregation will happen in cumulative style, consider just m collection
+			(m,100)
+			  a=10,b=30 o/p=40
+			  a=40,b=60 o/p=100
+			
+
+scala> val wc = pair.reduceByKey((a,b)=>a+b)
+wc: org.apache.spark.rdd.RDD[(String, Int)] = ShuffledRDD[56] at reduceByKey at <console>:39
+
+*****(or), both the expression mean same
+
+scala> val wc = pair.reduceByKey(_+_)
+wc: org.apache.spark.rdd.RDD[(String, Int)] = ShuffledRDD[57] at reduceByKey at <console>:35
+
+scala> wc.collect
+res60: Array[(String, Int)] = Array((is,1), (love,3), (spark,3), (hadoop,2), (I,3), (speed,1), (super,1), (and,1))
+
+scala> wc.collect.foreach(println)
+(is,1)
+(love,3)
+(spark,3)
+(hadoop,2)
+(I,3)
+(speed,1)
+(super,1)
+(and,1)
+
+====================================================================
+2nd way of doing above word count:
+
+scala> data.collect
+res62: Array[String] = Array(I love spark, I love hadoop, I love hadoop and spark, spark is super speed)
+
+scala> val wc = data.flatMap(x => x.split(" ")).map(x=>(x,1)).reduceByKey(_+_)
+wc: org.apache.spark.rdd.RDD[(String, Int)] = ShuffledRDD[72] at reduceByKey at <console>:31
+
+*******(or)
+
+scala> val wc = data.flatMap(x => x.split(" ")).map((_,1)).reduceByKey(_+_)
+wc: org.apache.spark.rdd.RDD[(String, Int)] = ShuffledRDD[84] at reduceByKey at <console>:31
+
+scala> wc.collect.foreach(println)
+(is,1)
+(love,3)
+(spark,3)
+(hadoop,2)
+(I,3)
+(speed,1)
+(super,1)
+(and,1)
+
+****Note: Generally this is not reccommended, because may purpose of Spark is reusability and if we write like this
+	  suppose I constructed a pair map(x=>(x,1)) in a single code like above then if I want to reuse many number 
+	  of times it can't be done.
+	  Here we're just talking about code reusability, we also have concept of persistance that's different topic
+==================================================================================
+3rd way:
+
+scala> data.collect
+res68: Array[String] = Array(I love spark, I love hadoop, I love hadoop and spark, spark is super speed)
+
+Scala> val wc = data.map{x =>
+     | val arr = x.split(" ")
+     | arr
+     | }
+wc: org.apache.spark.rdd.RDD[Array[String]] = MapPartitionsRDD[73] at map at <console>:33
+
+scala> wc.collect
+res66: Array[Array[String]] = Array(Array(I, love, spark), Array(I, love, hadoop),
+Array(I, love, hadoop, and, spark), Array(spark, is, super, speed))
+
+scala> val wc = data.map{x =>
+     | val arr = x.split(" ")
+     | val p = arr.map(w => (w,1))
+     | p
+     | }
+
+scala> wc.collect
+[Stage 93:>                                                                                                                             
+res70: Array[Array[(String, Int)]] = Array(Array((I,1), (love,1), (spark,1)), 
+Array((I,1), (love,1), (hadoop,1)), Array((I,1), (love,1), (hadoop,1), 
+(and,1), (spark,1)), Array((spark,1), (is,1), (super,1), (speed,1)))
+
+scala> val wc = data.map{x =>
+     | val arr = x.split(" ")
+     | val p = arr.map(w => (w,1))
+     | p
+     | }.flatMap(x=>x)
+wc: org.apache.spark.rdd.RDD[(String, Int)] = MapPartitionsRDD[76] at flatMap at <console>:39
+
+scala> wc.collect
+res71: Array[(String, Int)] = Array((I,1), (love,1), (spark,1), 
+(I,1), (love,1), (hadoop,1), (I,1), (love,1), (hadoop,1), 
+(and,1), (spark,1), (spark,1), (is,1), (super,1), (speed,1))
+
+scala> val wc = data.map{x =>
+     | val arr = x.split(" ")
+     | val p = arr.map(w => (w,1))
+     | p
+     | }.flatMap(x=>x).reduceByKey(_+_)
+wc: org.apache.spark.rdd.RDD[(String, Int)] = ShuffledRDD[79] at reduceByKey at <console>:39
+
+scala> wc.collect
+res72: Array[(String, Int)] = Array((is,1), 
+(love,3), (spark,3), (hadoop,2), (I,3), (speed,1), (super,1), (and,1))
+
+****(or) we can use the flatMap at the beginning itself:
+
+scala> val wc = data.flatMap{x =>
+     | val arr = x.split(" ")
+     | val p = arr.map(w => (w,1))
+     | p
+     | }.reduceByKey(_+_)
+wc: org.apache.spark.rdd.RDD[(String, Int)] = ShuffledRDD[81] at reduceByKey at <console>:39
+
+scala> wc.collect
+res73: Array[(String, Int)] = Array((is,1), (love,3), 
+(spark,3), (hadoop,2), (I,3), (speed,1), (super,1), (and,1))
+=================================================================================
+Summary (penning down all the 4 types):
+
+val data = sc.textFile("Sparks/comment")
+
+1st:
+val arr = data.flatMap(x => x.split(" "))
+val p = arr.map(x => (x,1))
+val wc = p.reduceByKey(_+_) or p.reduceByKey((a,b) => a+b)
+wc.collect
+
+2nd:
+val wc = data.flatMap(x => x.split(" ")).map((_,1)).reduceByKey(_+_)
+
+3rd:
+val wc = data.map{x =>
+val arr = x.split(" ")
+val p = arr.map(w => (w,1))
+p
+}.flatMap(x => x).reduceByKey(_+_)
+
+4th:
+val wc = data.flatMap{x =>
+val arr = x.split(" ")
+val p = arr.map(w => (w,1))
+p
+}.reduceByKey(_+_)
+
+or 
+
+val wc = data.flatMap{x =>
+val arr = x.split(" ")
+arr.map(w => (w,1))
+}.reduceByKey(_+_)
+
+===============================================================================================
+
+2nd Example:
+
+[cloudera@quickstart dvs]$ hadoop fs -cat Sparks/comment2
+spark           Spark               spark
+hadoop         spark Hadoop  HADOOP
+HADOOP      HADOOP
+
+-Create a function to remove the spaces
+-Each word needs to be upper or lower case based on need
+
+def rmspace (x:String):String = { //Here we're defining a function remove space
+				    considering entire data as string by mentioning (x:String)
+				    return type :string can be mentioned or ignored if not needed
+val line = x.trim() //To trim the spaces on left and right side
+val w = line.split(" ") //To split the array based on the space delimiter
+val words = w.filter(x => x!="").map(x => x.toLowerCase) //To filter out spaces
+
+words.mkString(" ") //Here y is collections because words is array and later we apply filter on array output is array only
+		, but we need string, hence we use mkString to convert collections into string with single space.
+}
+ 
+scala> def rmspace(x:String) = {
+     |             val line = x.trim()
+     |             val w = line.split(" ")
+     |             val words = w.filter(x => x!="").map(x => x.toLowerCase)
+     |             words.mkString(" data")
+     |            }
+rmspace: (x: String)String
+
+-Let's test our function:
+scala> rmspace("  I  love  SpArk  ")
+res77: String = ilovespark
+
+val lines = sc.textFile("Sparks/comment2")
+val data = lines.map(x => rmspace(x))
+val arr = data.flatMap(x => x.split(" "))
+val pair = arr.map((_,1))
+val wc = pair.reduceByKey(_+_)
+wc.collect.foreach(println)
+val wc = pair.reduceByKey(_+_).collect.foreach(println)
+
+Output:
+(spark,4)
+(hadoop,5)
+

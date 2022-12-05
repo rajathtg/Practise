@@ -1,0 +1,256 @@
+1.What is Spark?
+-Apache spark is faster & efficient data processing tool to perform Big data analysis.
+
+2.BigData / Data Analysis?
+Big Data are generally in terms of Size like
+-Web & Mobile
+-E-Commerce
+-Health Care
+-Search Engines
+It was difficult to store & process in single system
+Different kind's of data like structured(Tables),semi-structured(Excel,xml,plain txt) and unstructured data(Photo,Video,log etc).
+So aim is to process the unstructured data because out of world's main data 90% is unstructured
+And also another aim is to process above mentioned data with good speed and less time
+Hence Hadoop came into picture initially,
+-OpenSource
+-Fault Tolernce
+-High Scalability
+-Cost Effective
+
+So there was a need of tool which can support diff languages, work on different unix commands grep,awk etc
+above mentioned should be put under single cluster
+
+3.Hadoop Vs Spark?
+
+Note: Best combination is Hadoop(HDFS) for storage and Spark for processing
+
+-Hadoop:
+Hadoop is the best tool to integrate with spark
+Here storage is HDFS and Processing is MapReduce
+Hadoop is best interms of Storage, but it's slower in process using MapReduce(when it comes to complex and long running jobs)
+Ex: like iterative, streaming jobs MR is slower
+
+Hadoop stores data on disc
+MapReduce Operations
+Can only perform Batch Processing
+Only JAVA can be used to write MapR programs
+
+-Spark:
+Ppl migrated from hadoop to spark because of processing
+It's an independent/own cluster management
+***Can run or be used without hadoop(it was myth that spark cannot be used hadoop)
+Can compute/process on it's own
+Regarding storage concerns we use hadoop as storage component of Spark
+
+Spark stores data In-memory (i.e RAM), gives 10 to 100 times of faster results compare to Hadoop
+If needed can be stored on disc
+Along Mappers and Reducers operations we also have Transformations and Actions are additional components distributed across spark framework.
+*** Along with Batch it works with iterative and Streaming jobs
+Lot of API's can be used JAVA,Scala, Python etc
+
+4.Spark Usecases?
+
+2013 Scientist worked on:
+
+-K-means Alogorithm
+Hadoop(i.e MR) Executed job in 121sec and Spark did it in 4.1sec
+
+-Logistics Regression Technique
+Hadoop used 80sec and Spark utilised only 0.91sec
+
+-100TB data
+Hadoop took 72m minutes, but spark took 23m
+
+-1 PB
+Hadoop m,Spark took 234min
+
+companies using Spark:
+Conviva(Streaming Internet Videos)
+Capital one Bank(Recommend the products)
+Yahoo(To feed news generation)
+IOT's,wearables
+Genomics(Combination / Study of DNA's)
+
+5.Spark Evolution?
+2009 > Hadoop's Sub Project
+University of Berkley's
+Mater and Zaharia's team came up with In-memory computation technique
+
+2010 > Moved out as Open License
+
+2013 > Moved Apache Software Foundation
+
+2014 > Gained popularity and became Top-Level Project 
+
+There are many good communities in GitHub and Social Media
+ 
+6.Features of Spark?
+
+Top most feature is speed (10 to 100 times speed than MR) using In-memory computation
+Supports multiple API's like Java,Scala,Python etc
+Less number of source codes
+Can perform Advanced analytics in advance manner(Graph data,ML,Telecommunication etc)
+Can take lower overhead for starting jobs
+Less expensive to maintain
+Spark operations are Lazy evaluation (pattern like problems)
+***Catalyst optimization technique (75% reduction in time of execution technique, hence increases performance)
+***Trungskten optimisation technique(75% reduction technique in memory usuage, i.e less garbage collection)
+
+7.Eco-Systems?
+
+Main core component is Spark Core Engine and it facilitates utilities and provides architecture to below components.
+Spark Core > Is an execution engine of spark frame work is responsible for 
+		-Loading rdd-partitions into rams woker nodes(slaves).
+		-Responsible to execute the code on partitions as tasks (computations).
+		-Is responsible to hold rdd partitions into RAM, till its next rdd is ready.
+		-Once next RDD ready it deletes previous RDD.
+		-Once data flow completed, removes last RDD of the flow.
+	********-It keep holds of persisted RDD into RAM, till session ends.
+		-Spark Core API is called as RDD API:
+			The RDD API can be coded in Scala, Python, Java and R as well
+Spark SQL > To work with Structured data using SQL
+		-Spark Context > To interact with spark core data objects (RDDs)
+		-SQL Context > To convert RDDs, local objects into SQL temporary tables (old version)
+			>To Convert Data Frames
+			>To data sets
+		-We can process structured data with SQL statements.
+		-Hive context > Using this we can trigger HQL queries on hive tables.
+		-SPARL SQl > SQL Context and Hive Context
+		-Spark SQL has 2 types of objects,
+			Data Frames > Uses Catalyst optimizer with in-memory computing
+			Data sets > Uses touguesten optimizers with in-memory computing
+		-Above two objects run on top of RDD only, but if we use DF and DS and submit our statements internally some optimizers will be invoked,
+		 These optimizers will help in solving the statements with much better and optimized way.	
+Spark Streaming > Live data streaming of jobs (Best apcahe Storm alternate)
+Spark Machine Learning Library >Accepts most of the ML Algorithms, Distributed from the stack of spark
+Spark Graphx > To process graph data (Ex: Telecommunication data, FaceBook widely uses it for connecting people,logistics)
+Spark R > To integrate data analytics using R programming
+======================================================================================================================================
+
+- In hadoop we have two things:
+	Storage (HDFS)
+	Processing
+		MapReduce
+		MapReduce2
+		Tez (DAG - Direct Acyclic Graph)
+		DAG + InMemory (Spark)
+-Spark
+	Distributed data processing
+	Parallel Processing
+	In-Memory Computing
+	DAG execution flow
+	100 times faster than MR.
+-Meaning of Parallel system(In Distributed):
+	In spark data objects are called 'RDD' (Resilient distributed datasets)
+	RDD is a logical unit and physical data is partition
+	RDD is a collection of partitions and these partitions are distributed across multiple workers nodes(slave nodes of cluster)
+	Consider there are three partitions --> Part1,Part2,Part3
+	Above three partitions are distributed into rams of slave1,3 & 7
+	During computation or run time these 3 partitions will be executed parallely
+	Suppose each partition has 100 records, if three partitions means ---> 300 records
+	Consider things are getting executed and all partitions are distributed, work will get over fast
+-DAG(Direct Acyclic Graph):
+	It's a dataflow execution engine.
+	consider we an object RDD1 and it's reading data from a file, there are is only partition
+	rdd1 = [reading data from a file --> One year sales data]
+	rdd2 = rdd1.[filter --> last 3 months transactions]
+	rdd3 = rdd2.[collect pairs of month and SalesAmount]
+	rdd4 = rdd3.[Grouping aggregations on SalesAmount based on grouping column month]
+	4 spark objects(RDDs) are declared and still data is not loaded into Spark Cluster
+	Whenever action performed on rdd entire data flow will be executed
+		ex: rdd4.saveasTextFile('....')
+		rdd1 --> loaded, computes --> staging 1
+		rdd2 --> loaded(rdd2 + results of rdd1), computation, ready, rdd1 will be removed
+		rdd3 --> loaded(rdd3 + results of rdd2), computation, ready, rdd2 will be removed
+		rdd4 --> loaded(rdd4 + results of rdd3), computation, ready, rdd3 will be removed
+		then action will be executed i.e rdd4.saveasTextFile('....')
+		Once action is completed means, complete data flow got executed.
+		When flow exection completed, last rdd(rdd4) will also be removed from RAM
+	In general DAG monitors the flow, which rdd is in RAM and what computation it requires, which is the next rdd once
+	current execution is completed.
+-In-Memory Computation:
+	Disk Computing > [Hard disk 1000gb]
+			 [RAM 16 gb]
+			 [Processor > 5Ghz]
+			 Consider a Program which requires 20gb RAM is present, then it can't be run in our above systems.
+	Disk Computing(Next Generation) > [Hard disk 1000gb]
+						> 70% Physical Storage - 700gb
+						> 30% Virtual Storage - 300gb (This acts as Virtual RAM)
+			 		  [RAM 16 gb] - Real RAM
+			 		  [Processor > 5Ghz]
+					  We have 316gb of RAM and easily we can run the Program which requires 20gb of RAM.
+	The cycle of data flow is PhysicalStorage > VirtualRAM > RealRAM > Processor (Here 5Ghz or 3Ghz doesn't matter, but 32 or 64 bit matters)
+	But this fine when application size is small, but when the application size is large processing will get delayed.
+	Ex: MR processing
+
+	In Memory computing stytem:
+		Data is loaded into RAM
+		Data is processed at RAM [Cycling in between RAM and Processor, even the intermediate results gets stored in RAM]
+		Ex: SPARK
+
+Spark is a Execution Framework:
+	>Spark needs a cluster (for storage) like,
+		Hadoop
+		AWS
+		Mesos 
+	>In old version of MR it uses MapReduce, SPARK is 100 times faster than MR
+
+-Problems of MR:
+	Transformation can't be reused.
+	Not like a flexible parallelism (or limited parallel process)
+	Bad for iterative algorithms (In world most of the algorithms like ML,Advanced Analytics,Data mining etc)
+-Advantages of Spark:
+	Transformations can be reused.
+	Spark good for Iterative algorithms (We Python then why Spark because they don't have system to distribute the huge Data)
+*****Note: Execution model of Hadoop is MR previously 4 years back.
+
+******SPARK programming style is Data Flow(Nothing but Collection of Bags,Similar to PIG):
+Pig vs SPARK:
+Spark also follows lazy evaluation similar to PIG
+	r1 = .....
+	r2 = r1 + operation
+	r3 = r2 + operation
+	r4 = r3 + operation
+Above relations are just declared, above relations are executed when we use dump or store:
+dump r4
+store r4
+Even though coding style is data flow, background execution is done by MapReduce which doesn't follow data flow.
+But in SPARK coding style is dataflow and even execution is also Dataflow yay!!, who knows whether r2 input is r1 etc who is 
+maintaining all these, the spark core uses DAG engine and this engine takes care of all these.
+-------------------------
+We also Tez initially, which has DAG model:
+Tez vs SPARK:
+	Tez is disk computing
+	Spark is in-memory computing
+SAP Hana vs SPARK:
+	SAP HANA is also in-memory computing, but not distributed.
+	SPARK does in-memory and even distributed
+===========================================================================================================================================
+
+Spark Streaming:
+
+-Before entering into this topic, let's look into below topic:
+Big DATA:
+	Online > User interactive applications
+		Online transcations
+			> NoSql
+				MongoDB,Cassandra,Neo4j,LevelDB,CouchDB
+		Online (realtime) streaming
+			Live cams,DB logs,Web logs
+			Flume,Kafka(streaming and messaging systems)
+	Batch > User non-interactive applications
+		Full Batch
+		Micro Batch
+			Spark Streaming > This is micro batching which is near to real time.
+-Micro Batch > It means batches will be executed in micro period(small tiny of time) i.e. for every 10 or 5seconds
+-Spark Streaming keeps collecting data from producers and holds it/keeps within it for 10 seconds and later push it to Spark Core
+-SparkStreaming tasks:
+	-Collect streams from sources.
+	-Buffer them(batching) within worth of micro period(ex: 10 secs), buffering happens in-memory
+	-Once micro period completed , it pushes buffered  data into spark core
+	-Spark core executes given logic(code) on that micro batch data
+****-Generally Spark Streaming is not capable of collecting streams from multiple sources and make available them to multiple target applications.
+	Hence we use Kafka here for that purpose, it collects the streams and directs that to Spark Streaming which later pushes it to SparkCore interms 
+	of micro batches.
+    -In SparkCore (Uses SparkSql(if data is structured)+Mlib) to detect which is fraud or genuine in a batch within 10 seconds and push results to Kafka again,
+     Later other reporting systems can access data from Kafka. 
