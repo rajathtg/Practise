@@ -1,0 +1,59 @@
+Difference between List and Tuple and which is faster?
+What are Pandas?
+Difference between Pandas and DataFrames and which is Faster? ##It's always PySpark Dataframes
+Difference between Delete and Truncate and which is Faster? ##Truncate is faster
+Difference between Range and Xrange??
+Does dict supports Comprehension? ##Yes
+Interested to learn AWS?
+
+Remove the duplicates from the List:
+===================================
+list1=[1,1,2,3,5,8,5]
+print(set(list1)) ##Just convert it to Set
+
+Solve Below:
+===========
+list1=[1,1,2,3,5,8,5]
+list1.[0::1]
+Required Output is [1,2,3,8]
+
+Output of this:
+==============
+fn = lambda x, y, z : x + y + z  
+print(fn(4, 6, 8)) ##Output is 18
+
+a = True+5 ##Output is 6
+
+Write a function to find a number divisible by 3:
+================================================
+def mathDiv(x):
+	if x%3==0:
+		print("The input value is divisible by 3")
+	else:
+		print("Not divisible by 3")
+	return
+
+mathDiv(9)
+
+List Comprehension:
+==================
+numbers = [2, 1, 6, 9, 7]
+a = [x^2 for x in numbers]
+print(a)
+
+Linux Commands:
+==============
+cd 
+ls 
+ll
+cp 
+mv
+copyFromLocal
+
+To print first 10 lines of a file : head
+
+Cronjob for printing every 1 hour and how do you monitor the job and monitor it :
+================================================================================
+To re-direct the output to a log : crontab sh //// >> .log
+To print every 1 hour : 0 * * * *
+

@@ -1,0 +1,58 @@
+spark = enableHive()
+spark.format("csv").options("inferSchema","true").options("headers","true").options("")
+
+empid Name      dept  Manager   sal
+1      ABC      CS      Amit    10000
+2      Amit     CS      XYZ     8000
+3
+4
+5
+
+Explain Project and your roles and responsibility?
+How to customize the Schema using StructType and pass it?
+How to access Hive/CSV/Json data from spark read
+Print the Second Highest Salary dept wise
+Print emp sal > manager
+Print sal greater > 10000
+1 Million records cardinality is high and all data pushed to one partition and how to overcome, understand the Salting
+How do you do Spark Submit and what happens after it? Write Spark Submit code
+In hadoop data is getting written everyday, one day suddenly job ran twice and you notice it after three months, how to remove the duplicates? - If it is single day, Hive table create karo and drop that partition, but 3 months old and not to do it manually???
+How to save data
+
+
+
+schema = structType[structField("empid","String"),str
+
+createDataFrame(schema=schema,data=data)
+
+TempView
+
+select("sal").where("sal > 10000").show()
+
+Salting technique
+
+random key 
+
+Not to keep duplicates 
+append mode
+job as ran twice
+drop 
+
+TempView
+
+sql("select dept,denserank")
+
+
+
+select dept,denserank from (select dept,denserank() over(order by sal) r from employee) where r = 2
+
+select name,sal from employee where sal > (select name from employee )
+
+spark-submit 
+--deploy-mode 
+--driver-memory
+--
+
+
+
+

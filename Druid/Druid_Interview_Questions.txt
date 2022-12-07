@@ -1,0 +1,466 @@
+Apache Druid is a ______ oriented distributed data store.
+Choose the correct option from below list
+(1)Graph
+(2)Column
+(3)Key-Value
+(4)Document
+
+Answer:-(2)Column
+
+============================================================================================================
+
+The __________ provides unified API gateway to the Druid brokers, overlords, and coordinators.
+Choose the correct option from below list
+(1)Overlord process
+(2)Coordinator process
+(3)Broker process
+(4)Router process
+
+Answer:-(4)Router process
+
+=============================================================================================================
+
+Which of the following are common application areas for Apache Druid?
+Choose the correct option from below list
+(1)Clickstream analytics
+(2)Network flow analytics
+(3)All the options
+(4)Digital marketing analytics
+(5)Application performance metrics
+
+Answer:-(3)All the options
+
+=============================================================================================================
+
+The __________ downloads segments from Deep Storage, and responds to queries about these segments.
+Choose the correct option from below list
+(1)MiddleManager process
+(2)Broker process
+(3)Historical process
+(4)Router process
+
+Answer:-(3)Historical process
+
+=============================================================================================================
+
+Which of the following servers are used in Druid for easy deployment?
+Choose the correct option from below list
+(1)Query Server
+(2)All the options
+(3)Data Server
+(4)Master Server
+
+Answer:-(2)All the options
+
+=============================================================================================================
+
+A time range in Druid is considered a _______.
+Choose the correct option from below list
+(1)Datasource
+(2)Segment
+(3)Chunk
+
+Answer:-(3)Chunk
+
+=============================================================================================================
+
+The ___________ controls the flow of data to Druid.
+Choose the correct option from below list
+(1)Broker process
+(2)Overlord process
+(3)Coordinator process
+(4)Router process
+
+Answer:-(2)Overlord process
+
+=============================================================================================================
+
+Choose the available queries in Apache Druid.
+Choose the correct option from below list
+(1)All the options
+(2)Aggregation Queries
+(3)Search Queries
+(4)Metadata Queries
+
+Answer:-(1)All the options
+
+=============================================================================================================
+
+Which of the following servers in Druid are responsible for providing endpoints?
+Choose the correct option from below list
+(1)Data Server
+(2)Query Server
+(3)Master Server
+(4)All the options
+
+Answer:-(2)Query Server
+
+=============================================================================================================
+
+Datasources are responsible for storing data in Druid.
+Choose the correct option from below list
+(1)False
+(2)True
+
+Answer:-(2)True
+
+=============================================================================================================
+
+_____are organized into time chunks.
+Choose the correct option from below list
+(1)Columns
+(2)Segments
+(3)Files
+(4)Folders
+(5)None of the options
+
+Answer:-(2)Segments
+
+=============================================================================================================
+
+Select the correct statement in Apache Druid.
+Choose the correct option from below list
+(1)All the options
+(2)Druid must have enough disk space available in deep storage and across the historical processes for the data you plan to load.
+(3)Deep Storage also called Shared file storage, is accessible by every Druid server.
+(4)To respond to queries, Historical processes do not read from deep storage.
+
+Answer:-(1)All the options
+
+=============================================================================================================
+
+Which processes manage data availability on the Server?
+Choose the correct option from below list
+(1)MiddleManager
+(2)Overlord
+(3)Coordinator
+(4)Broker
+
+Answer:-(3)Coordinator
+
+=============================================================================================================
+
+In Apache Druid , Select queries do not support pagination.
+Choose the correct option from below list
+(1)True
+(2)False
+
+Answer:-(2)False
+
+=============================================================================================================
+
+Which of the following statements is not correct in relation to GroupBy v1 and v2 strategies.
+Choose the correct option from below list
+(1)The default strategy for a cluster is determined by the "druid.query.groupBy.defaultStrategy" runtime property on the Broker.
+(2)GroupBy v1 controls resource usage using a row-based limit (maxResults) whereas GroupBy v2 uses bytes-based limits.G
+(3)GroupBy v2 supports using chunkPeriod to parallelize merging on the Broker whereas GroupBy v1 ignores chunkPeriod.
+
+Answer:-(3)GroupBy v2 supports using chunkPeriod to parallelize merging on the Broker whereas GroupBy v1 ignores chunkPeriod.
+
+=============================================================================================================
+
+Which of the following is the default GroupBy query strategy.
+Choose the correct option from below list
+(1)v3
+(2)v1
+(3)v4
+(4)v2
+
+Answer:-(4)v2
+
+=============================================================================================================
+
+The _____ manages new data ingestion.
+Choose the correct option from below list
+(1)Router process
+(2)Overlord process
+(3)MiddleManager process
+(4)Coordinator process
+
+Answer:-(3)MiddleManager process
+
+=============================================================================================================
+
+Which of the following is a datasource type in Apache Druid?
+Choose the correct option from below list
+(1)Union data source
+(2)All the options
+(3)Query data source
+(4)Table data source
+
+Answer:-(2)All the options
+
+=============================================================================================================
+
+Which of the following is the core element of a Druid ingestion Spec?
+Choose the correct option from below list
+(1)Time Column
+(2)Datasource name
+(3)dataSchema
+(4)All the Options
+(5)Parser
+
+Answer:-(3)dataSchema
+
+=============================================================================================================
+
+Denormalized data in Apache Druid is ingested in _________ formats.
+Choose the correct option from below list
+(1)TSV
+(2)All the Options
+(3)JSON
+(4)CSV
+
+Answer:-(2)All the Options
+
+=============================================================================================================
+
+Which of the following external dependencies is used to backup and transfer data from Druid processes in the background?
+Choose the correct option from below list
+(1)Zookeeper
+(2)Deep storage
+(3)Metadata storage
+(4)All the options
+
+Answer:-(2)Deep storage
+
+=============================================================================================================
+
+Apache Druid uses _____ compressed bitmap indexes to create indexes.
+Choose the correct option from below list
+(1)Both Concise and Roaring
+(2)Concise
+(3)None of the Options
+(4)Roaring
+
+Answer:-(1)Both Concise and Roaring
+
+=============================================================================================================
+
+The ____________ receives requests from outside customers, and transmits these requests to data servers.
+Choose the correct option from below list
+(1)Coordinator process
+(2)Broker process
+(3)Overlord process
+(4)Router process
+
+Answer:-(2)Broker process
+
+=============================================================================================================
+
+_____ is responsible for allocating segments to specific servers, and ensuring that segments are well balanced across Historicals.
+Choose the correct option from below list
+(1)Overlord process
+(2)Broker process
+(3)Coordinator process
+(4)Router process
+
+Answer:-(3)Coordinator process
+
+=============================================================================================================
+
+Which of the following is used to interpret input data in Druid?
+Choose the correct option from below list
+(1)Datasource name
+(2)Time Column
+(3)dataSchema
+(4)Parser
+
+Answer:-(4)Parser
+
+=============================================================================================================
+
+Which of the following Granularity types are supported in Apache Druid?
+Choose the correct option from below list
+(1)Arbitrary
+(2)None of the options
+(3)Uniform and Arbitrary
+(4)Uniform
+
+Answer:-(3)Uniform and Arbitrary
+
+===============================================================================================================
+
+Which of the following concept in Druid optionally replaces dimensional values with new values, enabling combined functionality?
+Choose the correct option from below list
+(1)Lookups
+(2)Both virtual columns and Lookups
+(3)None of the Options
+(4)Virtual Columns
+
+Answer:-(1)Lookups
+
+===============================================================================================================
+
+Which of the following query is not included in Aggregation query?
+Choose the correct option from below list
+(1)Timeseries
+(2)GroupBy
+(3)TopN
+(4)Time Boundary
+
+Answer:-(4)Time Boundary
+
+===============================================================================================================
+
+Which option controls the number of rows returned in each block of paginated results?
+Choose the correct option from below list
+(1)threshold
+(2)PagingSpec
+(3)pagingIdentifiers
+
+Answer:-(1)threshold
+
+===============================================================================================================
+
+In case of a Druid server failure, data can be recovered from _____.
+Choose the correct option from below list
+(1)Sea Storage
+(2)None of the options
+(3)Deep Hub
+(4)Sea Hub
+(5)Deep Storage
+
+Answer:-(5)Deep Storage
+
+===============================================================================================================
+
+In Apache Druid, Scan queries do not support pagination.
+Choose the correct option from below list
+(1)False
+(2)True
+
+Answer:-(2)True
+
+===============================================================================================================
+
+Among the following options, which aggregation query is the most flexible but has the poorest performance?
+Choose the correct option from below list
+(1)None of the options
+(2)GroupBy
+(3)Timeseries
+(4)TopN
+
+Answer:-(3)Timeseries
+
+===============================================================================================================
+
+Segment IDs in Apache Druid are comprised of________.
+Choose the correct option from below list
+(1)Interval start time
+(2)Interval end time
+(3)All the options
+(4)Segment datasource
+(5)Version
+
+Answer:-(3)All the options
+
+===============================================================================================================
+
+For grouping and sorting over a single dimension, _______ queries are much more optimized than _________.
+Choose the correct option from below list
+(1)Timeseries, TopN
+(2)TopN, Timeseries
+(3)GroupBy, TopN
+(4)TopN, GroupBy
+
+Answer:-(4)TopN, GroupBy
+
+===============================================================================================================
+
+For ease of deployment, Druid suggests organizing processes into ________ server types.
+Choose the correct option from below list
+(1)Master, Query, Analytics
+(2)Client, Master, Zookeeper
+(3)Admin, Data, Master
+(4)Master, Query, Data
+(5)None of the options
+
+Answer:-(4)Master, Query, Data
+
+===============================================================================================================
+
+Druid data is stored in "datasources", similar to _____.
+Choose the correct option from below list
+(1)Table in RDBMS
+(2)Column in RDBMS
+(3)row in RDBMS
+(4)Database in RDBMS
+
+Answer:-(1)Table in RDBMS
+
+===============================================================================================================
+
+Which of the following queries are grouped by single dimension, and are sorted according to the metric?
+Choose the correct option from below list
+(1)TopN
+(2)GroupBy
+(3)Time Boundry
+(4)Timeseries
+
+Answer:-(1)TopN
+
+===============================================================================================================
+
+TopN queries can use HAVING conditions over aggregated data.
+Choose the correct option from below list
+(1)False
+(2)True
+
+Answer:-(1)False
+
+===============================================================================================================
+
+Periodically, segments are committed and published. At this point, they are written to deep storage, become immutable.
+Choose the correct option from below list
+(1)False
+(2)True
+
+Answer:-(2)True
+
+===============================================================================================================
+
+________ is the mechanism by which the segments are published and are served by historical process.
+Choose the correct option from below list
+(1)Handoff
+(2)Sharding
+(3)Indexing
+
+Answer:-(1)Handoff
+
+===============================================================================================================
+
+Each segment starts off being created on a MiddleManager, and at that point the segment is _____.
+Choose the correct option from below list
+(1)immutable & uncommitted
+(2)mutable & uncommitted
+(3)immutable & Committed
+(4)mutable & committed
+
+Answer:-(2)mutable & uncommitted
+
+===============================================================================================================
+
+Select the processes which store queryable data.
+Choose the correct option from below list
+(1)MiddleManager
+(2)None of the options
+(3)Historical
+(4)Broker
+(5)Coordinator
+
+Answer:-(3)Historical
+
+===============================================================================================================
+
+Zookeeper is used for _____.
+Choose the correct option from below list
+(1)leader election
+(2)All the Options
+(3)coordination and leader collection
+(4)backup data
+(5)coordination
+
+Answer:-(3)coordination and leader collection
+
+===============================================================================================================
