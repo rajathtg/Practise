@@ -4,7 +4,7 @@ Difference between Pandas and DataFrames and which is Faster? ##It's always PySp
 Difference between Delete and Truncate and which is Faster? ##Truncate is faster
 Difference between Range and Xrange??
 Does dict supports Comprehension? ##Yes
-Interested to learn AWS?
+Interested to learn AWS/Azure? ##Yes
 
 Remove the duplicates from the List:
 ===================================

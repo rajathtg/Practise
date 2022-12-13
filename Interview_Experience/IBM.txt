@@ -10,12 +10,12 @@ empid Name      dept  Manager   sal
 
 Explain Project and your roles and responsibility?
 How to customize the Schema using StructType and pass it?
-How to access Hive/CSV/Json data from spark read
-Print the Second Highest Salary dept wise
-Print emp sal > manager
-Print sal greater > 10000
-1 Million records cardinality is high and all data pushed to one partition and how to overcome, understand the Salting
-How do you do Spark Submit and what happens after it? Write Spark Submit code
+How to access Hive/CSV/Json data from spark read?
+Print the Second Highest Salary dept wise?
+Print emp sal > manager?
+Print sal greater > 10000?
+1 Million records cardinality is high and all data pushed to one partition and how to overcome, understand the Salting technique
+How do you do Spark Submit and what happens after it? Write Spark Submit code?
 In hadoop data is getting written everyday, one day suddenly job ran twice and you notice it after three months, how to remove the duplicates? - If it is single day, Hive table create karo and drop that partition, but 3 months old and not to do it manually???
 How to save data
 

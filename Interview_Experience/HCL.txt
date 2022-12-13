@@ -1,0 +1,39 @@
+Question1:
+==========
+lst=[1,2,3,4,5]
+lst2=lst
+lst2.append(6)
+print(lst)
+print(lst2)
+
+Question2:
+==========
+tuple1 = (('a', 23),('b', 37),('c', 11), ('d',29))
+Required Output i.e. to sort the tuples based on 2nd character >> (('c', 11), ('a', 23), ('d', 29), ('b', 37))
+
+Question3:
+==========
+ques = "PYnative29@#8496"
+Output >>> count the number of Alphabets,Numericals and Special Characters in the string
+
+Question4:
+==========
+list1 = [5, 10, 15, 20, 25, 50, 20,25]
+Output >>> To identify the duplicates in the list and to replace it with different number
+
+Question5: How to find a keyword from the read Text File?
+==========
+rdd1 = spark.read.format("text").load("filename.txt")
+rdd2 = rdd1.map(lambda x:x.split(','))
+
+Question6:
+==========
+What is normalization?
+
+Question7:
+==========
+Types of joins in SQL?
+
+Question8:
+==========
+Types of joins in Spark SQL?

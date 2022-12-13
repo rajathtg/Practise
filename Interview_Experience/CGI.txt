@@ -1,0 +1,18 @@
+1. Introduce yourself
+2. Explain your Architecture, it's tools and your role and responsibilities?
+3. List of services in Druid?
+4. How Kafka ingestion happens in Druid?
+5. Use of compaction of in Druid?
+6. To remove duplicates from Druid?
+7. Use of Airflow, how to write a Dag?
+8. How do you trigger Spark Job from Airflow?
+9. Have you worked on any Performance Tuning in Druid?
+10. What is Superset?
+11. How do you integrate Druid with Superset?
+12. How do you create a Dashboard in Superset?
+13. What is the difference between Database and Dataset in Superset?
+14. How many events do you receive through Kafka on daily basis?
+15. Explain use of each Druid Services?
+16. How do you perform batch ingrestion in Druid?
+17. What are plugins used in Airflow?
+18. What are the operators you've used in Airflow?
