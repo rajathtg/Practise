@@ -5,21 +5,85 @@ lst2=lst
 lst2.append(6)
 print(lst)
 print(lst2)
+print(id(lst))
+print(id(lst2))
+
+##Output:
+[1, 2, 3, 4, 5, 6]
+[1, 2, 3, 4, 5, 6]
+1855061546240
+1855061546240
 
 Question2:
 ==========
 tuple1 = (('a', 23),('b', 37),('c', 11), ('d',29))
 Required Output i.e. to sort the tuples based on 2nd character >> (('c', 11), ('a', 23), ('d', 29), ('b', 37))
 
+##Code
+# Tuple
+tuple1 = (('a', 23),('b', 37),('c', 11), ('d',29))
+print("Orignal List: ", tuple1)
+# Function to sort
+def Sort(x):
+    y=sorted(x, key=lambda a: a[1])
+    ##sorted(__iterable,key=,reverse=true/false)
+    return y
+# sorted list of tuples
+print("Sorted List: ", Sort(tuple1))
+
+##Output:
+Orignal List:  (('a', 23), ('b', 37), ('c', 11), ('d', 29))
+Sorted List:  [('c', 11), ('a', 23), ('d', 29), ('b', 37)]
+
 Question3:
 ==========
 ques = "PYnative29@#8496"
 Output >>> count the number of Alphabets,Numericals and Special Characters in the string
 
+##Code
+ques = 'PYnative29@#8496'
+string_value=''
+num_value=''
+spec_value=''
+for a in ques:
+    if a.isalpha():
+        string_value=string_value+a
+    elif a.isnumeric():
+        num_value=num_value+a
+    else:
+        spec_value=spec_value+a
+print('The {} has length of {}'.format(string_value,len(string_value)))
+print('The {} has length of {}'.format(num_value,len(num_value)))
+print('The {} has length of {}'.format(spec_value,len(spec_value)))
+
+##Output:
+The PYnative has length of 8
+The 298496 has length of 6
+The @# has length of 2
+
 Question4:
 ==========
 list1 = [5, 10, 15, 20, 25, 50, 20,25]
 Output >>> To identify the duplicates in the list and to replace it with different number
+
+##Code:
+list1 = [5, 10, 15, 20, 25, 50, 20, 25]
+output = []
+dup=[]
+for x in list1:
+    if x not in output:
+        output.append(x)
+    else:
+        dup.append(x) ##Duplicates are appended to new list
+        dup=[x+1 for x in dup] ##Using list comprehension +1 is added
+print(output)
+print(dup)
+print(output+dup) ##The consolidated list is printed
+
+##Output:
+[5, 10, 15, 20, 25, 50]
+[22, 26]
+[5, 10, 15, 20, 25, 50, 22, 26]
 
 Question5: How to find a keyword from the read Text File?
 ==========

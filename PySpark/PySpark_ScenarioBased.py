@@ -586,3 +586,37 @@ map_rdd.count()
 ##Output is 9
 
 ###*****Note: Please refer to the pictorical representation in the video
+
+============================================================
+
+16. Filter condition on Date vs Unix Timestsmp:
+In general the Unix Timestamp is always faster as it will be in the integer format and aggregation performed will be faster
+
+To convert the input date to unix_timestamp:
+from_date='2021-01-01'
+to_date='2021-04-30'
+import datetime
+#Convert String to datetimeformat:
+ft_date=datetime.datetime.strptime(from_date,"%Y-%m-%d")
+tt_date=datetime.datetime.strptime(ti_date,"%Y-%m-%d")
+#Convert datetime to timestamp:
+ft_date=int(datetime.datetime.timestamp(f_date))
+tt_date=int(datetime.datetime.timestamp(t_date))
+
+in_df=spark.read.csv("<filename>")
+in_df.count()
+
+from pyspark.sql.functions import sum
+in_df.filter("date>='2021-01-01' and date <= '2021-04-30'").groupby('State/UnionTerritory').agg(sum('Cured')).show()
+##Above filter takes more time when we go with actual date, post conversion into unix, things work faster
+
+from pyspark.sql.functions import to_date,max,unix_timestamp
+in_df2=in_df.withColumn("U_Date",unix_timestamp("Date",'yyyy-MM-dd'))
+
+in_df2.filter("u_date>=1609439400 and u_date<=1619807340").groupby('State/UnionTerritory').agg(sum('Cured')).show()
+##Above gives faster results, because it is in the form integer and also it can easily take help of SQL query engine
+
+#Let's try with automated code:
+from pyspark.sql.functions import col
+in_df2.filter((col('u_date')>=ft_date) & (col('u_date')<=tt_date)).groupby('State/UnionTerritory').agg(sum('Cured')).show()
+

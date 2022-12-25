@@ -19,7 +19,7 @@ argv [1]+argv[2]
 ------
 1020 ##It's a string buddy
 
--String is any sequence of characters within single quotes or withing double quotes.
+-String is any sequence of characters within single quotes or within double quotes.
 -s='Rajath' or s="Rajath"
 ****Note: We don not have any char datatype in Python, even single character i.e. s = 'a' is also consider string which is not in other programming languages.
 -Multi-line string literals we can use triple quotes 
@@ -30,8 +30,8 @@ argv [1]+argv[2]
 -'This is \' symbol' ==> Valid and \ is called as escape character.
 -"This is ' symbol" ==> Valid
 -'''This is " symbol''' ==> Valid
--'''The "Python Notes" by 'Durga' is very goog''' ==> Valid
--'The \"Python Notes\" by \'Durga\' is very goog' ==> Valid(but looks messy).
+-'''The "Python Notes" by 'Durga' is very good''' ==> Valid
+-'The \"Python Notes\" by \'Durga\' is very good' ==> Valid(but looks messy).
 
 ====================================================================
 Steps to access characters of the String:
@@ -206,12 +206,12 @@ Mathematical operators for String:
 
 'Durga'+'soft' >> 'Durgasoft'
 -If '+' to be applied for string, compulsory both arguments should be string.
--'Durga'+10 >> Will throw type error.
+******************-'Durga'+10 >> Will throw type error.
 
 -'Durga'*3 >> DurgaDurgaDurga -----Valid
 -3*'Durga' >> DurgaDurgaDurga -----Valid
 -For '*' operator, atleast one argument should be 'int' and other string.
--'Durga'*3.5 >> Will throw, type Error, it's non-nt datatype
+******************-'Durga'*3.5 >> Will throw, type Error, it's non-int datatype
 
 Summary:
 ========
