@@ -91,4 +91,695 @@ update orders set customer_gender case when customer_gender='Male' then 'Female'
 					   when customer_gender='Female' then 'Male' end
 					   
 					   
-SDET- QA Automation Techie					   
+SDET- QA Automation Techie
+
+
+##Most Asked SQL Join based Interview Question:
+id1
+1
+1
+
+id2
+1
+1
+1
+ 
+Short Cut to calculate the number values in case of Full Join is:
+2(1 in id1) * 3(1 in id2)
+=6
+
+select * from t1 inner join t2 on t1.id1 = t2.id2
+##Each value in id1 joins with each value of id2 therefore in total there are 6 Values in Output
+id1 id2
+1	1	
+1	1
+1	1
+1	1
+1	1
+1	1
+
+select * from t1 left join t2 on t1.id1 = t2.id2
+##Same as inner join, since there are no data not matching between them
+id1 id2
+1	1	
+1	1
+1	1
+1	1
+1	1
+1	1
+
+select * from t1 right join t2 on t1.id1 = t2.id2
+##Same as inner join, since there are no data not matching between them
+id1 id2
+1	1	
+1	1
+1	1
+1	1
+1	1
+1	1
+
+select * from t1 full outer join t2 on t1.id1 = t2.id2
+##Same as inner join, since there are no data not matching between them
+id1 id2
+1	1	
+1	1
+1	1
+1	1
+1	1
+1	1
+
+##Part2-Most Asked SQL Join based Interview Question:
+id1
+1
+1
+2
+
+id2
+1
+1
+1
+3
+
+Short Cut to calculate the number values in case of Full Join is:
+2(1 in id1) * 3(1 in id2) + 1(2 in id1) + 1(3 in id2)
+=6 + 1 + 1 = 8
+
+select * from t1 inner join t2 on t1.id1 = t2.id2
+id1 	id2
+1		1	
+1		1
+1		1
+1		1
+1		1
+1		1
+
+select * from t1 left join t2 on t1.id1 = t2.id2
+id1 	id2
+1		1	
+1		1
+1		1
+1		1
+1		1
+1		1
+2		null
+
+select * from t1 right join t2 on t1.id1 = t2.id2
+id1 	id2
+1		1	
+1		1
+1		1
+1		1
+1		1
+1		1
+null	3
+
+select * from t1 full outer join t2 on t1.id1 = t2.id2
+id1 	id2
+1		1	
+1		1
+1		1
+1		1
+1		1
+1		1
+2		null
+null	3
+
+##Part3-Most Asked SQL Join based Interview Question:
+id1
+1
+1
+2
+2
+
+id2
+1
+1
+1
+3
+2
+
+2(1 in id1) * 3(1 in id2) + 2(2 in id1)  * 1(2 in id2)+ 1(3 in id2)
+=6 + 2 + 1 + 1 = 10
+
+select * from t1 inner join t2 on t1.id1 = t2.id2
+id1 	id2
+1		1	
+1		1
+1		1
+1		1
+1		1
+1		1
+2		2
+2		2
+
+select * from t1 left join t2 on t1.id1 = t2.id2
+id1 	id2
+1		1	
+1		1
+1		1
+1		1
+1		1
+1		1
+2		2
+2		2
+2		Null
+
+select * from t1 right join t2 on t1.id1 = t2.id2
+id1 	id2
+1		1	
+1		1
+1		1
+1		1
+1		1
+1		1
+2		2
+2		2
+null	3
+
+select * from t1 full outer join t2 on t1.id1 = t2.id2
+id1 	id2
+1		1	
+1		1
+1		1
+1		1
+1		1
+1		1
+2		2
+2		2
+2		null
+null	3
+
+##Part4-Most Asked SQL Join based Interview Question:
+id1
+1
+1
+2
+2
+4
+
+id2
+1
+1
+1
+3
+2
+2
+
+2(1 in id1) * 3(1 in id2) + 2(2 in id1)  * 2(2 in id2)+ 1(4 in id1) + 1(3 in id2)
+=6 + 4 + 1 + 1 = 12
+
+select * from t1 full outer join t2 on t1.id1 = t2.id2
+id1 	id2
+1		1	
+1		1
+1		1
+1		1
+1		1
+1		1
+2		2
+2		2
+2		2
+2		2
+null	3
+4		null
+
+##Part5-Most Asked SQL Join based Interview Question:
+id1
+1
+1
+2
+2
+4
+null
+
+id2
+1
+1
+1
+3
+2
+2
+null
+
+***Note: Null can't be joined or compared with other null values in same table
+
+##Total count values post Full Join
+2(1 in id1) * 3(1 in id2) + 2(2 in id1)  * 2(2 in id2)+ 1(4 in id1) + 1(3 in id2) + 1(Null in id1) + 1(Null in Id2)
+=6 + 4 + 1 + 1 + 1 + 1 = 14
+
+select * from t1 inner join t2 on t1.id1 = t2.id2
+id1 	id2
+1		1	
+1		1
+1		1
+1		1
+1		1
+1		1
+2		2
+2		2
+2		2
+2		2
+
+select * from t1 left join t2 on t1.id1 = t2.id2
+id1 	id2
+1		1	
+1		1
+1		1
+1		1
+1		1
+1		1
+2		2
+2		2
+2		2
+2		2
+4		Null
+Null	Null	##This is not matching null
+
+select * from t1 right join t2 on t1.id1 = t2.id2
+id1 	id2
+1		1	
+1		1
+1		1
+1		1
+1		1
+1		1
+2		2
+2		2
+2		2
+2		2
+Null	3
+Null	Null
+
+select * from t1 full outer join t2 on t1.id1 = t2.id2
+id1 	id2
+1		1	
+1		1
+1		1
+1		1
+1		1
+1		1
+2		2
+2		2
+2		2
+2		2
+null	3
+4		Null
+Null	Null
+Null	Null
+
+##8. Calculate mode using SQL
+Ex: 1,2,3,3,4,5,6
+Mode is the most frequent number in an array, in above scenario 3 is the mode
+Ex: 1,2,3,3,4,5,6,6
+The above example is multi-mode scenario, 3 & 6 both are mode values
+
+#Using CTE:
+with freq_cte as(
+select id,count(id) as freq from mode group by id)
+select * from freq_cte
+where freq = (select max(freq) from freq_cte)
+;
+
+#Using Rank():
+with freq_cte as(
+select id,count(id) as freq from mode froup by id)
+, rnk_cte as (
+select *,rank() over (order by freq desc) as rn from freq_cte)
+
+select * from rnk_cte where rn = 1
+
+;
+
+##9. Calculate Median using SQL:
+Ex: 1,2,3,4,5,10
+In the above sequence median is the middle number, i.e. 3 (it is calculated after sorting the sequence)
+Ex: 1,2,3,4,10,12,14,16
+In the above sequence median is calculated as below since sequence has even number of arrays
+4+10 = 14
+14/2 = 7
+Therefore, 7 is the median
+
+#Median using row_number
+with cte
+(
+select *
+,row_number() over (order by emp_age asc) as rn_asc
+,row_number() over (order by emp_age desc) as rn_dsc
+from emp
+)
+select avg(emp_age) from cte
+where abs(rn_asc-rn_dsc) <=1
+
+##9. SQL Interview Question based on Full Outer Join
+##emp_2020
+emp_id	designation
+1		Trainee
+2		Developer
+3		Senior Developer
+4		Manager
+##emp_2021
+emp_id	designation
+1		Developer
+2		Developer
+3		Manager
+5		Trainee
+
+##Below is required output post doing full outer join
+emp_id	##Comment
+1		Promoted
+2		Promoted
+4		Resigned
+5		New
+
+step1:
+select e20.*,e21.* from emp_2020 e20
+full outer join emp_2021 e21 on e20.emp_id=e21.emp_id
+
+step2:
+select e20.*,e21.* from emp_2020 e20
+full outer join emp_2021 e21 on e20.emp_id=e21.emp_id
+where isnull(e20.designation,'xxx') != isnull(e21.designation,'yyy')
+
+step3:
+select e20.*,e21.* 
+,case when e20.designation != e21.designation then 'Promoted'
+when e21.designation is null then 'Resigned' else 'New' end as comment
+from emp_2020 e20
+full outer join emp_2021 e21 on e20.emp_id=e21.emp_id
+where isnull(e20.designation,'xxx') != isnull(e21.designation,'yyy')
+
+step4:
+select isnull(e20.emp_id,e21.emp_id) as emp_id 
+,case when e20.designation != e21.designation then 'Promoted'
+when e21.designation is null then 'Resigned' else 'New' end as comment
+from emp_2020 e20
+full outer join emp_2021 e21 on e20.emp_id=e21.emp_id
+where isnull(e20.designation,'xxx') != isnull(e21.designation,'yyy')
+
+##10. To rank the duplicate records:
+id
+a
+a
+b
+c
+c
+c
+d
+d
+e
+
+Output required:
+id	output
+a	DUP1
+a	DUP1
+b	NULL
+c	DUP2
+c	DUP2
+c	DUP2
+d	DUP3
+d	DUP3
+e	NULL
+
+Step1:
+with cte_dups as (
+select id from list group by id having count(1)>1)
+select *,rank() over (order by id asc) as rn from cte_dups
+;
+
+Step2:
+with cte_dups as (
+select id from list group by id having count(1)>1)
+cte_rank as (select *,rank() over (order by id asc) as rn from cte_dups)
+select l.*,'DUP'+cast(cr.rn as varchar(2)) as output list l left join cte_rank cr on l.id=cr.id
+
+##11. SQL Update Statement along with Join
+***SQL Update statement is used to update data of the row and not the column structure / table structure, not to confuse with the Alter table
+Two tables are there,
+select * from emp;
+select * from dept;
+
+#Update syntax for single value update
+update emp set salary=12000; ##Will update salary of all the employees to 12000 and mess up the data
+
+#Update with where clause
+update emp set salary=12000 where emp_id=1;
+update emp set salary=12000 where emp_age>30;
+##Will update the salary of specific employee only / based on given condition
+
+#Update multiple values
+update emp set salary = 12000, dep_id=200 where emp_id=2;
+
+#Update col with constant values and derivations(col calculations / case when)
+update emp set salary=salary+100; ##Using constant
+update emp set salary=salary+dep_id; ##Using existing column data
+update emp 
+set salary=case when dep_id=100 then salary*1.1 
+				when dep_id=200 then salary*1.2
+				else salary end ##Using case statements
+								
+#Update using join
+#Let's add a dept_name to emp table
+alter table emp add dep_name varchar(20)
+#Let's join with dept_id to add the dept_name to emp table
+update emp
+set dep_name=d.dep_name ##no need to mention as e.dep_name by default it is understood
+from emp e
+join dept d on e.dep_id=d.dep_id
+
+#Interview question on update
+#To swap gender
+update emp
+set gender=case when gender='Male' then 'Female'
+else 'Male' end
+
+#Cautious before running an update tips/tricks
+***Before running previous update command run below one, it will by default create a dummy column, so we will get to know what will get updated
+select *,case when gender='Male' then 'Female' else 'Male' end from emp where dep_id=200
+
+##12. Custom Sort in SQL for olympics if you know in news paper India will be shown at the top irrespective of rank later other countries will be listed, same as that
+step1:
+select * from (
+select *,
+case when country = 'India' then 1 else 0 end as country_derived
+from happiness_index) a
+order by country_derived desc, happiness_2021 desc
+)
+
+step2: To show multiple countries
+select * from (
+select *,
+case when country = 'India' then 3 
+	 when country = 'Australia' then 2
+	 when country = 'Germany' then 1
+	 else 0 end as country_derived
+from happiness_index) a
+order by country_derived desc, happiness_2021 desc;
+
+Step3: Best Approach
+select * from happiness_index
+order by case when country = 'India' then 3 
+	 when country = 'Australia' then 2
+	 when country = 'Germany' then 1
+	 else 0 end desc, happiness_2021 desc;
+
+##13. Problem with Running SUM (cumulative) in SQL
+Product Table:
+product_id	cost
+P1			200
+P2			300
+P3			300
+P4			500
+P5			800
+
+Step1: ##Not valid
+select *,
+sum(cost) over(order by cost asc) as running_cost
+from product;
+product_id	cost	running_cost
+P1			200		200
+P2			300		800	##Getting wrong data
+P3			300		800
+P4			500		1300
+P5			800		2100
+
+Step2:
+select *,
+sum(cost) over(order by cost asc,product_id) as running_cost
+from product;
+product_id	cost	running_cost
+P1			200		200
+P2			300		500
+P3			300		800
+P4			500		1300
+P5			800		2100
+
+Step3: In case of no row like product key which has unique #
+select *,
+sum(cost) over(order by cost asc rows between unbounded preceding and current row) as running_cost
+from product;
+product_id	cost	running_cost
+P1			200		200
+P2			300		500
+P3			300		800
+P4			500		1300
+P5			800		2100
+
+
+##14. Difference between 
+count(*) > Will count all the rows including any row which is completely null as well
+count(1) > Same as count(*)
+count(0) > Same as count(*)
+count(-1) > Same as count(*)
+count('Rajath') > Same as count(*)
+count(col_name) > It will count the number of rows which are not null, null values are ignored
+count(distinct col) > same as count(col_name) but gives distinct count
+
+##15. To count the number of occurence of a character or word in a String
+name
+Ankit Bansal
+Ram Kumar Verma
+Akshay Kumar Ak K
+Rahul
+
+step1:
+select name, replace(name,' ','') as rep_name from strings
+name				rep_name
+Ankit Bansal		AnkitBansal		
+Ram Kumar Verma     RamKumarVerma
+Akshay Kumar Ak K   AkshayKumarAkK
+Rahul               Rahul
+
+step2:
+select name, replace(name,' ','') as rep_name,
+len(name)-len(replace(name,' ','')) as space_cnt from strings
+name				rep_name		space_cnt
+Ankit Bansal		AnkitBansal		1	
+Ram Kumar Verma     RamKumarVerma	2
+Akshay Kumar Ak K   AkshayKumarAkK	3
+Rahul               Rahul			0
+
+step3:
+select name, replace(name,'Ak','') as rep_name,
+(len(name)-len(replace(name,'Ak','')))/lenk('Ak') as word_cnt from strings
+name				rep_name		word_cnt
+Ankit Bansal		Ankit Bansal	0	
+Ram Kumar Verma     Ram Kumar Verma	0
+Akshay Kumar Ak K   shay Kumar K	2
+Rahul               Rahul			0
+
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Kudvenkat YouTube Channel:
+==========================
+
+##1. To find nth highest salary in SQL:
+-By using a Sub-Query
+-Using a CTE
+-To find 2nd / 3rd / 15th Highest Salary
+
+-We can simply find a max salary by using 
+select max(salary) from emp
+
+-To find a second highest salary
+select max(salary) from emp
+where salary < (select max(salary) from emp)
+
+-To find nth highest salary using Sub-Query:
+select Top 1 salary
+from
+(
+select DISTINCT TOP N salary
+from emp
+order by salary desc
+) A
+order by salary
+
+-Last approch is using the rank() or dense_rank():
+-Don't go with the Row_Number:
+
+##2. To find employees hired in last n months?
+
+-To find diff in months?
+select *,DATEDIFF(MONTH, HireDate, GETDATE()) as Difference
+from Employees
+where DATEDIFF(MONTH, HireDate, GETDATE()) between 1 and 3
+order by HireDate desc
+
+-To find diff in days?
+select *,DATEDIFF(DAY, HireDate, GETDATE()) as Difference
+from Employees
+where DATEDIFF(DAY, HireDate, GETDATE()) between 1 and 30
+order by HireDate desc
+
+-To find diff in Year?
+select *,DATEDIFF(YEAR, HireDate, GETDATE()) as Difference
+from Employees
+where DATEDIFF(YEAR, HireDate, GETDATE()) between 1 and 1
+order by HireDate desc	
+
+##3. To transform rows into columns in SQL Server:
+select Country, City1, City2, City3, City4
+from
+(
+Select Country, City,
+	   'City' + CAST(ROW_NUMBER() over (Partition By Country Order By Country) as VARCHAR(10)) as ColumnSequence
+From   Countries
+) Temp
+PIVOT
+(
+Max (City)
+For ColumSequence in (City1, City2, City3)
+)PIV
+
+##4. To find rows that contain only numerical values?
+select value from TestTable where ISNUMERIC(Value)=1
+
+##5. To join three tables
+select empName, DeptName, Gender
+from Employees
+JOIN Dept ON Employees.DepartmentID = Departments.DepartmentID
+JOIN Genders ON Employees.GenderID = Genders.GenderID
+
+##6. To join two tables without Primary and Foriegn key column?
+Yes, we can join two tables without primary foriegn key relation as long as the column values involved in the join can be converted to one type.
+i.e.
+ID column in Departments table is not the primary key and DepartmentID column in Employees table is not the Foreign Key. but we can still join these tables using ID column from Departments table and Departmentid column from employess table, as both the columns involved in the join have same data type values i.e int.
+
+Primary Key >> This key enforces uniqueness of values over one or more columns. Since ID is not a primary key in Departments table, 2 or more departments may end up having same ID value, which makes it impossible to distinguish between them based on the ID column value
+
+Foreign key enforces refrential integrity without foreign key constraint on Dept column in Employees Table. It is possible to insert a row into Employees table with a value for DepartmentID column that does not exist in Departments table. This means there is a possibility for rows in Employees table to become orphan rows. RTeferential integrity is lost as result
+
+##7.  To select all names that start with a given letter without like operator
+-Using like operator, life is so simple
+select * from students where Name like 'M%'
+
+#Alternative Approaches:
+-CharIndex
+select * from Students where CharIndex('M',Name)=1
+
+-Left
+select * from Students where Left(Name,1)='M'
+
+-Substring
+select * from Students where SUBSTRING(Name,1,1)='M'
+
+##8. SQL query to delete from multiple rows / Write a SQL Query to Delete Parent Child Rows
+#Task
+-If row is deleted from Table Departments
+-Then all the related rows from Table Employees is to be deleted
+
+Ex: i.e. if a IT dept is deleted in Department table then all the employees related to IT department also needs to deleted
+
+Here DeptID in employee table is a foriegn key pointing id column in department table
+
+##Drop the existing  foriegn key constraint on DeptID column
+Alter table Employee drop constraint FK_Employees_DeptI_5EBF139D
+
+##Add constraint again along with cascading delete
+Alter table Employees
+add constraint FK_Dept_Employees_Cascade_Delete
+foreign key (DeptId) references Department(Id) on delete cascade
+
+##Let's drop IT dept from Department table, then all the employees belonging to that particular dept is also deleted
+Delete from Departments where Id=1
