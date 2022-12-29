@@ -668,6 +668,175 @@ Akshay Kumar Ak K   shay Kumar K	2
 Rahul               Rahul			0
 
 
+##15. All about Aggregation in SQL. Aggregation 0 to hero:
+id	order_no order_dt 	amnt
+1	30		 1995-07-14 460
+2	10		 1996-08-14 540
+:
+:
+:
+
+Possible aggregates are sum(),avg(),min(),max()
+
+#Simple sum on full table:
+select sum(amnt) from int_orders;
+
+#Simple sum on id based:
+select id,sum(amnt) from int_orders
+group by id;
+
+#Using window function:
+select id,order_no,order_dt,amnt,sum(amnt)
+over() from int_orders; ##Creates an additional column with an output 6670 for all rows same as SImple Sum
+
+#Using window function:
+select id,order_no,order_dt,amnt,sum(amnt)
+over(partition by id) from int_orders; ##Creates an additional column with an output same as Simple Sum on id based
+
+#Using window function:
+select id,order_no,order_dt,amnt,sum(amnt)
+over(order by order_dt) from int_orders; ##Creates an additional column where output is a cumulative value also called as running sum
+
+#Using window function:
+select id,order_no,order_dt,amnt,sum(amnt)
+over(order by order_dt rows between 2 preceding and current row) from int_orders; ##Creates an additional column where output is a cumulative value and value is sum(previous two rows + current row) and not like a running sum
+
+#Using window function:
+select id,order_no,order_dt,amnt,sum(amnt)
+over(order by order_dt rows between 2 preceding and 1 preceding) from int_orders; ##Creates an additional column where output is a cumulative value and value is 1 preceding + 2 preceding and not like a running sum
+
+#Using window function:
+select id,order_no,order_dt,amnt,sum(amnt)
+over(order by order_dt rows between 1 preceding and 1 following) from int_orders; ##Creates an additional column where output is a cumulative value and value is 1 preceding + 1 following value and not like a running sum
+
+#Using window function:
+select id,order_no,order_dt,amnt,sum(amnt)
+over(order by order_dt rows between unbounded preceding and current row) from int_orders; ##Creates an additional column where output is a cumulative value and value is all the preceding values + current row and not like a running sum
+
+#Using window function:
+select id,order_no,order_dt,amnt,sum(amnt)
+over(partition by id order by order_dt) from int_orders; ##Creates an additional column with where output is a cumulative value for given salesperson id
+
+#Using window function:
+select id,order_no,order_dt,amnt,sum(amnt)
+over(partition by id order by order_dt rows between 1 preceding and current row) from int_orders; ##Creates an additional column where output is a cumulative value and value is sum(previous two rows + current row) partition by id and not like a running sum
+
+#Lag Using window function:
+select id,order_no,order_dt,amnt,sum(amnt)
+over(partition by id order by order_dt rows between 1 preceding and 1 preceding) from int_orders;
+
+#Lead Using window function:
+select id,order_no,order_dt,amnt,sum(amnt)
+over(partition by id order by order_dt rows between 1 following and 1 following) from int_orders; 
+
+##16. MySQL doesn't support full outer join, let's do it using Union
+
+select c.id,c.name,co.id,co.name
+from customer c
+left join customer_orders co
+on c.id=co.id
+union all
+select c.id,c.name,co.id,co.name
+from customer_orders co
+left join  customer c
+on c.id=co.id
+where id is null ##This is optional, based on requirement we can adapt
+
+##17. Left Outer Join Master Class
+emp table:
+emp_id emp_name dep_id sal 	mang_id emp_age
+1	   Ankit    100    1000 4       39
+2	   Mohit    200    1500 5       48
+
+dep_id dep_name
+100	   Analytics
+200	   IT
+300    HR
+400    Text Analytics
+
+select * from emp left join dept on emp.dep_id=dept.dep_id ##Normal way of working with left join / left outer join;
+
+select * from emp
+left join dept on emp.dep_id=dept.dep_id
+and dept.dep_name='Analytics'; ##It means that dep_name='Analytics' is first applied and later join will happen, therefore for remaining dep_id and dep_name will display as null
+
+select * from emp
+left join dept on emp.dep_id=dept.dep_id
+where dept.dep_name='Analytics'; ##Here join will have later data where dep_name='Analytics' is fetched which has only 4 records in the output
+
+###The left join is same as inner join with a where condition, provided all the possible output values are added in the where dep_name in (' ')
+
+##****Please provide the list of all the employees whose dept is not present in the department table
+select * from emp
+left join dept on emp.dep_id=dept.dep_id
+where dept.dep_name is null;
+
+##Let's try putting filter on the left table of joining condition:
+select * from emp
+left join dept on emp.dep_id=dept.dep_id and emp.salary=1000 ##Same as putting the filter on right side, first filter is applied, later join happens, remaning non-matching rows become or display Null
+
+##18. How to use group by and rank(Window functions together)
+To find top 5 products in each category by sales
+
+Step1: To apply ranking
+with sales_value as (
+select category,product_name,sum(sales) as total_sales from orders group by category,product_name)
+select *,rank() over (partition by category order by total_sales desc) as rn
+from sales_value
+
+Step2: To fetch top 5 category
+with sales_value as (
+select category,product_name,sum(sales) as total_sales from orders group by category,product_name)
+select * from (
+select *,rank() over (partition by category order by total_sales desc) as rn
+from sales_value) A
+where rn <= 5
+
+Step3: To reduce length of the query
+select * from
+(select category,product_name,sum(sales) as total_sales,rank() over (partition by category order by sum(sales)desc) as rn
+from orders
+group by category,product_name) A
+where rn <= 5 ##Here first groupby happens, then rank inside which order by will happen next
+
+##First Value and Last Value functions Master Class:
+#Let's try out using first_value() function
+Step1:
+select *,first_value(emp_name) over (order by salary) as lowest_sal_emp from employee
+##This will create a new column emp_name and print 1 emp_name in all the rows who has lowest salary
+
+
+Step2: For last_value() we have go for special scenario as below, because it doesn't provide proper result when tried in normal way similar to first_value
+select *,last_value(emp_name) over (order by emp_age rows between current row and unbounded following) as oldest_emp from employee
+order by emp_age
+
+##19. To write a SQL to find business day between create date and resolved date by excluding weekends and public holidays:
+ticket_id	create_date		resolved_date
+1			2022-08-01		2022-08-03
+2			2022-08-01		2022-08-12
+3			2022-08-01		2022-08-16
+
+2022-08-01 >> Monday
+2022-08-03 >> Wednesday
+2022-08-12 >> Friday
+2022-08-16 >> Tuesday
+
+Step1 : To day diff
+select *
+,datediff(day,create_date,resolved_date) as actual_days
+from tickets
+
+Step2 : To calculate week diff
+select *
+,datediff(day,create_date,resolved_date) as actual_days
+,datediff(week,create_date,resolved_date) as week_diff
+from tickets ##If diff 0(then same week), >1 then dates are in different weeks
+
+Step3: If 1 week diff means there are 2 weekends, similarly 2 weeks means 4 weekends and so on therfore
+select *
+,datediff(day,create_date,resolved_date) as actual_days
+,datediff(day,create_date,resolved_date) - 2*datediff(week,create_date,resolved_date) as business_days from tickets
+
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 Kudvenkat YouTube Channel:
