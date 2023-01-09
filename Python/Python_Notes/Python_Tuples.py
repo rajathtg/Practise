@@ -339,13 +339,13 @@ print(t1)
 
 Sorting of elements of tuple:
 -----------------------------
--Similar to 'list.sort()' we can not use 'tuple.sort()' here, since tuple is immutable.
+-*************Similar to 'list.sort()' we can not use 'tuple.sort()' here, since tuple is immutable.
 -We can use sorted() (python inbuilt function) instead.
 
 ##Example1:
 t=(40, 30, 20, 10)
-r=sorted(t)
-t1=tuple(r)
+r=sorted(t) ##The output is a list******************
+t1=tuple(r) ##Hence conversion is required
 print(t)
 print(t1)
 
@@ -515,7 +515,7 @@ Set:
     ##As we can see, 5 is added anywhere randomly, order is not applicable
     -It stores data in the memory through hashing, i.e. each element has an hashcode, so it helps in faster retrieval/search of data.
     -Linear search / binary search algorithm.
-        -Consider there are 100 students and all sat next to eavh other.
+        -Consider there are 100 students and all sat next to each other.
         -Linear search will work like, one by one it will search until it finds required person, if 100th student are there 100 comparison is required, time complexity for linear search is order(n)
         -Linear search is proportional to number of students.
         -Where as binary search is like it divides 100 students to 50 and checks the element is greater than middle elemnt or less than that, post that half of the 50 will be ignored, next again it will divide the remaining 50 to 25 and 25 and it goes on.
@@ -543,7 +543,7 @@ The average:  30.0
     
 ##ShortCode:
 t=eval(input('Enter tuple of numbers: '))
-print(sum(t)) ##sum is Python function and also applicable for list and other DS as well.
+print(sum(t)) ##sum is Python function and also applicable for list and other DS as well ******************
 print(sum(t)/len(t))
 
 ##Output:

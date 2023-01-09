@@ -219,7 +219,7 @@ id2
 2
 
 2(1 in id1) * 3(1 in id2) + 2(2 in id1)  * 1(2 in id2)+ 1(3 in id2)
-=6 + 2 + 1 + 1 = 10
+=6 + 2 + 1 = 9
 
 select * from t1 inner join t2 on t1.id1 = t2.id2
 id1 	id2
@@ -242,7 +242,6 @@ id1 	id2
 1		1
 2		2
 2		2
-2		Null
 
 select * from t1 right join t2 on t1.id1 = t2.id2
 id1 	id2
@@ -266,7 +265,6 @@ id1 	id2
 1		1
 2		2
 2		2
-2		null
 null	3
 
 ##Part4-Most Asked SQL Join based Interview Question:
@@ -302,6 +300,47 @@ id1 	id2
 2		2
 null	3
 4		null
+
+select * from t1 inner join t2 on t1.id1 = t2.id2
+id1 	id2
+1		1	
+1		1
+1		1
+1		1
+1		1
+1		1
+2		2
+2		2
+2		2
+2		2
+
+select * from t1 left join t2 on t1.id1 = t2.id2
+id1 	id2
+1		1	
+1		1
+1		1
+1		1
+1		1
+1		1
+2		2
+2		2
+2		2
+2		2
+4		null
+
+select * from t1 right join t2 on t1.id1 = t2.id2
+id1 	id2
+1		1	
+1		1
+1		1
+1		1
+1		1
+1		1
+2		2
+2		2
+2		2
+2		2
+null	3
 
 ##Part5-Most Asked SQL Join based Interview Question:
 id1
@@ -411,7 +450,7 @@ select * from rnk_cte where rn = 1
 ;
 
 ##9. Calculate Median using SQL:
-Ex: 1,2,3,4,5,10
+Ex: 1,2,3,4,5
 In the above sequence median is the middle number, i.e. 3 (it is calculated after sorting the sequence)
 Ex: 1,2,3,4,10,12,14,16
 In the above sequence median is calculated as below since sequence has even number of arrays
@@ -506,11 +545,19 @@ select id from list group by id having count(1)>1)
 select *,rank() over (order by id asc) as rn from cte_dups
 ;
 
+
+id rn
+a 1
+b 2
+c 3
+
 Step2:
 with cte_dups as (
 select id from list group by id having count(1)>1)
 cte_rank as (select *,rank() over (order by id asc) as rn from cte_dups)
 select l.*,'DUP'+cast(cr.rn as varchar(2)) as output list l left join cte_rank cr on l.id=cr.id
+
+
 
 ##11. SQL Update Statement along with Join
 ***SQL Update statement is used to update data of the row and not the column structure / table structure, not to confuse with the Alter table

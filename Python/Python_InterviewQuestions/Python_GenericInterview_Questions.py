@@ -256,6 +256,7 @@ True
 ##Sorting by Key:
 d1={575:'Apple',876:'Mango',132:'Grapes'}
 d=sorted(d1.keys())
+print(d)
 d2={}
 for i in d:
     d2[i]=d1[i]
@@ -358,7 +359,7 @@ for i in s:
     ch[i]+=1
  else:
     ch[i]=1
-
+print(ch)
 max_char=max(ch, key=ch.get)
 print(max_char)
 
@@ -642,11 +643,16 @@ j
 from collections import Counter
 s='aaaaaabbbbbbbhhhhhhhssssssjjiiiiiiieeeeee'
 ch=Counter(s)
-result=min(ch,key=ch.get)
-print(result)
+print(ch)
+result_min=min(ch,key=ch.get)
+result_max=max(ch,key=ch.get)
+print(result_min)
+print(result_max)
 
 ##Output:
+Counter({'b': 7, 'h': 7, 'i': 7, 'a': 6, 's': 6, 'e': 6, 'j': 2})
 j
+b
 
 #####Count of any particular element
 #Using count for String, Number, List

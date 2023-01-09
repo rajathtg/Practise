@@ -137,7 +137,7 @@ Syntax : l[begin:end:step]
             Default value for end is len(list)
         -In backward direction:
             Default value for begin is -1
-            Default value for end is (len(list)+1)
+            Default value for end is -(len(list)+1)
         
 l=[10,20,30,40,50,60,70,80,90,100]
 
@@ -225,7 +225,7 @@ For loop even number output
 #-6     -5      -4      -3      -2      -1
 #10     20      30      40      50      60
 # 0      1       2       3       4       5
-##************To generate -ve index, it is nothong but
+##************To generate -ve index, it is nothing but
 -ve index = +ve index-len(l)
 
 ##Example2:
@@ -413,21 +413,20 @@ True
 ##Important Methods and Functions for List: len(),count() and index():
 -len() >> Returns number of elements present in the list
 -count() >> Returns the number of occurrences of specified element present in the list
--index() >> Returns index of the first occrrence of the specified item
+-index() >> Returns index of the first occurrence of the specified item
 
 ***********Note: There are two types of methods/functions, Python inbuilt function (Syntax >> function(object)) and object specific function/method (Syntax >> object.function()):
 
 ex: 
 p=[10,20,30,40]
--len(p) ##Pyhton inbuilt and can be used on list, string etc.
--sorted(p) ##Pythgon inbuilt
+-len(p) ##Python inbuilt and can be used on list, string etc.
+-sorted(p) ##Python inbuilt
 -p.append(10) ##Object specific function can only be applied on list.
 
 ##Example1:
 l=[10,20,10,20,30,20,40]
-print(len(l))
+print(len(l)) ##Python inbuilt
 print(l.count(10))
-print(l.append(10))
 
 ##Output:
 7
@@ -649,13 +648,13 @@ IndexError: pop index out of range
 -remove()
     -l.remove() : To remove specified element
     -If the list is empty then we will get ValueError
-    -The return value is None and won't get ValueError
+    -The return value is None and won't get ValueError (##i.e.print(remove(n)) is none)
     
 -pop()
     -l.pop() : To remove & return last element
     -l.pop(index) : To remove & return element present at specified index
     -If the list is empty, then we will get IndexError
-    -It returns removed element
+    -It returns removed element (##i.e.print(remove(n)) is value at nth place)
     
 
 ##Syntax : s.clear() ##Used to clear all elements present in the list
@@ -1068,3 +1067,15 @@ print('The no of unique vowels is: ',len(result))
 Enter Any String: rttttfbkevdnvjlvnjfkvsjkklmjnvnbdhgfacdqwopwqd
 ['a', 'e', 'o']
 The no of unique vowels is:  3
+
+======================================================================
+max() and min() functions for List:
+------------------------------------
+##Example3:
+t=[40, 50, 20, 10]
+print(max(t))
+print(min(t))
+
+##Output:
+50
+10

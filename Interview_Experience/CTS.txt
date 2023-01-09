@@ -1,4 +1,4 @@
-Difference between List and Tuple and which is faster?
+Difference between List and Tuple and which is faster? ##Tuple is faster
 What are Pandas?
 Difference between Pandas and DataFrames and which is Faster? ##It's always PySpark Dataframes
 Difference between Delete and Truncate and which is Faster? ##Truncate is faster

@@ -719,3 +719,11 @@ d4
 e5
 f
 g
+
+======================================================
+
+What is a Python Context Manager (With and Open can be explained for this)?
+What is Dunder Method in Python?
+Find max height of person that will see all its people without sorting and they will be placed in order
+Input : 2,17,6,8,1
+Output : 1,8,17

@@ -12,7 +12,7 @@ Group of unique objects as single entity where order is not important.
     Dict >> {}
 -Heterogenous objects are allowed
 -It's mutable
--Mathematical operations such as unio,intersection,difference can be applied
+-Mathematical operations such as union,intersection,difference can be applied
 
 ##Example1:
 s={} ##*****By default empty curly braces means dict and not set, Python people gave more importance to dict because, dict is more commonly used compared to set
@@ -69,9 +69,9 @@ Difference between List & Set:
 
 ##Example1: To create empty Set
 s={} ##This is for dict
-s=s() ##This is the correct way
+s=s() ##This is the correct way *********
 
-##Example2: If we already have datA, then we can create it like below:
+##Example2: If we already have data, then we can create it like below:
 s={10,20,30,40}
 
 ##Example3: By using set function:
@@ -162,7 +162,7 @@ True
 
 -len() >> Returns number of elements present in set
 -add() >> To add individual elements to set we use add() it is set specific method, in list we use append(), the reason behind not using append() for set is, in general append() is used to append an element at the end of the list always, but in set element can be added at any point, therefore add() is used over append().
--update() >> To add multiple items to the set, we can pass any number of arguments, but every argument passed should be iterable object (like list,stirng,range etc).
+-update() >> To add multiple items to the set, we can pass any number of arguments, but every argument passed should be iterable object (like list,string,range etc).
 
 ##Example1:
 s={10,20,30,40}
@@ -336,7 +336,6 @@ print(s3)
     -But disadvantage is, if changes done to s1 will impact s2.
 Cloning:
     -The process of creating a separate new object similar to existing object, were the changes done to s1 won't impact s2 is called cloning
-    -
 
 ##Example1:
 s1={10,20,30}
