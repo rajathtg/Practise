@@ -648,7 +648,7 @@ IndexError: pop index out of range
 -remove()
     -l.remove() : To remove specified element
     -If the list is empty then we will get ValueError
-    -The return value is None and won't get ValueError (##i.e.print(remove(n)) is none)
+    -The return value is None and not get ValueError (##i.e.print(remove(n)) is none)
     
 -pop()
     -l.pop() : To remove & return last element

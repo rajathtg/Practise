@@ -441,7 +441,7 @@ where freq = (select max(freq) from freq_cte)
 
 #Using Rank():
 with freq_cte as(
-select id,count(id) as freq from mode froup by id)
+select id,count(id) as freq from mode group by id)
 , rnk_cte as (
 select *,rank() over (order by freq desc) as rn from freq_cte)
 
@@ -999,3 +999,7 @@ foreign key (DeptId) references Department(Id) on delete cascade
 
 ##Let's drop IT dept from Department table, then all the employees belonging to that particular dept is also deleted
 Delete from Departments where Id=1
+
+What are triggers and Materialized View in SQL?
+Triggers : A trigger is a special type of stored procedure that automatically runs when an event occurs in the database server. DML triggers run when a user tries to modify data through a data manipulation language (DML) event. DML events are INSERT, UPDATE, or DELETE statements on a table or view.
+Materialized View : A Materialized View ""persists"" the data returned from the view definition query and automatically gets updated as data changes in the underlying tables. It improves the performance of complex queries (typically queries with joins and aggregations) while offering simple maintenance operations.
