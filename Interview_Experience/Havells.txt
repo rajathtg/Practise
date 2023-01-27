@@ -1,0 +1,31 @@
+Text File Data : "Hi How are you"
+
+Hi,1
+How,1
+Hi,1
+you,1
+
+rdd1=sc.read.textFile("path")
+rdd2=rrd1.flatmap(lambda x:x.split())
+rdd3=rdd2.map(lambda x:(x,1))
+rdd4=rdd3.reduceByKey(lambda x:(x+1))
+rrd5=rrd4.countByValue()
+rrd4.collect()
+
+Output:
+======
+Hi,2
+How,1
+you,1
+
+------------------------------------------------------
+
+df = spark.read.format("csv").option("inferSchema",True).option("delimiter",',').option("header",true).load("path")
+df.show()
+
+Average sal dept wise?
+
+Window function..
+
+window = df.Window.groupBy("Dept_Id")
+avg_sal = df.withColumn("Avg_Sal",Avg() over(window))

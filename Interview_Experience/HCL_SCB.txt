@@ -1,0 +1,49 @@
+
+Read a CSV file, with : delimiter, A, B, C, run a rank on col A and load data into Hive filter rank 1
+
+
+
+df=spark.read.format("csv").option("delimiter",":").option("inferSchema",True).option("Header",True).load("path")
+
+from pyspark.sql.functions import *
+
+df1=df.select("A")
+w = df1.Window.orderBy(A)
+df2=df1.withColumn("rn",rank().over(w)).filter(rn=1).drop(rn)
+
+df2=spark.write.hive(path)
+
+Read a table add extra column c with value INFO and write into file with '|' delimiter
+
+df=spark.read.format("csv").option("delimiter",",").option("inferSchema",True).option("Header",True).load("path")
+
+df1=df.withColumn("C",value='INFO')
+
+output=df1.write.saveTextFile("path").option("delimiter",'|')
+
+rn,dense_rank and %rank
+
+1--1--1
+1--1--1
+2--3--2
+3
+4
+5
+5
+6
+
+File with | delimiter
+fetch 5th column and write it into new file
+
+cat abc.txt >> file.txt
+
+dir
+files having .sh .hql .log
+
+pwd
+cp *.sh /tmp
+
+
+Difference between Sort By and Order By
+
+

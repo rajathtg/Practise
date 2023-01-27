@@ -1,0 +1,10 @@
+-How to Identify the Null/junk values and replace with constant at time of creating DF
+-If job fails at some point and 40k records are transffered and how would you transfer remaining 1M by not duplicating by identifying the only missing values
+-What exactly is structype and structfield
+-What all are the data cleansing/profiling you're aware of?
+-Are you aware of Data Warehousing?
+-What all are the transformations/actions you've used?
+-Types of joins you're aware of, left anti join, left semi join etc?
+-There is table A and B, how do you join extracting only null values and also taking care of duplicates?
+-Pivoting, Exploding in PySpark?
+-Tuning in Spark

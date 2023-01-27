@@ -1,0 +1,35 @@
+
+
+Table A
+ID Emp Sal
+All the columns from Table A
+
+
+Table B
+ID Name
+Only One column from B
+
+df1=spark.read.format("csv").option("inferSchema",True).option("header",True).option("delimiter",",").load()
+df2=spark.read.format("csv").option("inferSchema",True).option("header",True).option("delimiter",",").load()
+
+df3=df2.select("id")
+
+df4=df1.join(df3,on )
+
+20 Data nodes, 8 GB RAM, 1 TB data
+
+RDD_Parent
+
+RDD1
+
+RDD2
+
+
+Emp:
+ID EmpName	Sal, bottom 3 salaries
+
+
+select e.sal,e.rn
+(select *,dense_rank() over(order by sal) rn from emp) e
+where rn in (1,2,3);
+
