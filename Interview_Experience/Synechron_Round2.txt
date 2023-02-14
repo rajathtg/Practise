@@ -1,0 +1,153 @@
+
+10 Nodes
+64GB RAM
+15 Cores
+
+8 - 12 GB - Dim Geography Data
+
+There needs to be provided 5 cores for a better Throughput of all the Services
+
+Total nu
+
+Dynamic Allocation of Executors
+
+1 GB for Appliocation Manager
+63 GB
+
+
+
+21 GB 
+29 Executors
+
+3 executors with 5 cores/exec 
+
+1 Executor with 15 Cores, memory 
+Decrease the no.of executors
+
+
+rdd.getNumPartition()
+##of partitions
+1a
+1b
+1c
+
+++++++++++++++++++++++++++++++++++
+
+
+File1:
+Emp ID Sal 
+
+File2:
+Dept ID
+
+df1=spark.read.format("csv").option("inferSchema","true").option("header","true").option("delimiter",",").load("file1")
+
+df2=spark.read.format("csv").option("inferSchema","true").option("header","true").option("delimiter",",").load("file2")
+
+df3=df1.join(df2,on df1.id=df2.id)
+
+df3.createOrReplaceTempView("emp_info")
+df3.sql("select * from emp_info").show()
+
++++++++++++++++++++++++++++++++++++++++++
+
+
+spark-submit \
+Mode \
+Cluster \
+Driver-memory \
+Executor ("enabling dynamic allocation","true") \
+Intial executors \
+max executors \
+min executors \
+
+
+
+
+reduceByKey vs GroupByKey
+
+
+l=[1,2,3]
+a=map(lambda x:x+1,l)
+print(a)
+
+2,3,4
+
+
+
+###Connection Strings
+minioclient.configurations("access_key","")
+minioclient.configurations("secret_key","")
+a=minioclient.configurations("abs_path","<bucket>/<dir>/<file>")
+
+rdd1=sc.parallelize(a)
+rdd1.collect()
+
+rdd2=rdd1.reduce(lambda x:x+1)
+rdd2.collect()
+
+##2,3,4
+
+df1=spark.read.format("csv").option("inferSchema","true").option("header","true").option("delimiter",",").load("a")
+
+df2=spark.read.format("csv").option("inferSchema","true").option("header","true").option("delimiter",",").load("a")
+
+df3=df1.join(df2,on df1.id=df2.id)
+
+df3.createOrReplaceTempView("emp_info")
+df3.sql("select * from emp_info").show()
+
++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Why coalesce is better than repartition?
+Why reduceByKey is better than groupByKey?
+What is Dynamic partition?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

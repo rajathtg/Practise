@@ -1,0 +1,5 @@
+Kafka side any authentication is done?
+Data cleansing/Data Modelling?
+Python for reading file/writing file?
+What is your contribution?
+What are the various packages you've used in Python?

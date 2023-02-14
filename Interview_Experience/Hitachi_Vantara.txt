@@ -1,0 +1,100 @@
+Marks	
+600		1	1	1
+600		2	1	1
+595		3	3	2
+590
+
+Table A
+C
+1 - a1
+1
+1
+
+Table B
+C
+1 - b1
+1	b2
+
+Inner
+1
+1
+1
+1
+1
+1
+
+Left
+1
+1
+1
+1
+1
+1
+
+Right
+1
+1
+1
+1
+1
+1
+
+Table A
+Date	Amount
+Jan1	1500
+Feb1	1000
+Mar1	2500
+Apr1	2000
+May1	3000
+
+Result:
+Date	Amount
+Jan1	1500
+Feb1	1000
+Mar1	2500
+Apr1	2000
+May1	3000
+
+preceeding follow
+
+select r.date,r.amount,(r.sum_amount/3) avg_sum from
+(select date,amount,sum() over(Amount rows 2 preceeding + Current row)sum_amount from table A) r
+
+1st of Feb: []
+Last Working Day of the Previous Month: []
+Saturday/Sunday[]
+Holidays to be considered: []
+
+
+input_date = input("Please provide a date: ")
+lwd = input_date 
+
+def lwdPreviousMonth:
+	if input_date==sat and input_date==sun:
+	
+Start Schema?
+SCD Logic?
+If data is inactive and having price value how will you consider it in the final sum? use the surrogate key?
+Linked List and Array List difference?
+Kafka Insert key policy?
+	
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

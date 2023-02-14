@@ -1,0 +1,57 @@
+
+
+sample.csv file
+
+from pyspark.sql import SparkSession
+
+spark=SparkSession.builder.master("local[*]").getOrCreate()
+
+df=spark.read.format("csv").option("inferSchema",True).option("header",True).load("sample.csv").option("delimiter",'|')
+
+df1=df.filter()
+
+df2
+
+df3
+
+
+
+sample.txt
+5th occurance
+id	name education exp lang
+1|name1|b.e|8|java|
+Junk data
+2|name2|B.tech|5|Python|
+Junk data
+3|name3|Msc|9|C
+
+
+schema=structType( \
+	   structField["id","intType",True]\
+	   ,structField["name","stringType",True]\
+	   ,structField["education","stringType",True]\
+	   ,structField["exp","intType",True]\
+	   ,structField["lang_prof","stringType",True]
+	   )
+	   
+df=spark.read.format("csv").option("inferSchema",True).option("header",True).load("sample.csv").option("delimiter",'|').option("mode","DropMalformed")
+
+
+
+df
+Name Age 
+
+df1=df.withColumn("Gender",lit("M/F"))
+
+df2
+Name Age Gender
+
+
+
+
+
+
+
+
+
+

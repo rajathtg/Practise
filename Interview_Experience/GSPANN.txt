@@ -1,0 +1,34 @@
+Problem Statement: Migrate data from MySQL to Hivesrc: mysqltgt: hivetablename 
+
+mysql: company.employeesrc 
+schema: id, name, salary, joiningDatetgt 
+
+schema: id, firstName, lastName, salary, joiningDate 
+
+transformation: split name by ‘-‘ and create firstName and lastName 
+
+connection details -hostname: http://somehostname:3306user: mysqluserpwd: mysqlpwd
+
+from pyspark.sql import SparkSession
+
+spark=SparkSession.builder.master(" ").enableHiveSupport().getOrCreate()
+
+
+
+df=spark.read \
+	.mysql("jdbc_driver","MySQL")
+	.option("url", http://somehostname)
+	.option("username", "3306user")
+	.option("password", "mysqlpwd")
+	.option("query","select id, name, salary, joiningDatetgt from company.employeesrc")
+
+df.show()
+
+df1=df.createTempView("employee_table")
+
+df2=df1.sql("select id, split(name,'-', salary, joiningDatetgt ")
+
+df2.show()
+
+df2.write.saveAsTable("hivetablename")
+

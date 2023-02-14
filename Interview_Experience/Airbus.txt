@@ -1,0 +1,36 @@
+a=[1,3,5,7,9,11,13,15]
+b=[0,2,4,6,8,10,12,14,16]
+
+c=a.extend(b)
+
+Output: Give a merged list i.e. sorted
+
+==============================================================================
+
+emp_name	role	sal	row
+R			
+R
+
+select * from
+(select * from emp_table
+group by emp_name,role,sal)
+where emp_name = "Rajath" 
+
+===============================================================================
+
+What is shuffling in Spark
+Which is better Reduce_ByKey or Group_ByKey?
+Difference between Dictionary and Linked List?
+
+
+App_Name User_ID	login_Time
+
+Output:
+Application wise User Logged In current month
+
+df.
+df.sql("select * from emp_table where ")
+
+
+
+

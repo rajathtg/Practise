@@ -1,0 +1,61 @@
+
+Table 
+
+emp_name	dept	sal		Date
+R			Sale	200		2-Feb
+R
+
+emp_name on dept wise cum(sal) > 5000 between 1 Feb to 10 Feb
+
+
+windows functions
+
+
+select e.*,
+case when e.roll_sum > 5000 then 'Highest_Salary' else 'Lowest_Salary' end 'HighOrLow'
+from
+(
+select e.* from 
+(select *,sum(sal) over(partition by dept order by sal asc rows unbounded_preceeding and current row) 
+		as roll_sum from emp_table) e
+		
+		where e.date between (1 Feb,10Feb) and e.roll_sum > 5000 ;
+		)
+		
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+		
+A={'AAB':'ABCD'}
+If with open is used output is String, I need it to be Dict
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+A=(1,2,3)
+res=A(1)+2 ???
+print(res)
+Output=(1,4,3)
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Storage 1
+-Storage Issue is there
+ORC > Desr is not good
+RC have Comopression when it comes to Storage
+
+Stotage 2
+-No Storage issue
+-Parquet/Avro is good in SerDe
+
+Req: Freq Read and Less Write, File Formats Parquet,ORC,RC,Avro and CSV
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Any Data Type used in Hive and not supported by Spark, vice versa??
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+
+
+
+
