@@ -1,0 +1,82 @@
+Types and Serialization:
+------------------------
+-Till now we have learnt how create a Kafka Producer and send data to Kafka Cluster
+-However we have been sending simple text messages, in real life they're never simple plain text messages, they're complex Java objects
+-Kafka programming is maining dealing with data records in variety of formats and that brings two critical questions
+	-How to create Java Types(POJOs)?
+	-How to Serialize your Java Types(POJOs)? - To send data to Kafka
+	-A simple example can manage with 4 to 5 types, but if there are 100s of different types (they're complex), how to overcome it
+	-We need to create a POJO for multiple such types, can't be done manually, how to automate it?
+***Note: POJO stands for Plain Old Java Object
+-Our goal is simple, 
+	-It is to define a Simple Schema using a Schema definition language
+	-Later we want our IDE or build tool to Auto-generate Java Class definition from Schema definition automatically
+-There are many ways and tools achieve this, however there are two alternatives I can suggest for Kafka, 
+	-JSON schema to POJO
+	-Avro schema to POJO
+-We have enough open source support to generate POJO for both the options
+-To serialize the Java Types, we can use,
+	-JSON Serialization
+	-AVRO Serialization
+
+Summary : 
+Complex Java Objects >> Create a POJO >> Serialize to Send it to Kafka
+---------------------------------------------------------------------------------------------
+
+Creating POJO from JSON Schema:
+-------------------------------
+We will define a few Schema Definitions and generate POJOs out of those Schemas:
+Task:
+	-To model an invoice event
+	-Invoice is a complex Java Object, that contains below fields,
+		ClassName			Invoice
+		FieldName			Type
+		----------			--------
+		InvoiceNumber		String
+		CreatedTime			Long
+		CustomerCardNo		String
+		TotalAmount			Number
+		NumberOfItems		Integer
+		PaymentMethod		String
+		TaxableAmount		Number
+		CGST				Number
+		SGST				Number
+		CESS				Number
+		InvoiceLineItem		Array Of LineItem***
+		
+	-***Array of Invoice LineItem is again another complex object which is defined separately and contains items details,
+		ClassName			LineItem
+		FieldName			Type
+		----------			--------
+		ItemCode			String
+		ItemDescription		String
+		ItemPrice			Number
+		ItemQty				Integer
+		TotalValue			Number
+		
+	-There is also need of defining a separate object for Delivery Address,
+		ClassName			LineItem
+		FieldName			Type
+		----------			--------
+		AddressLine			String
+		City				String
+		State				String
+		PinCode				String
+		ContactNumber		String
+		
+	-Finally we need to combine all of this objects to create a PosInvoice, this PosInvoice inherits the Invoice object****, later PosInvoice will be transmitted to Kafka Broker, however here we have modelled various objects separately and also included a scenario for extending a class
+	-This is similar to modelling the usual Java Classes
+		ClassName			PosInvoice
+		FieldName			Type
+		----------			--------
+		StoreID				String
+		CashierID			String
+		CustomerType		String
+		DeliveryType		String
+		DeliveryAddress		DeliveryAddress
+		
+	-Execution:
+		-We need to define above objects using simple schema definition language and automatically generate serializable classes
+		-To achieve above step we're using simple open source project, jsonschema2pojo, this is a reasinable choice to generate both Java and Scala Code
+	-Skeleton Code:
+		-Let's define Schema for the Object post creation of a Maven project

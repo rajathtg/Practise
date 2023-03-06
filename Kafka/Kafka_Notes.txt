@@ -1,0 +1,286 @@
+Apache Kafka:
+------------
+
+What is Apache Kafka?
+-Apache Kafka is a highly scalable, and distributed platform for creating and processing streams in real-time
+	-Creating real-time data streams
+		-Receiving data from multiple data points on a real-time basis (minutes,seconds / milliseconds)
+	-Processing real-time data streams
+		-Processing the messages immediately after receiving it (within minutes, seconds / milliseconds) and not waiting until all data is accumulated
+		(Ex: Immediately alerting individual if he crosses threshold/limit of internet usage)
+
+Apache Kafka - How does it work?
+-It works as Pub-Sub messaging system
+-It typically has three components, Message Producer, Message Broker and Message Consumer
+	-Producer : It is client servers that produces messages
+	-Broker : Responsible for receiving message and producer and storing on local storage (Kafka Cluster)
+	-Consumer : Again client servers/machines to read the messages from broker and process it
+	
+Apache Kafka History:
+-Craeted at LinkedIN and open sourced in 2011
+-It had only below components initially and it wasn't streaming platform
+	-Server Software - Broker
+	-Client API - Java Library
+		-Producer API
+		-COnsumer API
+-Below three components was later augmented to Kafka to make it real-time processing engine
+	-Kafka Connect (Open Source)
+	-Kafka Streams (Open Source)
+	-KSQL (Has licensing restrictions)
+-Summary of evolution since Kafka came into existence
+	-Kafka Broker : Central server system
+	-Kafka Client : Producer and Consumer API libraries
+	-Kafka Connect : Address integration solution for which Kafka was initially designed
+	-Kafka Streams : For creating real-time stream processing applications
+	-KSQL : Aiming to become realtime database
+
+Where does it fit in Enterprise Application Ecosystems?
+-New BI
+-Elisa
+
+---------------------------------------------------------------------------------------
+
+Apache Kafka Core Concepts:
+---------------------------
+1.Producer : 
+	-It's an application that sends data/message record
+	-It's small to medium size piece of a data
+	-Can have a different meaning, schema or record structure for us
+	-For Kafka it is a simple array of bytes
+	-If I want to send data on a file, each line on a file will be sent as a text, for Kafka it's an array of bytes
+	-If I want to send all records from a DB table, I'll post each row as a message
+2.Consumer :
+	-It's an application that receives a data
+	-Producer never targets any consumer, it just sends data to Kafka Server and Consumers should come forward to read the respective data
+	-The conumer reads/receives messages, process it and again requets, loop continues
+3.Broker :
+	-It's a meaningful name given to Kafka Server
+	-All that a Kafka is doing is to act as a Message Broker between a producer and a consumer
+4.Cluster :
+	-Group of servers/computer acting together for a common purpose
+	-Kafka is also a distributed system, hence cluster means same thing for Kafka, Kafka cluter is a group of computers each running an instance of a Kafka Broker
+5.Topic :
+	-An arbitrary name given to a dataset or a unique name for a datastream
+	-It's like a table in the DataBase
+	-Once topic is in place, the producer and consumer is going to send and receive the data by the topic
+6.Partitions :
+	-As Kafka is a distributed system and it runs on a cluster of computers
+	-It is evident that Kafka can easily break topic into smaller partitions and store those partitions on different machines, this approach will solve the capacity problem
+	-Partition is nothing but, small and independent portion of a topic
+	-The number of partitions for a topic is decided by a Developer/ an Architect
+7.Partition Offset :
+	-Unique sequence ID of a message in the partition
+	-The sequence ID is automatically added by broker for every mesage record as it arrives into a partition (completely depends on the order of arrival), once assigned it is not going to be changed, they're immutable
+	-Offsets starts from 0th index
+	-The offsets ID is local for the given partition and not global across partitions
+	-Acts as both increasing the capacity and also distributing the load indirectly makes Kafka distributed and scalable system
+
+Note: To locate a particular message, we should know the Topic_Name > Partition_Number > Offset_Number
+	
+8.Consumer Groups :
+	-Multiple consumers can form a group to share the work load
+	-Consider there are 500 partitions, if there is only one consumer, it is difficult to read across all 500 partitions
+	-Let's introduce 100 consumer groups, each starts consuming from 5 partitions, that's how we divide and rule
+	
+Note: 
+1.The number of parallel consumers depends on the number of partitions in the topic
+2.Kafka never allows more than one consumer to read the data from same partition simultaneously (helps in avoiding duplication)
+
+--------------------------------------------------------------------------------------
+
+Kafka Connect:
+--------------
+
+-The producer can push/publish the data onto Kafka
+	a. Producer can publish the data by picking from a source sysrtem
+	b. Provided the source code of source system must be practically feasible to modify source code to create an embeded Kafka producer using Kafka producer APIs
+	c. Here the embeded Kafka producer becomes a part of source code application, it runs inside the application and sends invoices to Kafka
+-Consider there is no source code or practically not possible to modify the source system code, then what?
+-Therefore, an independent Kafka producer outside source system can be created for reading and writing, then Kafka Connect is right choice to make, that's what the Kafka Connect is designed for
+-It's more of configuration
+-Same thing can be repeated at the Consumer end
+Source > KafkaConnect (Source Connector) > KafkaCluster > KafkaConnect (Sink Connector) > Sink 
+-Source Connector internally uses producer APIs
+-Sink Connector internally uses consumer APIs 
+
+How Kafka Connect Works?
+-We have Kafka Connect Framework to do the needful
+	1. Source Connector
+		i. Source Connector
+		ii. Source Task
+	2. Sink Connector
+		i. Sink Connector
+		ii. Sink Task
+-The frame work takes care of all other issues like,
+	1. Fault Tolerance
+	2. Heavy Lifting
+	3. Bunch of other problems
+-As a developer all we need to do is to implement, two Java classes
+	1. One class for SourceConnector and SinkConnector
+	2. One class for SourceTask and SinkTask
+ex: JDBC-Kafka Connect for SQL DBs
+	
+Can we scale Kafka Connect?
+-Kafka COnnect itself is a cluster, each individual unit within Connect cluster is called as a Connect worker
+-Let's consider a source connector for a reason, each worker can connect to each table in a DB
+-lllrly the Sink Connector
+-The scalability depends on adding of a new worker, we can do it dynamically
+
+Note: There is no requirement of keeping a source and sink connector on two different serveres, they can be ran on a same server
+
+Can we do some transformations?
+-It was merely designed to do a plane copy or data movement, nothing else
+-But still it allowed a fundamental Single Message Transformations on the fly (Both for Source and Sink)
+	a. Add a new field in your record using static data or metadata
+	b. Filter or Rename Fields
+	c. Mask some fields with a Null Value
+	d. Change the Record Key
+	e. Route the record to a different Kafka Topic
+-But it is not that effective when it comes to real life examples
+
+Kafka Connect Architecture?
+-There are things to know mainly
+	a. Worker
+	b. Connector
+	c. Task
+-We know Kafka Connector is a cluster and it runs one or more workers
+-Let's consider an example of Kafka Connector with three workers which are fault tolerant and uses Worker Group-1 id lllr to consumer group id to form a cluster
+-When all the workers are started with same group id, they'll join hands to form a Kafka Connector as a cluster
+-Workers are main work horse of Kafka Connect, that means they work like a container process and they'll be responsible for starting connector and tasks
+-These workers are fault tolerant and self managed, lllr to executors in Spark and also there is a new worker, the tasks are shared amongst them
+-In a nutshell, these wokers give us,
+	-Reliability
+	-High Availability
+	-Scalability
+	-Load Balancing
+
+Copy of Data?
+-We need to copy it from a RDBMS
+	-Download JDBC source connector and install within the cluster, it means all jar files and dependencies are made available for the workers
+	-Next thing to configuring the connectors
+		a. DB Connection Details
+		b. Source Table List
+		c. Polling Frequency
+		d. Max parallelism
+-First start the connector and laster publish a source/sink connector
+-Kafka Connect also offers us a Rest API based or Command Line based interface to do the needful
+-Now, one of the connector will start a connector process, workers are like containers, they'll start and run other processes, this time it is a connector process
+-Now connector process is responsible for two main things,
+	a. Task Split (Helps is deciding parallelism)
+	b. Task List & Configuration
+ex:
+DB Connection details=10.x.x.x
+Source Table List=T1,T2,T3,T4,T5
+Polling Frequency=5 Min
+Max Parallelism=5
+-Splitting logic for different source systems is written in the connector code and we can opt for configurations options accordingly, therefore we must our connector and configure it accordingly
+
+Note:
+For Source:
+-----------
+-All the work of connecting to source, getting data will be done by tasks, number tasks is configured based on requirements, once all data is collected, it will handed over to Worker
+-Worker is responsible to send it to a Kafka Broker
+
+For Sink:
+---------
+-Worker will get all the data from Kafka Broker and tasks are responsible to inserted to the target system
+
+How to split the input??? >>> Taken Care of by Connector class
+How to interact with the external system??? >>> Taken Care of by Tasks class
+
+--------------------------------------------------------------------------------------------
+
+Kafka Streams:
+--------------
+
+What is Real-time Stream Processing?
+-Data Streams are:
+	-Unbounded - No definite starting or ending Often Infinite and Ever Growing Sequence of data in small packets (KB)
+-Common Examples :
+	1. Sensors - From transportation vehicles, Industrial equipments, healtcare equipments, wearables etc
+	2. Log Entries - Mobile apps, web applications etc
+	3. Click Streams - E-commerce, news, video streaming, online gaming
+	4. Transactions - Stock market, e-commerce, online food order, logistics etc
+	5. Data Feeds - Social media activity, traffic activity etc
+List goes on...
+-Now we have a challenge on how to process them,
+	-Common approach is to collect and store them in a storage system
+	-Post which,
+		-One Request response approach handled through SQLs i.e. we can query data to get answers to specific question, it is like getting answer to one question at a time and also getting answer as quickly as possible
+		-Second approach is to create one big job to find answers for bunch of queries at one go by scheduling the same set of queries for each hour or every day
+		-The stream processing sits in between above two approaches, in this approach we ask question once and system needs to give an answer of most recent version all the time, it is a continuous process based on the data available till date
+		-Even in the stream process, we will be performing same set of operations as we do in the 1st and 2nd approache like grouping, data processing etc, but in a continuous manner
+		-Using DB for Stream Process is feasible, but tiring, not simple, exhausting, best way to overcome these tiring process is to opt for Kafka Streams
+-Can't we use Kafka Client APIs - Producer/Consumer and Kafka Connect for realtime stream processing, answer is Nope!!
+-Realtime stream processing is not similar/as straight forward as Data Integration, it posses new challenges and it cannot be solved using these Data integration tools such as Kafka Client APIs - Producer/Consumer and Kafka Connect
+
+What is Kafka Streams?
+-At most basic level:
+	-It's a Java/Scala Library for building applications/microservices
+	-The input data must be in Kafka Topic, starting point for Kafka Streams is one or more Kafka Topics
+	-The most powerful feature of Kafka Streams is being a simple library that you can embed Kafka Streams in your microservices
+	-Deploy anywhere ex: virtual machine,container,kubernetes, No Cluster Needed
+	-Out of the box parallel processing, scalability, and fault tolerance
+-Kafka Stream Offers following things:
+	-Working with streams/tables and interoperating with them
+	-Grouping and continuously updating Aggregates
+	-Join streams, tables and a combination of both
+	-Create and manage fault-tolerant, efficient local state stores
+	-Flexible Windowing capability
+	-Flexible Time Schematics - Event time, Processing time, Latecomers, Higher watermark, Exactly-once processing, etc
+	-Interactive Query - Serving other microservices using request response interface, over and above your stream applications
+	-Provides set of unit testing tools
+	-Easy to use DLS and extensibility to create custom processors
+	-Inherent fault tolerance and dynamic scalability
+	-Deploy in containers and manage using Kubernetes cluster
+
+Let's look into Kafka Streams Architecture?
+-Kafka Streams : Is basically continuously reading stream of data from One or More Kafka Topics and later you develop your application logic to process those streams in real-time and take necessary action
+-DataSources >>> Kafka Cluster >>> Kafka Streams
+-Again here, Kafka Streams framework internally creates number of tasks based on the topic partitions so it can consume data in parallel, the number of tasks is deducted by framework itself, no need to code specifically
+-Kafka Streams framework is very smart that it distributes & re-balances itself based on the available threads on a server, it happens automatically, even without starting or stopping an application
+
+--------------------------------------------------------------------------------------------
+
+KSQL:
+-----
+-Provides an SQL interface to Kafka Streams
+-It has two operating modes,
+	-Interactive Mode - Using CLI, web based UI to submit response and get an immediate response, works similar to any SQL interface, ideal for development environment
+	-Headless Mode - Non interactive mode, that allows to submit your KSQL files and executed by KSQL servers, ideal for Production environment
+-KSQL Cluster is separate from Kafka Cluster
+-KSQL Server Cluster internally communicates with Kafka Cluster for reading inputs and writing outputs
+
+KSQL Components are as below:
+	-KSQL Server
+		-KSQL engine : Responsible for KSQL statements and queries
+		-REST Interface : To power the KSQL clients, KSQL clients send the commands to this and this internally communicate to the KSQL Engine to execute the command
+		-Can be deployed in Interactive/Headless Mode
+		-Can deploy multiple KSQL servers to form a Scalable KSQL cluster
+	-KSQL Client (CLI/UI)
+-KSQL Client >>>> KSQL Server Cluster >>>> Kafka Cluster
+
+What can you do with KSQL?
+-In a NutShell, KSQL allows you to use Kafka Topics as table,
+	-Grouping and aggregating on your Kafka Topics
+		Select store_id,count(*) from invoices group by store_id;
+	-Grouping and aggregating over atime window
+		select store_id,count(*) from invoices WINDOW TUMBLING(SIZE 1 HOUR) GROUP BY store_id;
+	-Apply Filters
+		select store_id,count(*) from invoices WINDOW TUMBLING(SIZE 1 HOUR) WHERE UCASE(locality)='SOUTH BANGALORE' GROUP BY store_id;
+	-Join two topics
+	-Sink the result of your query into another topic
+
+--------------------------------------------------------------------------------------------
+
+When to Use What?:
+------------------
+
+-Basically we have three things in front of us:
+	-Data integration pattern
+	-Microservice architecture for stream processing
+	-Real-time streaming in Data Warehoiuse and Data Lakes
+-I need to focus more on:
+	-Kafka Broker and Internals
+	-Kafka Client APIs
+	-Kafka Streams

@@ -1,0 +1,156 @@
+Kafka Producers Internals:
+--------------------------
+-Kafka Producer API is primarily made available in Java, in this course we shall use the Java APIs .i.e Kafka Client for Java
+https://kafka.apache.org/documentation/#api
+
+Problem Statement:
+==================
+-Create a simplest possible Kafka producer code that sends one million string messages to a Kafka topic
+-Kafka Producer APIs are pretty straight forward, include following steps:
+	-Step1 : To set configurations to control behaviour of Producer API
+	-Step2 : To Create a Producer Object
+	-Step3 : To send all the messages
+	-Step4 : To close the Producer
+
+-In Step4: We package message content inside a producer record object and with atleast two mandatory argument names,
+	-Kafka Topic Name >> The destination to which message needs to sent
+	-The Message Value >> The message to be sent / content of the message
+	-Below optional items/arguments can be also specified,
+		Very rarely set:
+			-Target Partition :
+			-Timestamp
+		At times becomes mandatory argument:
+			-Message Key : One of the most critical argument and used for many purposes, such as partitioning, grouping and joins 
+			
+Kafka Producer Serializer:
+--------------------------
+-The Kafka Producer is suppose to transmit the Producer record to Kafka Broker over the network
+-However it doesn't immediately transfer the records, each goes through the 
+	-Serializer
+	-Partitioner
+	-Kept inside a Buffer
+-Serialization of data is mandatory, without serialization we cannot transmit the data over a network, however the Kafka doesn't know how serialize your key and a value
+-To make Kafka understand serialization we need to specify a Key and Value serializer class becomes mandatory i.e. supplied as part of the Producer configurations
+-In the previous example we used Integer Serializer for the Key and String Serializer for the Value, however these serializers are the most elementory serializers and they do not cover the most of the use cases
+-In real life scenarios events are represented by Complex Java Objects, these objects must be serialized before the producer can transmit them to a Broker
+-String Serializer may not be of great help in real-life scenarios, for such cases Java gives generic serializer library such as Avro or Thrift
+-Alternatively we also have an option to create a custom serializer
+
+Kafka Producer Partitioner:
+---------------------------
+-Every Producer message will have a mandatory Topic name that acts as a Destination address of the data
+-However Kafka Topics are partitioned and hence the Producer has to decide on which Partition the message has to be sent
+-There are two approaches to specify the target partition number for the message,
+	-Set partition number argument in the Producer record, but passing a partition number is rarely used
+	-Supply a Partition class that implements the desired partitioning startegy and assigns a partition number toeach message at run time, this can be achieved by setting a custom partitioner using the properties object, however creating a custom partitioner is often not needed, why???
+	props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, MyPartitioner.class.getName());
+	-The answer to above two points is, Kafka comes with a default partitioner and it is the most widely used in the market, the default partitioner takes one of the below two approaches to determine the destination topic address
+		-Hash Key Partitioning : 
+			-This approach is based on the message key, when the message key exists, default partitioner applies hashing algorithm on the key to determine the partition number for the message
+				MyKey >>> hash(key)%#partitions >>> 3
+			-It is as simple as hashing key to convert it into a numeric value
+			-Then use the hash number to deuce the target partition number
+			-Hashing ensure that, all the messages with same key goes into the same partition
+			-However this algorithm takes the total number of partitions as one of the input
+			-So, if total partitions increase, default partitioner starts giving a different output
+			-So, it is good to over provision the partitions by 25% at the time of Topic creation, there is no harm, if plan is to have 100 partitions, we can go for 125 partitions
+		-Round Robin Partitioning : 
+			-If the message key is Null this approach is used to distribute the equal number of messages across the available partitions
+			
+Kafka Message TimeStamp:
+------------------------
+-As discussedf earlier, this is also optional
+-However, for real-time streaming application, the timestamp is a most critical value, so even though it is not explicitly specified, it is automatically timstamped
+-Kafka allows us to implement one of the two Message Timestamp mechanism,
+	-Create Time : This is the time when the message was produced
+	-Log Append Time : This is the time when the message was received at the Kafka Broker
+-However at a go we can't use both, the application must decide any of the timestamp method at the time of creating the Topic
+-Setting up of deafault timestamp method for a Topic is straight forward,
+	-message.timestamp.type=0 ##In the Topic config, to use the Create Time
+	-message.timestamp.type=1 ##To use Log Append Time
+-By default it is always the Create Time
+-The Producer API automatically sets the current Producer time to the producer record timestamp field
+-However we can override the auto-timestamping by explicitly specifying the timestamp argument
+-We can go for explicitly specifying by Developer or automatically using the Producer Time
+-When opted for a Log Append Time, the Broker will override the Producer timestamp with local Broker time before appending the message to a topic partition/log
+-Preferring which timestamp to use depends completely on the requirement
+
+Producer Message Buffer:
+------------------------
+-The Producer object consists of a partitionwise Buffer space that holds the record that haven't been sent to the Server
+-The Producer also runs a background I/O thread that is responsible to turning these records into a request and transferring them to Server/Cluster
+-The buffering of message is designed to offer two advantages,
+	-Asynchronous send API
+	-Network Round Trip Optimization
+-Buffering arrangement makes the send method Asynchronous : It means send method will add message to buffer and return without blocking, those records are later transmitted by the background I/O thread
+-This method is quite convincing as your send method is not delayed due to Network Operation, buffering also offers the I/O thread to combine multiple messages from the same buffer and transmit them together as a Single Packet to achieve a better throughput
+-There is a critical consideration, if the messages posted faster than message transmission, the Buffer space will be exhausted, then I/O might take some time combine and transmit in such cases, the Send method might throw exceptions
+-To overcome such exceptions we can increase the Producer Memory, the default memory for a Producer size is 32MB
+	-buffer.memory=HigherValue ###In the Producer Configurations
+	
+Producer I/O Thread and Retries:
+--------------------------------
+-Generally whenever the Broker successfully committs the message, it will provide a Success Acknowledgement or it will return an error
+-If the background I/O recieves an error or doesn't receive an acknowledgement it would try sending the message a few more times, before giving up / throwing an exception
+-The number of re-tries can be controlled by setting up the number of re-tries in the Producer Configurations
+-When all the retries are failed the I/O thread will return the error to the Send Method
+
+---------------------------------------------------------------------------------------------
+
+Horizontal Vs Vertical Scalability:
+-----------------------------------
+-Let's understand about Scalability of Producers
+-Apache Kafka was designed with Scalability in mind and scaling up Kafka is straight forward
+-Scaling up has two things based on the requirements,
+	-Adding multiple Producers
+	-Adding multiple threads within single Producer
+		-This is required if a Producer is producing 100s of messages per second, not for POS machine which generates a message at a rate of 1 message / minute
+-When to apply multi-threading in a Producer Application?
+	Ex: Let's take an example of Stock Exchange Data Center
+Stock Exchange >> TCP/IP >> Main Thread >> Thread Pool >> Kafka Cluster
+****Note : Main Thread + Thread Pool = Kafka Producer Application
+-The main thread listens to the socket and reads the data packet as they arrive, immediately hand-overs data to a thread pool to send it to a Kafka Broker and main thread again starts reading the next packet
+-Other threads or thread pool is responsible for un-compressing the packets, reading individual messages from the data packets, validating the message and further sending them to Kafka Broker
+-lllr scenario are seen in the other applications where the data is received at higher speed and we may need multiple applications to handle the load
+-The Kafka Producer is thread safe, so app can share the same producer object across multiple threads to send messages in parallel using the same Producer instance, therefore there will be no need of creating numerous Producer objects within same application/instance
+	-This helps in achieving a less resource intensive
+	-Faster processing as well
+	
+To create a Multi Threaded Producer:
+------------------------------------
+-Create a multi-threaded Kafka Producer that sends data from a list of files to Kafka Topic such that independent thread streams each file:
+Data Files >>> Kafka Producer Application (Main Thread + Thread Pool) >>> Kafka Cluster
+
+-Task is to create one main thread that reads multiple/bunch of files and later pool of threads to process each individual file and to avoid creating multiple/bunch of Kafka Producer instances, but as a recommended best practise we want to share the same Kafka Producer instance across all threads
+
+----------------------------------------------------------------------------------------
+
+At Least Once vs At Most Once:
+------------------------------
+-Apache Kafka provides message durability gaurantee by committing messages at the Partition Log, the durability just means, once the data is persisted by the Leader broker in the Leader Partition we cannot lose that message till the Leader is alive
+-However, if the Leader broker goes down we may lose the data, to protect the loss of the record, due to Leader Failure, Kafka implements replication using Followers
+-The Followers copies message from Leader and provides fault tolerance in case of Failure due to Leader
+-But there is a chance of creating Duplicate messages due to producer re-try mechanism, ex: Producer has sent message, Kafka received it and sent acknowledgement, but due to network error acknowledgement hasn't received to Producer, it pushes again therefore duplicate is created, this is called as At Least Once Semantics**********
+-We can avoid this by changing to At Most Semantics**********, by keeping retries=0, but disadvantage is we have high chances losing the input data
+
+Exactly Once Semantics-Producer Idempotence:
+--------------------------------------------
+-This concept is to achieve we don't lose anything and at the same time we don't create any duplicates, it can be achieved by enabling below mentioned property
+	-enable.idempotence=true
+-What exactly it does?
+	-Internal ID for Producer Instance (each producer is identified by a unique ID)
+	-Message Sequence Number(for each message/partition there is a sequence that increase monotonically, the broker knows which message it has received and what to expect next, like it has received x next it needs x+1, so no duplicates/missing message)
+-If duplicate messages are sent at Application Level this configuration cannot protect from duplicates
+-If two Producer instances are sending duplicates, that too is an application design problem
+-Idempotence is only gauranteed for Producer re-tries and should not re-try to send message at the application level
+-Idempotence is not gauranteed for the application level re-sends or duplicates send by the application itself
+
+Transactions in Kafka Producer:
+-------------------------------
+-This is simlar to Atomicity in the Databases i.e. Atomicity is a feature of databases systems dictating where a transaction must be all-or-nothing. That is, the transaction must either fully happen, or not happen at all. It must not complete partially.
+-The transactional producer goes one step ahead of a idempotence producer and provides transactional gaurantees i.e. ability to write to several partitions atomically
+-Example of PrintService implemented in UIDAI
+-To achieve this, topic should have Replication Factor >= 3 and min.insync.replicas >= 2
+-We have to take care below points as well,
+	-Transaction depends on Idempotence
+	-Transactional_id_config must be unique

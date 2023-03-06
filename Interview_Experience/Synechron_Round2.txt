@@ -102,6 +102,8 @@ df3.sql("select * from emp_info").show()
 Why coalesce is better than repartition?
 Why reduceByKey is better than groupByKey?
 What is Dynamic partition?
+How to drop a column in Hive?
+How to decide number of partition while reading file in Spark?
 
 
 

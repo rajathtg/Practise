@@ -1,0 +1,200 @@
+Kafka Flavours:
+	-Open Source - Apache Kafka
+	-Commercial Distribution - confluent.io
+	-Managed Service - confluent,amazon,aiven.io
+
+Installation Steps:
+-Launch https://www.confluent.io/get-started/?product=software
+-Sign Up for free and download local and community confluent zip files which is available for free
+-Copy to any directory and successfully extract it
+
+To start the single node Kafka Cluster (It's a two steps process):
+-Navigate to the path >> cd Kafka\confluent-7.3.1\
+
+*****Step1: To start zookeeper and we're using windows .bat file, unlike in Linux/Mac we prefer the .sh scripts
+Additionally we also need to pass an argument to it, i.e. zookeeper.propperties file
+-Start zookeeper >> bin\windows\zookeeper-server-start.bat etc\kafka\zookeeper.properties
+
+Note: If we get below error, it means that confluent download for windows has got a broken script, let's fix it...
+
+C:\Users\91961\Kafka\confluent-7.3.1>bin\windows\zookeeper-server-start.bat etc\kafka\zookeeper.properties
+Classpath is empty. Please build the project first e.g. by running 'gradlew jarAll'
+Mitigation:
+	-Go to bin/windows
+	-Open the file kafka-run-class.bat
+	-Search for Classpath addition for core
+	-Copy the below content above the first occurrence of "Classpath addition for core"
+	rem Classpath addition for LSB style path
+if exist %BASE_DIR%\share\java\kafka\* (
+	call :concat %BASE_DIR%\share\java\kafka\*
+)
+	-Try again starting the Zookeeper
+	-Voila! it worked
+	-Zookeeper is up and running
+	
+*******Step2: To start the broker services, even for this we need to pass a configuration file
+-Start Broker >> bin\windows\kafka-server-start.bat etc\kafka\server.properties
+-Voila! it also started
+
+What's a Zookeeper?
+-It is like a DB, where the Kafka Brokers store the bunch of shared information
+-It is used as a Shared system among multiple Kafka Brokers, to co-ordinate amongst themselves for various things
+-Very soon Zookeeper will see it's sunset, as confirmed by Kafka community
+
+-----------------------------------------------------------------------------
+
+Kafka Producer and Consumer:
+----------------------------
+
+1.Sending Data File to Kafka:
+	-Create Topic using Kafka-Topics
+	-Sending data file using Kafka-Console-Producer
+2.Reading Kafka Topic:
+	-Using Kafka-Console-Consumer
+	
+Steps to create a Kafka Topic:
+-Navigate to cd Kafka\confluent-7.3.1\
+-Fire Command >> bin\windows\kafka-topics.bat --create --topic test --partitions 1 --replication-factor 1 --bootstrap-server localhost:9092
+-Voila! Created topic test.
+
+Note:
+-The --partitions on a Kafka Topic can be decided using:
+	-Storage Requirement
+	-Parallel Processing Requirement
+-The --replication-factor on Kafka is used for creating number of replicas of partitioned data
+-As we're creating Kafka Topics, we need to keep the cliuster co-ordinates informed about it, who are the cluster co-ordinates, they're the bootstrap servers and their value is ip and port#
+
+Steps to send data to Kafka Topic (****Use cmd not powershell):
+-Let's use the Kafka-Console-Producer to do the needful
+-The producer uses --broker-list, while topic command uses --bootstrap-server both means the same
+
+Create a sampl1.csv file
+S#,Name,Class
+1,ABB,First Grade
+2,BBA,Second Grade
+
+C:\Users\91961\Kafka\confluent-7.3.1>bin\windows\kafka-console-producer.bat --topic test --broker-list localhost:9092 < ..\data\sample1.csv
+
+Steps to Read the messages on consumer end:
+C:\Users\91961\Kafka\confluent-7.3.1>.\bin\windows\kafka-console-consumer.bat --topic test --bootstrap-server localhost:9092 --from-beginning
+S#,Name,Class
+1,ABB,First Grade
+2,BBA,Second Grade
+
+*****Note: We used existing Producer and Consumer on the same server, we didn't go for producer and consumer on different servers and connecting using a TCP ip.
+
+===================================================================================
+
+Setting up a Multi-Node Kafka Cluster:
+--------------------------------------
+
+-To Start the Kafka Cluster in a Multi Node (.i.e 3 Node), following changes are incorporated,
+1. Create a multiple copies of below file in etc\kafka directory
+Default:
+server
+
+New Files:
+server-0
+server-1
+server-2
+
+2. Update the broker.id it needs to be unique
+Default:
+broker.id=0
+
+New Values:
+broker.id=0
+broker.id=1
+
+3. The #listeners=PLAINTEXT://:9092 is commented with port 9092, needs to have unique port for each
+Default:
+#listeners=PLAINTEXT://:9092
+
+New Value: To uncomment and change port values
+listeners=PLAINTEXT://:9092
+listeners=PLAINTEXT://:9093
+listeners=PLAINTEXT://:9094
+
+4. To log.dirs=/tmp/kafka-logs update the directory where the topics store the partitioned data, to be unique
+Default:
+log.dirs=/tmp/kafka-logs
+
+New Value:
+log.dirs=/tmp/kafka-logs-0
+log.dirs=/tmp/kafka-logs-1
+log.dirs=/tmp/kafka-logs-2
+
+Let's start the Multi Node Kafka Cluster:
+Step1: To start a Zookeeper
+>bin\windows\zookeeper-server-start.bat etc\kafka\zookeeper.properties
+
+Below Steps are two start Broker Servers:
+Step2: bin\windows\kafka-server-start.bat etc\kafka\server-0.properties
+Step3: bin\windows\kafka-server-start.bat etc\kafka\server-1.properties
+Step4: bin\windows\kafka-server-start.bat etc\kafka\server-2.properties
+
+-------------------------------------------------------------------------------------
+
+-To create a topic with 3 partitions
+-To start two consumers within the same consumer group/having same group id
+-Both the consumers will read the data from the same topic, however they're running in the same group, both consumers should share the workload
+
+Steps:
+
+1. To create new topic with 3 partitions
+bin\windows\kafka-topics.bat --create --topic multi_test --partitions 3 --replication-factor 1 --bootstrap-server localhost:9092
+
+2. To start a consumer along with a group name (connecting one bootstrap server is sufficient (past exp ;)))
+.\bin\windows\kafka-console-consumer.bat --topic multi_test --bootstrap-server localhost:9092 --from-beginning --group group1
+
+3. To start one more consumer with same group name:
+.\bin\windows\kafka-console-consumer.bat --topic multi_test --bootstrap-server localhost:9092 --from-beginning --group group1
+
+4. Let's start a producer and push the data
+bin\windows\kafka-console-producer.bat --topic multi_test --broker-list localhost:9092 < ..\data\sample1.csv
+
+5. One Consumer Read 585 Messages
+   Second Consumer Read 1342 Messages
+   Voila!
+
+6. How to Debug how it is divided?
+Let's go to Log directory it is located at C:\tmp
+-Seems like messages are divided across partitions, the first and second partitions are taken by Consumer 1 and 3rd partition is read by the consumer 2 and that's how the data is divided.
+-The logs were the messages created can be dumped to view the content
+bin\windows\kafka-dump-log.bat --files c:\tmp\kafka-logs-0\multi_test-2\00000000000000000000.log
+
+Summary:
+-The Kafka Cluster will store data in the Kafka Partitions
+-Each Partition is managed by a separate broker as a storage directory
+-The actual data sits inside a log file
+-We can use the log dump file to investigate the data files
+-Consumers can work in Consumer Groups to share the work load and achieve the work load balance to an good extent that is possible
+
+---------------------------------------------------------------------------------------
+
+To configure your development IDE:
+----------------------------------
+
+-Let's change the log directory from tmp to current across brokers and zookeeper, by updating the below files,
+server-0.properties
+Before: log.dirs=/tmp/kafka-logs-0
+After: log.dirs=../tmp/kafka-logs-0
+
+server-1.properties
+Before: log.dirs=/tmp/kafka-logs-1
+After: log.dirs=../tmp/kafka-logs-1
+
+server-2.properties
+Before: log.dirs=/tmp/kafka-logs-2
+After: log.dirs=../tmp/kafka-logs-2
+
+zookeeper.properties
+dataDir=/tmp/zookeeper
+dataDir=../tmp/zookeeper
+
+-Let's create an environmental variable for Confluent Kafka absolute path:
+setx KAFKA_HOME C:\Users\91961\Kafka\confluent-7.3.1
+SUCCESS: Specified value was saved.
+
+
+

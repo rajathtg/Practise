@@ -1,0 +1,253 @@
+Kafka Architecture:
+-------------------
+Definition : Apache Kafka is a horizontally scalable, fault-tolerant, distributed streaming platform
+1. Apache Kafka is a messaging broker, that is all, everything else is an API, library either to interact with Kafka Broker or work with the Data in real-time, Kafka Broker is a middle man between producers and consumers, three primary responsibilities of Kafka Broker are:
+	-Receive messages from the producers and acknowledge the successful receipt
+	-Store the messages in a log file to safegaurd it from potential loss
+	-Deliver the messages to the consumers when they request it
+
+Kafka Data Storage:
+Topics >> Log File >> Partitions >> Replicas >> Segments
+
+-Topic is a logical name to group your messages, similar to table in a DB to store records
+-Partitions under the topics are the physical directories
+	Ex: kafka-log-0 will have below 5 partitions:
+			1. invoice-0
+			2. invoice-1
+			3. invoice-2
+			4. invoice-3
+			5. invoice-4
+-Replication Factor : Number of copies for each partition to maintain on Kafka Cluster
+ex: In the example where we're working:
+Number of Replicas (15) = Partitions(5) * Replication(3) = 15
+
+--------------------------------------------------------------------------
+
+Classification of Partition & Replication:
+------------------------------------------
+1. The topic partition replicas can be classified into following categories:
+	-Leader Partitions
+	-Follower Partitions
+Ex: In our case we have 5 partitions and 3 replicas
+Topic Name: Invoice, 5 partitions and 3 replicas
+
+Leader Paritions(Replica 1)	Follower Partitions(Replica 2&3)
+invoice-0					invoice-0-1
+							invoice-0-2
+invoice-1					invoice-1-1
+							invoice-1-2
+invoice-2					invoice-2-1
+							invoice-2-2
+invoice-3					invoice-3-1
+							invoice-3-2
+invoice-4					invoice-4-1
+							invoice-4-2
+							
+91961\IdeaProjects\01-storage-demo\scripts>C:\Users\91961\Kafka\confluent-7.3.1\bin\windows\kafka-topics.bat --describe  --bootstrap-server localhost:9092 --topic invoice 
+Topic: invoice	TopicId: zYu798KNTGyZ0GYG6caWFQ	PartitionCount: 5	ReplicationFactor: 3	Configs: segment.bytes=1000000
+	Topic: invoice	Partition: 0	Leader: 2	Replicas: 2,1,0	Isr: 0,1,2	Offline: 
+	Topic: invoice	Partition: 1	Leader: 1	Replicas: 1,0,2	Isr: 0,1,2	Offline: 
+	Topic: invoice	Partition: 2	Leader: 0	Replicas: 0,2,1	Isr: 0,1,2	Offline: 
+	Topic: invoice	Partition: 3	Leader: 2	Replicas: 2,0,1	Isr: 0,1,2	Offline: 
+	Topic: invoice	Partition: 4	Leader: 1	Replicas: 1,2,0	Isr: 0,1,2	Offline: 
+
+
+Kafka Log Segments:
+-------------------
+-The messages are stored within the directories inside a log file, instead of creating one large file, it will create a several small files known as segments
+ex: kafka-logs-0 > invoice-0 > 00000000000000000000.log
+
+-Let's push 10 messages, the limit is set in AppConfigs.java file and post which the StorageDemo.java is triggered
+-C:\Users\91961\Kafka\confluent-7.3.1>.\bin\windows\kafka-console-consumer.bat --topic invoice --bootstrap-server localhost:9092 --from-beginning
+Simple Message-5
+Simple Message-6
+Simple Message-3
+Simple Message-8
+Simple Message-10
+Simple Message-1
+Simple Message-2
+Simple Message-4
+Simple Message-7
+Simple Message-9
+-Ten messages loaded and in parallel the .log files under topics also gets created
+
+Logic behind, creation and splitting of segment files:
+-When partitions receives its first message, it stores in the first segment, the next message also goes into the same segment, the segment file continues to grow until max segment limit is reached (By default, each segment contains either 1 GB of data or a week of data, whichever limit is attained first, but in our example it is 1 MB)
+-As the Kafka broker is writing into the partition, the segment limit is reached, it closes the file and starts new segment, that's how multiple files are created in each partition directory
+
+Kafka Message Offsets:
+----------------------
+-Each Kafka message in the partition is uniquely identified by the 64 bit integer offset, every Kafka message within a single partition is uniquely identified by the Offset
+Ex:
+Segment-00000 : M-0000	M-0001	M-0002	...........	M-30652
+Segment-30653 : M-30653	M-30654	M-30656	...........	
+
+Note:
+-The name of the segment is suffixed with offset number for easy identification
+-The segment ends and new one is created once the limit reaches i.e. 1 MB in our example
+-The offset is unique within the partition
+-Across the partitions/Topic, the offsets may be same, but within partition it is unique
+-Since offsets are not unique across a topic, to locate a specific message on a topic, we must know at least three things >> Topic Name, Partition Number & then the Offset Number
+
+Kafka Message Index:
+--------------------
+-The consumer application is requesting the messages based on the offset, Kafka allows consumer to fetching messages from a given offset number, this means if a consumer is looking for a message beginning with an index 100
+-Broker must be capable of locating such a message, to make broker to effectively locate a message based on given offset Kafka maintains index of offsets
+-The index offsets i.e. .index are stored in the Kafka Topic partitions directory along with the log file segments
+-However in many use cases, we might require to fech messages based on the timestamp, to support such requirement it also maintains .timeindex, this is also stored in the Kafka Topic partitions directory along with the log file segments
+
+-------------------------------------------------------------------------------------
+
+Kafka Cluster Architecture:
+---------------------------
+-Brokers are often configured to form a cluster, a cluster is nothing but a group of brokers that work together to share the work load, that's how the Apache Kafka becomes a distributed and scalable system
+-It can start from a single node broker in a development environment and grow upto to 100's of brokers in a production environment, however the notion of clustering brings in two critical questions,
+	-Who will manage Cluster Membership?
+	-Who will perform routine Administrative Tasks?
+		-In a typical distributed system, there will be a master node, that will maintains a list of active cluster members, master always knows state of members
+		-Who manages active brokers and how to know whether a broker is recently crashed or new broker has recently joined the cluster
+		-If an active broker is continuously working and suddenly it crashes, who will take over it and perform it's responsibilities?
+		-We need someone to re-assign tasks
+		-The answer is Zookeeper
+
+Zookeeper:
+----------
+-To answer above queries, important point to note is,
+	-The Apache Kafka is not a Master Slave Architecture
+	-It's a Masterless cluster, Zookeeper is used to overcome the Masterless issue
+	-Each and every broker has a broker id defined in the broker configuration file even the Zookeeper connection details is specified in the broker configuration file
+	-When the broker starts it connects to Zookeper and creates an ephimeral node using broker id to represent an active broker session
+	-The ephimeral node remains intact with Zookeeper as long as the broker remains active, if broker looses connectivitty for some reason, zookeeper will automatically removes the ephimeral node
+	-Therefore, the list of active brokers in the cluster is maintained as the list of active ephimeral nodes under the broker/id's path in the zookeeper
+	-Use below commands to check the broker ids linked to zookeper
+	
+PS C:\Users\91961\Kafka\confluent-7.3.1> ./bin/windows/zookeeper-shell.bat localhost:2181
+Connecting to localhost:2181
+Welcome to ZooKeeper!
+JLine support is disabled
+
+WATCHER::
+
+WatchedEvent state:SyncConnected type:None path:null
+ls /
+[admin, brokers, cluster, config, consumers, controller, controller_epoch, feature, isr_change_notification, latest_producer_id_block, leadership_priority, log_dir_event_notification, zookeeper]
+ls /brokers
+[ids, seqid, topics]
+ls /brokers/ids
+[0, 1, 2]
+
+Kafka Controller:
+-----------------
+-We know that a Kafka is a masterless cluster, the list of active brokers is stored in the zookeeper
+-However we still need someone to perform the routine administrative activities, such as monitoring list of active brokers and re-assigning the work when an active broker leaves the cluster
+-All these activities are performed by a controller, a controller is also one of the broker which is been elected as controller to take up some extra reponsibilities
+-There is only one controller in a cluster at any given point in time, it is responsible to monitor the list of active brokers in the zookeeper, when the controller notices that broker left the cluster it knows it is time to re-assign the work to the other brokers
+-The controller election is straight forward, the first broker starts in the cluster becomes the controller, by creating an ephimeral controller node in the zookeeper
+-When other broker starts they also try to create ephimeral node, but they receive an exception node already exists, they keep watching the ephimeral node, once it dies quickly other broker tries to take over it, anyways there is always one position available
+
+PS C:\Users\91961\Kafka\confluent-7.3.1> ./bin/windows/zookeeper-shell.bat localhost:2181
+Connecting to localhost:2181
+Welcome to ZooKeeper!
+JLine support is disabled
+
+WATCHER::
+
+WatchedEvent state:SyncConnected type:None path:null
+ls /          
+[admin, brokers, cluster, config, consumers, controller, controller_epoch, feature, isr_change_notification, latest_producer_id_block, leadership_priority, log_dir_event_notification, zookeeper]
+get /controller
+{"version":1,"brokerid":1,"timestamp":"1677950848953"}
+get /controller
+{"version":1,"brokerid":2,"timestamp":"1677951215643"} ###This is due to broker id 1 got killed
+
+-------------------------------------------------------------------------------------
+
+Partition - Log Files and Cluster Formation:
+--------------------------------------------
+
+-Kafka is scalable and Fault Tolerant system
+-Consider we have,
+	-Kafka Cluster
+	-2 Racks
+	-3 Brokers in each rack
+	-Rack1 : B0, B1, B2
+	-Rack2 : B3, B4, B5
+	-Let's create a Topic with 10 Partitions and 3 replicas
+	-Total Replicas : 30
+-Therefore Kafka Cluster by default tries to two things,
+	-Even Distribution of Partitions, to achieve load balance
+	-Achieve Fault Tolerance, duplicate copies to be placed on different machines
+-To partition assignment, following steps are taken by Kafka,
+	-Ordered list of Brokers
+	-Leader and Followers Assignment
+	-Round robin method
+-We have 10 partitions and 3 replicas (30 in total), 
+	-It should distribute 5 partitiions to each broker to achieve load balance
+	-Also fault tolerance also needs to be achieved
+	-For the partition assignment, it goes something like this,
+	
+	Brokers		Leaders		Followers		Followers
+	R1-B0		P0	P6			P5				P4
+	R2-B3		P1	P7		P0	P6				P5
+	R1-B1		P2	P8		P1	P7			P0	P6
+	R2-B4		P3	P9		P2	P8			P1	P7
+	R1-B2		P4			P3	P9			P2	P8
+	R2-B5		P5			P4				P3	P9
+
+-Leaders and followers are successfully created successfully across the cluster
+-Though we couldn't achieve perfectly even distribution .i.e
+	-R1-B0 > Has got 4 partitions
+	-R2-B4 > Has got 6 partitions
+-However we made an ideal fault tolerance at a price of little disparity example P4 parition
+	-R1-B2, R2-B5, R1-B0
+	-Even though one of the rack is completely down, we can still read the messages
+
+Leader vs Follower:
+-------------------
+-We know, broker manages two type of partitions .i.e 
+	-Leader Partitions
+	-Follower Partitions
+-Depending on type of partitions, broker performs two type of activities .i.e
+	-Leader Activity
+	-Follower Activity
+-For an example R2-B4,
+	-Has Two Leader Partitions P3, P9
+	-Has Four Follower Partitions P2, P8, P1 and P7
+	-Therefore R2-B4 broker acts as Leader partition for P3, P9 and act as a Follower partition for P2, P8, P1 and P7
+-Meaning of a broker act like a Leader means,
+	-It's responsible for all the requests from Producers & Consumers
+-Producer,
+	-First connects to any of the broker
+	-Requests the Metadata, it can connect to any of the broker, all the brokers will give the Metadata details
+	-The Metadata contains details of all the Leader partitions and respective host & port informations
+	-Now producer has the list of all the Leaders, now it's producer that decides on which partition it has to send the data
+	-Accordingly send the message to respective broker i.e. producer directly transmits message to a Leader, post receiving the message, the Leader will persists the message on the Leader partitions and sends back an acknowledgement
+	-****llly when consumer wants to read message, it will read fro the Leader of the partition
+-Followers never interact with Producers and Consumers, it's only job is to copy the messages of Leader partition and stay up to date, only aim is to get elected as Leader when the currnt Leader is down/crashed
+	-For the follower to stay in sync with the Leader, it connects with the Leader and requests for the data
+	
+The ISR List - In Sync Replica:
+-------------------------------
+-Followers always try to achieve 100% sync with the Leaders, however following resons may cause sync issues between the Leader and Followers,
+	-Network Congestion
+	-Follower Broker Crash/Restart
+-Leader is smart enuogh and always has a list of in-sync replicas, known as the ISR-In Sync Replicas (List of Followers in Sync with Leader) and it is a Partition Wise ISR List, these details are persisted in the Zookeeper
+-ISR List plays important role in electing next Leader if current Leader fails/crashes
+-The Sync between the Leader and Follower is judged based on the Offset in both of them, Follower always request new messages from Leader based on the Offset through which Leader can judge how far behind / how closer is the Follower, this also helps in maintaining the ISR-In Sync Replicas
+-Only the not far behind/closer followers gets updated in the List
+-ISR-In Sync List is Dynamic, the followers always get updated, based on the Offsets
+-The default value of Not too Far is 10seconds, however the value is configurable
+
+Committed vs Uncommitted Messages:
+----------------------------------
+-What happens if all followers have 11s behind Leaders, therefore no one qualifies to be in ISR and ISR is empty, if Leader has failed, who will be Leader?
+-What will happen to the messages those are collected in the most recent 11s in the Leader, whether we will lose them?
+-Yes, those messages collected in the most recent 11s will be lost, solution is simple, it is implemented using two concepts,
+	-Committed Vs Uncommitted
+		-The message is considered as committed, only if a copy of the data is available across the Leader and all the replicas
+		-The Leader sends acknowledgement to the Producer after message is committed
+		-Therefore at any given point in time the Leader fails, not an issue uncommitted messages will be replayed by Producers, becuase Producer always replays the messages for which acknowledgement is not recieved after certain polling period
+	-Minimum In-Sync Replicas
+		-.i.e min.insync.replicas=2
+		-It means at any given point in time, there needs to be 2 replicas available for a partition, or else data will be written and acts as only read only from that partition
+		-If producer tries to write anything, it will throw an exception message stating not enough replicas available
