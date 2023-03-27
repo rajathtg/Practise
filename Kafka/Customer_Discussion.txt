@@ -1,0 +1,116 @@
+Introduction:
+Hi All,
+Good Evening / Morning!
+Thank you for this opportunity, coming to my introduction, I'm a native to Bangalore city which is one of the fast growing IT hub in India, I'm also a Graduate Engineer with an overall experience of 6.7 years in IT industry, the work experience is spread across healthcare, insurance and public sector domains and with a good hands on experience in tools/applications/languages such as SQL, Python, Java, Hadoop ecosystem, Spark, Kafka, Airflow, Object Storage MinIO (S3), data bases like Apache Druid / MySQL / Oracle DB and reporting tools such as Power BI & Superset
+
+Coming to my recent assignment/project in TCS, it is UIDAI, UIDAI stands for Unique Identification Authority of India, which is one of the largest agency under the central government of India mandated to collect demographic and biometric information of the country's residents through enrolments and to provide services to residents as part of their identity during any verification / validation of their identity
+
+In this project I was part of Business Intelligence Track / BI Track, the business goal was to provide a near real time reporting of the Authentication and Enrolment trends on daily/weekly basis, by ensuring the security and confidentiality of identity information of individuals
+
+Coming to technical ascpect, whenever a Resident performs authentication (OTP/FingerPrint/Iris) it can be for opening a bank account, buying a new SIM card or any kind other kind of registrations which is required to prove the identity of an individual
+
+Post Authentication, the details reaches to UIDAI tech center in the form of packets (it includes both success / failure authentications if any), which undergoes series of validation called as SEDA process (SEDA is an acronym that stands for Staged Event Driven Architecture it is designed as a mechanism to regulate the flow between different phases of message processing.) the entire SEDA process is more or less like a black box for BI developers, post SEDA process the data is pushed on to RabbitMQ,
+	-Then a Kafka Connect source connector is used to read the data from RMQ and publish on to the first BI Source Kafka Topic, the format of the event/message data is in AVRO data format
+	-Kafka Connect source connector is also used to read the latest data of the registered vendors present on MySQL DB and publish on to a second BI Source Kafka Topic
+
+Business Hours:
+---------------
+Kafka (Authentication):
+Volume of data : 100,000 / minute
+Each message payload : ~2MB
+
+
+There are two Kafka topics 
+	-For the data flowing in through RMQ KStream is created
+	-KTable is created on the dataflowing in from MySQL which acts as a Lookup Table for the Vendor ID present in the event/message of the KStreams
+	-A join is established between KStream and KTable to enrich or enhance the data
+	-Post which a filter is applied to seggregate the Type of Authentication (OTP/Finger Print/Iris) and pushed on to a respective target topics
+	-Apache Druid which is a database, it has capability to read data directly from the Kafka Topics in real time, a dedicated tables along with required aggregation is created in Druid for OTP/FingerPrint/Iris
+	-Also a additional copy of the data is written onto Object storage S3 via Kafka Connect Sink connector for archival purpose
+	-During the process,
+		-Creation of required schemas
+		-Serialisation
+		-Handling of messages with null values/tombstone records is done
+	-The Power BI is the reporting tool which is integrated with Druid to provide the required reporting related to the Authentication,
+	-The types of reports generated are:
+		-The Bar chart which gives Success authentication based on the authentication type & Vendor : The report can be extracted in the CSV format and sent across to the Vendors for billing on the service provided by the UIDAI
+		-The Bar chart which gives Failure authentication based on the authentication type & Vendor : Which helps in analysing the reason whether the failure has caused due to any human error / if it is something to deal at technical side, so accordingly process can be streamlined
+		-To get an insight on authentication trends a unified dashboard that includes Pie/Stacked Bar charts,
+			-Which sector is utilising the service the most - Accordingly more resources could be deployed
+			-What type of authentication is preferred the most - OTP/FP/Iris
+			-What is the total authentication happening over period of time - Helps in scaling up the resources / optimizing the existing one
+		-Further a drill down graphs is also generated,
+			-This provides an option drill down to VTC level (i.e. Village/Town/City) based on the Vendor location
+
+Requirements or inputs is taken from Customers
+Close relation with customers
+
+Introduction
+Project
+Roles and Responsibility
+Customer requirement is taken
+Working at client location
+			
+There is one more similar pipeline which is based on Enrolment (It can be a update / new)
+
+Any Questions around this?
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+One more assignment is around the providing the processed data to ML engineers to train their model on Face Image Liveliness:
+
+Moto : As part of covid pandemic, UIDAI started to work on a new project called as FaceRD (Face Recognition Device), to provide/encourage a contactless authentication for the residents
+
+BI Team Task:
+	-This facility is still in pre-production testing stage
+	-The FaceRD data captured by the fieled engineers across different sectors in the country is sent to UIDAI tech center
+	-Post initial processing, the messages are pushed to multiple MySQL tables
+	-As a BI developer,
+		-I have to write a PySpark code to establishing a JDBC connection with MySQL tables
+		-The huge datasets which has the FaceRD data is extracted
+		-The initial level of data profiling/cleansing is done
+		-A Joining is performed at Spark level across the multiple Data Frames of FaceRD
+		-Post which multiple level of required transformation/aggregations are applied to meet the requirement of ML engineers and the end result is written on to a object storage (S3) and Oracle DB
+		-Data validation and quality improvement
+			-Stored procedures
+				-Target table truncated > CTE > push the temp data to target table
+			-Multiple views is created to enrich the data for business insights, this also comes with the cost on the performance
+		-The points such as,
+			-Required Spark tuning techniques like predicate pushdown, column pruning, broadcast joins, dynamic allocations etc are considered wherever applicable
+		-The entire process of ETL is scheduled with the help of the Airflow
+		-ML engineers extract the processed data from the S3 data lake and train their model on the Face Image Liveliness (a certain threshold will be set, the image captured need to meet the threshold or else it will be considered as Fake)
+		
+=======================================================================================================================
+
+Kafka Streams Error Categories:
+-------------------------------
+
+Kafka Streams has three broad categories of errors: 
+	-entry (consumer) errors
+	-processing (user logic) errors
+	-exit (producer) errors.
+
+Entry
+This type of error happens when records are coming in, and is usually a network or deserialization error.
+
+The related error handler is the DeserializationExceptionHandler interface, which has a default configuration of LogAndFailExceptionHandler. This default handler logs the exception and then fails. The other option is the LogAndContinueExceptionHandler, which logs the error but continues to run. You can also provide a custom implementation and specify the classname via a Kafka Streams configuration.
+
+Processing
+Generally, any exception related to logic that you provide will eventually bubble up and shut down the application. This could be related to mismatched types, for example. Kafka Streams provides a StreamsUncaughtExceptionHandler to deal with these exceptions, which are not handled by Kafka Streams (an example would be the ProducerFencedException).
+
+The StreamsUncaughtExceptionHandler returns an enum, and you have three options: you can replace the StreamThread, shut down the individual Kafka Streams instance, or shut down all Kafka Streams instances (i.e., all instances with the same application ID, which are viewed as one application by the brokers). If the error is severe enough, you want to shut down all applications. This is accomplished via a rebalance, where the command to shut down is communicated to all of the instances.
+
+Exit
+This type of error happens when writing records to a Kafka topic and is usually related to network or serialization errors (a common example is the RecordTooLargeException). These errors are handled with the ProductionExceptionHandler interface, and you can respond by continuing to process, or by failing. Note that the ProductionExceptionHandler only applies to exceptions that are not handled by Kafka Streams; it doesn't apply, for example, to a security exception, an authorization exception, or an invalid host exception (these would always result in failure). The default configuration for the ProductionExceptionHandler is the DefaultProductionExceptionHandler, and it always fails. For any other option, you need to provide your own implementation.
+
+Other Kafka Issue:
+------------------
+-In Sync Replica Alerts
+-Kafka Liveness Check Problems and Automation
+-New Brokers Can Impact the Performance
+-Questionable Long-Term Storage Solution
+-Finding Perfect Data Retention Settings
+-Overly Complex Data Transformations on-Fly
+-Upscaling and Topic Rebalancing.
+
+

@@ -1,0 +1,523 @@
+Kafka Streams:
+--------------
+-Processing of data stored in DataLake is called Data Processing
+-Processing of data in streams / Dataset in Motion is called Stream Processing and if it needs to be processed in seconds/milliseconds the idea is termed as real-time stream processing
+-Two things to explore:
+	-Creating and Managing Streams
+	-Processing Streams in Real-time
+-How to Apply events? it's not difficult if below queries are answered,
+	-Identifying & Modeling events
+	-How create Streams?
+	-Transporting events
+	-Processing events
+-Whats is an event > It is a business activity that we capture as a data object for processing
+-Stream of events are nothing but, continuous flow of data objects one after the other
+-Stream Processing Use Case-Categories:
+	-Incremental ETL
+	-Real-time Reporting
+	-Real-time Alerting
+	-Real-time Decision Making and ML
+	-Online Machine Learning and AI
+-Design Considerations:
+	-Time sensitivity
+	-Decoupling
+	-Data format evolution
+	-Reliability
+	-Scalability
+-Solution:
+	-Using Databases
+	-Using RMI & RPC
+	-File Transfer
+	-Messaging Systems
+		-Point to Point
+		-Publish/Subscribe
+			-Publisher
+			-Subscriber
+			-Broker
+			-Topic
+
+-----------------------------------------------------------------------------
+
+Bringing Data into Kafka Cluster as Streams is the important thing:
+-------------------------------------------------------------------
+
+There are two types of Application:
+	-In house systems
+	-Packaged/Third Party Systems
+		-DB Access to underlying tables
+		-Access to some APIs to allows extract those events
+		-Data Integration Tools / Kafka Connect can also be used
+
+---------------------------------------------------------------------------------------
+
+Stream Processing:
+------------------
+There are multiple ways to perform Stream Processing,
+	-Kafka Consumer API : Applies for simple and straight forward stream processing application
+	-Kafka Streams API : 
+		-This a brand new library for developing real-time streaming applications, this new library is built on Kafka Producer and Consumer APIs and known as Kafka Streams API
+		-Streams API is a next level of abstraction that offer us a frame work that makes real-time stream processing simple and straight forward
+		-Used for processing complex scenarios which the normal Consumer API fails to do effectively
+	-KSQL:
+		-Helps in providing a interactive, SQL like interface for stream processing on Kafka
+		-KSQL can be written interactively and view results pn CLI, save the results as a file and deploy it to production
+		-It offers multiple things, however real-life applications are designed using microservices architecture which cannot be achieved using KSQL
+		-End of the day, we would want to use Kafka Streams library
+		
+Kafka Consumer APIs:
+--------------------
+-Refer the Kafka Consumer - Pratical Introduction where Valid and Invalid explanations are given
+-It is simple one, no much operations involved
+Challenges:
+	-Issues starts when there is a huge difference between the rate at which produces produce message and rate at which consumers are consuming it later transforming and writing it to external storage
+			Producers 10K Events/Sec
+			Consumers 2K Events/Sec
+	-If there is only one consumer, then the application will fall farther and farther behind and would no longer remain a pratical real-time application
+Mitigation:
+	-Similar to how multiple produces write to single topic, we can introduce multiple consumers consuming from it
+	-However we need to write a logic to split the data among the consumers, so they work with their set of data and won't intefere with each other, how to do that?
+	-This is where topic partitions are handy, when we group of consumers reading data from same topic, we can split them by assigning them to read data from 1 or more partitions
+	-This will avoid data duplicacy
+	-We need to plan carefully the number of partitions
+	-How to create a consumer group? and add consumers in the same group, do we also need to something to assign partitions to the consumer?
+		-Kafka offers, automatic group management and re-balancing of the work load in a consumer group
+		-All we need to do is to set a group ID configuration, Kafka will automatically form a Consumer group and it will also add consumer to the same group, if they have the same group ID
+		-Kafka will also take care of assigning partitions to the consumer in the same group
+		-Membership in the consumer group is maintained dynamically, If a consumer fails, if a Partition assigned to it will be re-assigned to other consumers in the same group
+		-If new consumer is added, the partition is moved from any existing consumer to new consumer to maintain the balance
+		-Conceptually we can think of a consumer group that is a Single logical consumer that happens to be made of multiple processes sharing the work load, Kafka automatically manages all of this and whole process is transparent to the users
+		-As a programmer we're responsible for setting the Group ID configurations and starting the new consumer process, either on the same machine or on a separate computer
+		-Therefore rebalancing, fault tolerance and scalability is taken care
+Open Question??
+	-Assume that a partition was assigned to a consumer, the consumer processed the message and crashed, therefore Kafka will do it's part of re-assigning the partition to a different consumer, this is where we get a new doubt, whether the offset is taken cared? the new consumer should not process the messages which were earlier processed by the previous consumer
+	-How would Kafka handles this?
+	-Offset Management,
+		Current Offset : auto-offset-rest=earliest
+		Committed Offsets : auto-commit=true (this is additional check by Kafka to store committed records offset)
+	-Committed offset helps in storing the till date committed offsets, incase when consumer restarts/partition is re-assigned to another consumer, the committed offset is used to avoid duplicate processing and all this happens automatically, but we have option to take control in our hand and do it manually using commit APIs
+	-******There is a loop hole, the committed offset is only updated when the conumer comes back to poll again, consider consumer has read 10 messages and failed without making a second poll to the broker, therefore committed offset is not updated
+	-This will create duplicacy
+	-Kafka Offset management is a complex topic, not to worry if you don't understand the offset management, Kafka Streams allows you to get rid of all these complexities
+
+--------------------------------------------------------------------------------
+
+Kafka Streams API:
+-----------------
+-This is a 'Kafka Client Library' for processing and analyzing data stored in Kafka
+-We can easily embed Kafka Stream library inside a Java application
+-We can deploy client Applications on single machine or on Docker Containers
+-Can be scaled horizontally and vertically both
+-It is transparent, ""automatic"" load balancing and ""automatic"" fault tolerance
+-The core functionality of Kafka Streams library is available in the two flavours,
+	-Streams DSL : 
+		-This is a high level API, which is very well thought API set
+		-Allows us to handle most of the Stream Processing needs
+		-Hence DSL is the recommended way to create the Kafka Streams Application
+		-It should cover most of our needs and most of our use cases
+	-Processor API : 
+		-These are the low level APIs and they provide more flexibility than DSL
+		-Using processor API there is need of extra manual work and code on application developer side
+
+Problem Statement:
+------------------
+-Create a Kafka Streams application to do following:
+	-Read a stream from Kafka Cluster from the given Kafka Topic
+	-Print Key/Value pair on console
+-In Kafka Streams, we will be using Serdes, because this example is a data consuming stream application, we read a stream and print it, typically in real-time scenario, it will be reading the data and printing it to any DB, internally they create a combination of Producer and Consumer 
+	-Integer Serdes for Key
+	-String Serdes for Value
+-Previously we had used Serializer for producer and Desrializer for consumer
+-Next step is central part of Kafka Streams,
+	-Open a stream to a source topic :
+		-i.e. define a stream to Kafka Topic, that can be used to read all the messages
+		For this we already have the inbuilt functions streamBuilder
+	-Process the stream : 
+		-That means for each message, print the Key and the Value
+		For this KStream with foreach or peek (k,v) is used
+	-Create a Topology : 
+		-The Kafka Stream computational Logic is known as a Topology and is represented by a Topolgy class, whatever we define as computational logic we can get all that bundled into a topology object by calling the build method, we're using Java builder pattern that allows us to create step by step creation of complex Java objects using the correct sequence of actions, we define the series of activities for the Topology, finally call the build method to get the Topology object
+		-Core of the Kafka Streams application is the Topology of the application
+
+Bird View of Code Steps:
+------------------------
+-Define the Configurations properties
+-Create the Topology
+-Start the Stream
+-Shut down
+
+------------------------------------------------------------------------------------
+
+What is Streams Topology?
+-------------------------
+-Defines step-by-step computational logic of a stream processing application
+-It can also be represented using a Topolgy DAG,
+Kafka Topic
+	| <- Kafka Consumer
+	V
+Source Processor <-- Processor Nodes
+	| <- KStream
+	V
+Foreach Processor <-- Processor Nodes
+	
+Every Kafka Streams Application / Topology starts from subscribing to a Kafka Topics, because we need to consume streams to begin our Processing, Topology begins by  creating a Source Processor, creating source processor is straight forward, below is the code snippet from previous example,
+kstream=streamBuilder.stream(AppConfigs.topicName);
+-The source processor internally implements the Kafka Consumer to consume data from one or multiple Kafka topics and it produces KStream object, that will be used by it's downstream processors as an input stream
+-once you've a source processor and your KStream object, you're ready to add more Processors to the topology
+-Adding a new processor is as simple as calling a transformation method on the Kstream object for example we take a Kstream that was returned by the source node and make a call to the Kstream.foreach method, this process/operation will just add the foreach processor node to the Topology
+Kstream.foreach((k,v) -> System.out.println("Key=" + k +" Value= " + v));
+-However we can use the KStream transformation methods to create a Dag of processor nodes resulting in more sophisticated topology
+
+Kstream Class:
+	-Abstraction of a stream of Kafka message records:
+		filter()	--
+		map()		  | >> Return a new KStream
+		flatmap()	--
+		foreach() -- Doesn't return KStream it's output is Void (known as terminatiung or sync processors)
+		to()	  -- Doesn't return KStream it's output is Void (known as terminatiung or sync processors)
+		
+							Kafka Topics:
+							=============
+					POS												Shipment				  Loyalty			Hadoop-SINK						
+					|												  ^							 ^					^
+					|												  |							 |					|
+					V												  |							 |					|
+Requirement1 Source Processor  >>KS0>>	filter()    	 >>KS1>>     to()						 |					|
+											Home Delivery		 	 Sink Processor				 |					|
+																								 |					|
+Requirement2			       >>KS0>>   filter()	 	 >>KS3>> mapValues()		    >>KS4>>	to()				|
+											Prime Customers		 	 Notification Event			Sink Processor		|
+											
+Requirement3				   >>KS0>>	mapValues()      >>KS6>> flatMapValues()         >>>>>>>KS7>>>>>     		to()
+											Masking				 AnalyticsRecord									Sink Processor
+											
+
+------------------------------------------------------------------------------------------------
+
+Kafka Stream Architecture:
+--------------------------
+-Following concepts needs to be clearly understood to get a hold of Kafka Streams parallelism
+	-Multithreading-Vertical Scaling
+	-Multiple Instances-Horizontal Scaling
+	-Streams Topology
+	-Streams Task
+-Typical Kafka Streams application runs as single threaded by default
+-Similar to Producer, Multithreading can be implemented for Kafka Streams as well, by setting up below properties,
+props.put(StreamConfig.NUM_STREAM_THREADS_CONFIG, 3);
+-When running 10 threads, each thread will run/execute one or more Kafka Stream tasks
+-Degree of parallelism will be 10, because we're running 10 threads, ****Therfore increasing number of threads is on way of verticaling scaling your application
+-****Horizontal scaling can be achieved, by starting multiple streams application on different computers, even for each Kafka Streams Application we can configure the number of threads, however all these parallelism will be respective to that each application 
+-The secret of Streams tasks is hidden behind the Topology, consider there are two topics T1 and T2, Kafka Streams framework will look at it and create a fixed number of logical tasks
+	-The number of tasks is equal to the number of partitions in the input topic of the topology
+	-In case multiple input topics, number of tasks equal to largest number of partitions among those input topics
+	-If there are 2 topics with 3 partitions each, then Kafka Streams application will receive 2 partitions per task i.e. one partition from each topic
+	-Consider we started Kafka Stream application with two threads, in that 1 thread will receive 1 Task and remaining thread will receive 2 tasks
+	-Since tasks distribution is not even, the thread running two tasks will run slow
+	-Kafka streams framework is smart enough with respect to re-balancing (where there is an addition of instance/removal) and also fault tolerance
+	
+---------------------------------------------------------------------------------
+
+Understanding States and State Stores:
+--------------------------------------
+-Most of Stream Processing requirement would need you to remember some information or context from past events
+-The state is the table in the real-time streaming applications, where the status of the previous computation of the event is stored
+-The state maintained is part of a Source Processor, a processor state can be as simple as a Key-Value pair / large lookup-table / bunch of tables
+-Where exactly it gets stored in the Kafka?
+	-It can be In-memory
+	-Local File System
+	-Remote Database
+-The chosen State Store should provide two features, 
+	-Faster Performance : As we're working in real-time
+	-Fault Tolerance : We're working in distributed & real-time system
+-In stead of opting for a Remote Database, Kafka Streams provide us two options,
+	-Fault-tolerant in-memory state stores
+	-Recoverable persistent state stores
+-The processors are the ones who use state, a processor may/may not need to use a state, based on that we categorize it to 
+	-Stateless Processors (mapValues, filters and flatMapValues)
+	-Stateful Processors (Aggregation, windowing)
+
+Caution:
+-Consider there are three partitions of a Kafka Broker:
+	-The data flowing(reward points) for C1 customer is ingested to Partition1 of the Kafka broker for X purchases
+	-lllrly for C1 customer the Y purchases should also get ingested Partition1 of the Kafka broker or else historical data will be missed and this seems to be a downside
+-Above issue can be solved using two methods,
+	-To use right message Key and default partitioner
+		-If message key is the customer ID and we're using a default partitioner, all the messages will fall into same partition, because default partitioner will use the hash value of the message key and computes the target partition number, as long as the message key is the same, we will get same hash value
+		-If the message key is not common due to choosing of storeID at the beginning instead of the required message key, then some sought of re-partitioning is mandatory
+		-Repartioning is common for a complex Kafka STream processing application, it can be achieved by implementation of kstream.through() processor
+		-The through processor writes current stream to a given Intermediate Kafka Topic and we can also pass custom partitioner to a through processor, which will be used to re-partition the data
+		-The through processor again reads data from the Intermediate topic and returns a Kstream, the through method takes care of both read and write
+		-The through() process is used to achieve the seamless re-partitioning of your Kstream
+	-To ignore the message key and to use a custom Parititioner
+	
+Note: 
+-Re-partitioning is an expensive operation, we need to design our key in such a way that to minimise the need for repartitioning and try to avoid it, however the need for it is inevitable for any distributed framework and Kafka streams is no different
+-The intermediate Kafka Topic to be created before hand with required number of partitions and retention period appropriately
+
+		
+------------------------------------------------------------------------------------
+Introducing to KTable:
+----------------------
+-Kafka Stream APIs allows us to create tables, using an Abstraction called as KTables, these tables can be thought of as a Local Key Value state store, where we can store message key and value
+-KTable can be created similar to KStream, by opening a table against Kafka Topic, later all the messages will flow into KTable and go and sit inside a Local State Store
+-KTable allows insert (new values), update (if existing key comes with new value) and delete (if existing comes with null value) of values inside it
+-Summarize:
+	-KTable is an abstraction of update stream / change log stream
+	-We can visualize as a table with a Primary Key
+	-And each record in a KTable is an Upsert (Update/Insert) and Delete
+
+Problem Statement with KTable:
+--------------------
+-Create a Kafka topic that will receive a key-value pair of stock ticks
+-Send Following messages to the topic
+HDFCBANK:1250.00
+TCS:2150.00
+KOTAK:1570.00
+HDFCBANK:1255.00
+HDFCBANK:
+HDFCBANK:1260
+-Create Kafka Streams Application for the following:
+	1. Read the topic as KTable
+	2. Filter out all other symbols except HDFCBANK and TCS
+	3. Store the filtered messages in a separate KTable
+	4. Show the contents of the Final KTable
+	
+Topology/DAG for the Working KTable:
+-Stock-Tick >> Source >> "KTable" >> Filter >> "KTable" >> State Store >> "Query State Store"
+
+Note:
+-If we want to print details inside KTable, it isn't possible, we need to convert it to KStream, so we can print it or even if we want to apply any other functionalities like foreach/filter etc
+-By default Kafka will give it's own naming convention for state stores, to customize it we can mention "Materialized.as(AppConfigs.stateStoreName)"
+
+Summary of the Code:
+-KTable is an update stream backed by a local state store
+-Records are Upserted into the KTable
+-A record with an existing key and a null value is a delete operation for the KTable
+-You can use Ktable in the same way you are using KStream
+
+Table Caching and Emit Rates:
+-----------------------------
+-There was a delay of printing messages or pushing it to KTables as noticed, to overcome these issues we shall implement Caching and Emit rates
+-KTables are responsible for forwarding messages to downstream processors and as well as internal state store
+stock-tick >> Source >> KT0 >> Filter >> KT1 >> Downstream/Persistent State Store
+-A KTable will internally cache the records in memory and wait for a while for more records to arrive, why is that?, becuase this is an optimization technique to reduce the number of operations
+-This waiting is used by the KTable to perform a in-memory update and forward only the latest records to the downstream processors
+-This caching can be disabled, however if that is done so, KT1 will get all the records of HDFC Bank
+-To tune the KTable caching we can modify below properties:
+	-commit.interval.ms ##Max time for a processor to wait before emitting records to downstream processor or to the state store
+	-cache.max.bytes.buffering 
+		##Controls the bytes allocated for caching, remember this is the maximum buffer for all the threads in your application instance
+		##If we specify 10MB cache buffer and running 10 topology threads, each 1 will get 1MB cache share
+Note: The data is flushed to state store and then forwarded to downstream processor node, Whenever the earliest of commit interval or the cache buffer hits defined threshold
+
+//set commit interval to 1 seconds
+props.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 1000)
+//Enable record cache of size 10MB
+props.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 10*1024*1024L);
+
+Scope of above these configurations, both of the above mentioned configurations are the application level parameters, so it is not possible to specify different parameters for individual processor nodes in your topology
+i.e. means we cannot set commit interval of KT0 500ms and 100ms for KT1, no way idhu chancey illa
+
+If we want to implement at the individual processor level, we can use KTable suppress operator
+KTable<String, String> KT1 = KT0.filter((k, v) -> k.matches(AppConfigs.regExSymbol) && !v.isEmpty(), Materialized.as(AppConfigs.stateStoreName)).suppress(Suppressed.untilTimeLimit(Duration.ofMinutes(5),Suppressed.BufferConfig.maxBytes(byteLimit: 1000000L).emitEarlyWhenFull()));
+
+Global KTable:
+--------------
+-The KTable is the local copy of the State Store
+-The local copies are great, as they allow you to work on the data in parallel
+-It also means that in KTable, one task doesn't rely on the other task while working
+-However in some cases we need a table which is available for all the stream tasks i.e. Global KTable, even this is also an abstraction of an update stream, where each data record represent an update or insert
+-The Global KTable is a common table that any one can access it or read it, any changes to GKTable, should be available to all stream tasks even though they're running on different machines
+-However there is one fundamental difference between KTable and GKTable,
+	-Consider there is one Kafka Topic T with 5 partitions, w.r.t KTable it starts reading the data from each partitions in parallel and there are 5 individual instances of them running in parallel to achieve parallel reading, where each task is subscribed to one partition only
+	-In GKTable it's totally different, each GKTable Tasks reads data from all the available partitions on the Kafka Topic, here the moto is not parallelism, it is make sure when subcribed to any one of the GKTable, it has all the data from the topic, it's more like broadcasting, look tables and mainly used in star joins and foreign key look up
+Downside:
+	-GKTable requires loacl storage on each instance of the application and they also increase n/w traffic and broker work load because all the instances read entire data
+	-GKTable is good for small set of data to make it available to all of the instances
+
+Word Count Example:
+-------------------
+-The aggregation is group by value and count the words repeating
+-Post which KTable is created and data is persisted in the local state store
+-The KTable needs to be converted into the KStreams for printing the output
+-As an alternative we can also introduce a query server and query the data from the state store
+
+Streaming Aggregates - Core Concept:
+------------------------------------
+-Computing Aggregate is a two step process,
+	-Group By a Key
+		-Key is the most critical element for aggregation
+		-Data must be partitioned on the Key and all the keys should be available in the same partition for grouping, through() needs to be used for re-partitioning the data
+		-But we know grouping method will always going to change the key
+		-*****Good news is that Kafka Creators knew that, so they designed the Kafka Streams API, to deduct such needs for an aggregation and automatically re-partition your stream, without making a explicit through method call, so need to worry about through() method
+		-Our word count program is already full proof	
+	-Apply Aggregation formula
+		-Kafka Streams offers only three methods/functions to compute
+			-count()
+			-reduce() 
+				-Disadvantage is, it doesn't allow to change the data type of the stream
+				-We can't apply the reduce on the stream of invoices and return an aggregated table notifications
+				-Hence the input key,value type and output key,value type of the reduce method remains same
+				-This is not a problem in most cases, but in few cases it increases the steps
+				-ex: if the reduce method can take K grouped stream of invoices and returns an aggregated table of notifications we do not need this map method
+				-In reality map method is doing two things, changing a key to customer id, we do that in group by method without using groupbykey, the Map method was not needed to change the key
+				-Second thing we're doing in map method is to turn an invoice to notification, we can ignore map method if an reduce method can take an invoice and return a notification, but it is not permitted, that is were aggregate method takes an upper hand
+			-aggregate()
+				-It allows us to change the  type
+				-The aggregate mthod takes in three arguments,
+					-Initializer : 
+						-To initialize the state store, because aggregator is all about taking values from past state store, current values from the stream and combining them to compute the aggrgate
+						-However for the very first time the store will be empty, so intializer is used only once as initial value for state store
+						-Note: Reduce method by default initializes the state store as zeros
+					-Aggregator :
+						-This behaves same as reducer() and responsible for computing the aggregate
+						-Aggregator lambda is a k,v,aggValue lambda and will return the new aggregated value
+					-Serializer :
+			-Common Mistakes in Aggregation:
+				-Both the examples mentioned below doesn't cover the -ve scenarios
+					-Sum of rewards by the customer
+						-i.e. the sum of the reward points continuously increasing, how would you reduce the reward value when customer redeems his/her points, simple way is to keep an additinal field in the invoice that represent the redeemed reward points and subtract those points while computing aggregates, but doesn't go well with other examples
+					-Average salary by the department:
+						-What if? an employee swaps his department, the aggregate final value printed will be different, because KStream is not an ****Update Stream**** but an ****Append Stream****
+						-In such cases we need to model our use case using KTable - For Update Stream
+		-We don't have luxury to use sum,min,max etc
+*****Thumb Rule:
+		-If our scenario is just insertion of new records or ever growing table we need to opt for KStreams
+		-If our scenario includes updation of existing record based on the key then KTable is better choice
+-Most of the Kafka Streams API are available in the two variants,
+	-Key preserving API
+		mapValues(), flatMapValues(), groupByKey()
+		-We need to use above functions to work with values, while preserving the same key over the resulting stream
+		-We keep using the above ones, unless we purposefully want to change the message key
+	-Key changing API
+		map(), flatMap(), groupBy() and also transform
+		-Here the key gets changed, in other words it shows the intention of re-partition / re-distribute your data on the new message key
+		-Ideally always add a through() method after changing your message key
+		-However Kafka Streams DSL automatically deducts this and applies an automtic re-partition for us
+		-Whenever we use a Key Changing API, Kafka will internally sets a boolean flag that a new KStream instance requires a re-partitioning, Once this boolean flag is set if you perform an aggregate or a join re-partitioning is handled for us automatically, that is amazing isn't it
+
+*********Note:
+-Auto repartition happens only in two cases,
+	-When we're using a Key changing API
+	-Applying aggregation or a join
+-Outside above two scenarios we need to use through() method, no other options
+-We can perform aggregation on KStream/KTable, so primary source of aggregation could be KTable/KStream, however the outcome of aggregation is always a KTable
+
+
+KTable Count:
+-------------
+Problem Statement: Create a topic named person-age and send the following messages,
+	Abdul : 26
+	Prashanth : 41
+	John : 38
+	Milli : 26
+Create a Kafka Streams application to count the number of Persons by age
+	Age	 Count
+	26		2
+	38		1
+	41		1
+Send the following update message and compare the results with below tables:
+Prashanth : 42
+	Age	 Count
+	26		2
+	38		1
+	42		1
+
+-----------------------------------------------------------------------------------
+
+Stream Timestamps And Timestamp Extractors:
+-------------------------------------------
+-It's always good to compute results on hourly,daily sale window etc , instead of opting it for consolidated count, since no one is interested in such outcomes
+-Point is clear and straight forward, we often need to compute and create smaller chunks or buckets of data to work and calculate on that time period only
+-Here buckets are nothing but windows and time is the primary factor in the windowing
+-However there are two additional questions about time, they're,
+	-Which timetasmp?
+		-Event generation time / producer Api time, printed when an item is invoiced in a POS machine
+		-Insertion time, time when the message written on to the brokers partition/log appender
+		-Processing time, time when the message is recieved at Kafka Stream's topology
+	-How to read time?
+		-In general the timestamps are sitting inside the message or message metadata
+		-So which one to read or which one to consider, better all we need to do is this, set the below configurations, we're just saying how to extract the timestamp, WallclockTimestampExtractor is available for us as an out of the box timestamp extractor, which simply gives current system time
+props.put(StreamsConfig.DEFAULT_TIMESTAMP_EXECUTOR_CLASS_CONFIG, WallclockTimestampExtractor.class);
+
+Note: 
+-If we're opting for above WallclockTimestampExtractor, it simply means we're opting for a processing time**********
+-Accordingly if we want to use any other timestamp according we need to use different timestamp extractor
+
+-Finally how to use message timestamp? how will I extract created time from my message and use it for timebased windows, we got to create a custom timestamp extractor to meet the requirement and accordingly configure it
+
+Notion of Timstamps:
+	-FailOnInvalidTimestamp : Raise exception when timestamp is invalid
+	-LogAndSkipOnInvalidTimestamp : Skip the message if the timestamp is invalid
+	-UsePreviousTimeOnInvalidTimestamp : Use the timestamp of previous message when the timestamp in current message is invalid
+
+Tumbling Windows:
+-----------------
+-Kafka Streams API, offers two types of windows,
+	-Time window
+	-Session window
+Summary:
+	-Tumbling windows are fixed size, non-overlapping, gap-less windows, we can define the Tumbling window using the size of the window
+	-In the code we don't define the start time of the window, it is taken care by Kafka, Kafka API will look at the timestamp of the message and use the rounding algorithm to arrive at the start time of the window, they call it normalising window start to the epoch
+KTable<Windowed<String>, Long> KT0 = KS0.groupByKey(Grouped.with(AppSerdes.String(), AppSerdes.SimpleInvoice())).windowedBy(TimeWindows.of(Duration.ofMinutes(5))).count();
+
+Stream Time and Grace Period:
+-----------------------------
+-Consider there is a record arriving late, like FaceRD scenario, how to manage in that scenario
+Ex: Messages are arrived at below time and window time is of 5 minutes,
+	10:01
+	10:08
+	10:03 (Late comer)
+-What happens is, the 10:01 window is updated with the 10:03 details, with term this approach as continuous updates, it means that compute the aggregates for the window and forward the results to downstreams for reporting, if late record arrives then update the results and deliver again to downstreams for refresh the reports
+-Can we allow the late comers for the infinite? Ans is No
+-We can implement the Grace Period in such cases to manage the late comers
+
+Summary:
+--------
+Stream Time:
+	-Stream time clock is different than your wall clock time
+	-*******Stream time clock advances when you receive a new record with a higher timestamp
+Grace Period:
+	-Kafka windows are kept open to accept latecomers and implement notion of continuous updates
+	-Grace period allows you to close the window and reject late records
+	-In most generic cases, the default grace period is 24hrs
+
+Suppressing Window:
+-------------------
+-We call a suppress method and suppress is active until the window closes, this will avoid unecessary pushing of alert emails
+-Suppressing of the window needs some buffering, hence some memory for it
+
+Hopping Windows (lllr to Sliding in Spark):
+----------------
+-Fixed Size but Overlapping, defined with,
+	-Window Size
+	-Advance Interval(aka hop)
+
+------------------------------------------------------------------------------------
+
+Streaming Joins:
+----------------
+
+Join Operation 			Result 		Join Types 								Feature
+KStream – KStream 		KStream 	Inner, Left, Outer, Swapping for Right 	Windowed, Key-based
+KTable – KTable 		KTable 		Inner, Left, Outer, Swapping for Right 	Non-Window, Key-based
+KStream – KTable 		KStream 	Inner, Left, Outer 						Non-Window, Key-based
+KStream – GlobalKTable 	KStream 	Inner, Left 							Non-Window, Key-based or Non-Key Based
+
+-Pre-conditions / Limitations on joining two datasets in Kafka:
+	-Join are based on the Message Key
+		-If there is no valid key / key is null join can't be performed
+		-One exception is there, Non-Key Based join can be made between KStream-GlobalKTable
+	-Both the topics in a join must be co-partitioned
+		-i.e. partition count must be same
+		-If not co-partitioned, for one of the topic can re-written to a new topic and post which joining can be ensured
+		-One exception is there, Non-Key Based join doesn't require co-partitioning
+	-Right outer join is not allowed, instead swapping for the same is encouraged (swapping the datasets), however even swapping is not allowed between KStream-KTable & KStream-GlobalKTable, because swapping of the orders not possible
+	-Full outer join not allowed with KStream-GlobalKTable
+
+KStream-KStream Joins:
+----------------------
+-It should be a windowed join, if we opt for non-windowed join, it's like a two unbounded streams messages and Kafka cluster will crash
+
+KStream-KTable Joins:
+---------------------
+-This type of join is for LookUp and enrichment type of join

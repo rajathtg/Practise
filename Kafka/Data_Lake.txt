@@ -1,0 +1,44 @@
+Conception of Data Lake?
+	-Ingest : Data Collection and Ingestion
+	-Store : Data Storage and Management
+	-Process : Data Processing and Transformation
+	-Consume : Data Access and Retrieval
+
+Ingest:
+	-We have multiple ingestion tools,
+		-HVA
+		-AWS Glue
+		-Informatica
+		-Talend
+		-Kafka
+Store :
+	-It is nothing but,
+		-On-premise HDFS
+		-Amazon S3
+		-Azure Blob
+		-Google Cloud
+Process:
+	-Intial data quality check, transformaing and preparing data, correlating, aggregating and analyzing and also applying machine learning model
+	-Processing layer is further broken down into
+		-Process : Apache Spark
+		-Orchestration : Responsible for formation of cluster, managing resources, scaling up & down etc
+			-Three competitors,
+				-YARN
+				-Kubernetes
+				-Mesos
+Consumers:
+	-Data Lake is a repo of raw and processed data, consumption is all about putting it to real life requirement
+	-Consumption comes in all possible formats,
+		-Data Scientist
+		-Rest Interface
+		-File Download
+		-JDBC/ODBC
+		-Search
+DataLake platform is much more complicated as a whole, we also need bunch of other capabilities to complete this design / implementation,
+	-Security
+	-Workflow
+	-Metadata
+	-Data Lifecycle
+	-Monitoring
+	-Operations
+	

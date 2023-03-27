@@ -153,4 +153,4 @@ Transactions in Kafka Producer:
 -To achieve this, topic should have Replication Factor >= 3 and min.insync.replicas >= 2
 -We have to take care below points as well,
 	-Transaction depends on Idempotence
-	-Transactional_id_config must be unique
+	-Transactional_id_config must be unique i.e. we can't run two instance of Producer with same transactional ID

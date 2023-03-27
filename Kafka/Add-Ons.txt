@@ -1,0 +1,40 @@
+Teelcom domain:
+	Spark is used for processing Subcription plans
+		-Analuze he uses which plan in the last 1 year, let's push him to use 3G
+		-Analyse he uses Amazon Prime, push him for another product like Netflix
+		-Customer Product details
+	-Subscription : Netflix
+		-Contracts
+
+close to 7 years in IT industry as Data Engineer	
+I carry Datalake platform and Datalake technologies like,
+	-Python
+	-Apache Spark
+	-Apache Kafka
+	-Scheduling tool Apache Airflow
+	-Object Storage MinIO (AWS-S3 replica)
+	-DB's like Apache Druid, MySQL and Oracle
+	-Finally the reporting tools Power BI & Apache Superset
+
+It's a central government project of India no need to mention about UIDAI, let it be single line
+
+To recieve the business requiremnt from the customers to create a Kafka Data Pipeline convert it into business insights
+
+Requirement to capture all these user details in real-time, perform authenticate records and update details as early as possible, so user can get acknowledgement at the earliest and also it is pushed to downstream systems for further analysis
+
+To mitgate I've Architected and implemented real-time Kafka Data pipeline
+To handle all those users real-time details 
+
+From Field engineers > MySQL > Kafka Connect > Kafka Source Topic (8 Node Cluster, handling Billions of Events)
+1 Million per day, 500KB per record
+Develop the KSTreams Authenticate it in real-time as per business rules and aggregation, also join with help of KTable is used as LookUP like Vendor, geographical details for verification and enrichment
+After applying Filter we loaded into target topics
+Downstream are using the target topics data for sending real-time notification
+Integrated with Druid and further integrated with Power BI
+Kafka connector Sink connector to Data lake for analysis and archival purpose
+AVRO File Format, Serialization and Schema
+
+============================
+
+Spark:
+One liner business requirement

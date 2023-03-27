@@ -196,5 +196,23 @@ dataDir=../tmp/zookeeper
 setx KAFKA_HOME C:\Users\91961\Kafka\confluent-7.3.1
 SUCCESS: Specified value was saved.
 
+======================================================================================
 
+Connect Docker with IntelliJ:
+-----------------------------
 
+-Open IntelliJ > Files > Settings > Plugins > Search "Docker" and Install it > Apply and Ok
+-Launch Docker Sektop > Settings > Enable > Expose daemon on tcp://localhost:2375 without TLS
+-Open IntelliJ > Files > Settings > Build, Execution, Deployment > Docker > TCP Socket > Engine API URL > tcp://localhost:2375 > Apply and OK
+-In IntelliJ IDE > services tab > Docker will be available > Try running it and all the container & images to be available
+
+===============================================================================
+
+Installing Open source Apache Kafka:
+------------------------------------
+
+-Install the binary file given in the course, uncompress it
+-GoTo environmental variable add below paths,
+-Under User variables for 91961, add below things:
+	-Click on 'New button' >> OPEN_KAFKA & C:\Users\91961\Kafka\kafka23\
+	-Edit Path and add "C:\Users\91961\Kafka\kafka23\bin\windows"

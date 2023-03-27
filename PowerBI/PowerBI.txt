@@ -1,0 +1,38 @@
+PowerBI:
+--------
+-It is a business intelligence tool, which basically helps to analyse your data, clean your data and also helps in creating a visualization report, do a drill down and also export it
+-The multiple components of Power BI are:
+	-Power Query : 
+		-Helps in ETL (Extract Transform and Load)
+		-Cleaning the data (removal null, junk etc)
+	-Power Pivot : 
+		-Used for Data Modelling
+		-If there are multiple datasources, if I want to collect data from them, create relationships between them, we can use Power Pivot
+	-Power View :
+		-This is basically the one that creates a visualization
+		-Pie, Donut, Bar, Map chart etc
+	-Power BI Service :
+		-To share the charts with multiple people seated at different corners of the world, we can use Power BI Service
+
+Advantages of Power BI:
+	-Top reporting tool preferred across industry
+	-Loaded with more features
+		-We can write 1200 functions (m and dax functions)
+		-Dax is nothing but Data Analysis Expressions, it's a data programming language that is used through out the Power BI for below purposes and also it has collection of all the functions that comes in handy in producing very cool formulaes and expressions that can be used to solve several Data Analysis Problems
+			-Calculated Columns
+			-Measures
+			-Custom Tables
+			
+		-280 chart visuals
+	-Cheapest reporting tool in the market
+	-Supports importing data from 100+ different Datasources
+	-It also supports data in different formats
+		-Structured
+		-Unstructured
+		-Semi-Structured
+
+How Power BI Works?
+	-There are two things here,
+		-Power BI Desktop : For development and download and install, generate the reports and push it to Power BI Service
+		-Power BI Service : Cloud version for sharing and collaboration with all the stake holders across the globe
+		-The process is automatic, once the 

@@ -80,3 +80,7 @@ Task:
 		-To achieve above step we're using simple open source project, jsonschema2pojo, this is a reasinable choice to generate both Java and Scala Code
 	-Skeleton Code:
 		-Let's define Schema for the Object post creation of a Maven project
+		
+Creating POJO from Avro Schema:
+-------------------------------
+-The Avro generated classes doesn't support the inheritance
