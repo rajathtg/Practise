@@ -436,12 +436,12 @@ Stream Timestamps And Timestamp Extractors:
 		-Processing time, time when the message is recieved at Kafka Stream's topology
 	-How to read time?
 		-In general the timestamps are sitting inside the message or message metadata
-		-So which one to read or which one to consider, better all we need to do is this, set the below configurations, we're just saying how to extract the timestamp, WallclockTimestampExtractor is available for us as an out of the box timestamp extractor, which simply gives current system time
+		-So which one to read or which one to consider, better all we need to do is this, set the below configurations, we're just saying how to extract the timestamp, WallclockTimestampExtractor is available for us as an out of the box timestamp extractor, which simply gives timestamp of the processing time
 props.put(StreamsConfig.DEFAULT_TIMESTAMP_EXECUTOR_CLASS_CONFIG, WallclockTimestampExtractor.class);
 
 Note: 
 -If we're opting for above WallclockTimestampExtractor, it simply means we're opting for a processing time**********
--Accordingly if we want to use any other timestamp according we need to use different timestamp extractor
+-Accordingly if we want to use any other timestamp according we need to use different timestamp extractor or right custom code
 
 -Finally how to use message timestamp? how will I extract created time from my message and use it for timebased windows, we got to create a custom timestamp extractor to meet the requirement and accordingly configure it
 
