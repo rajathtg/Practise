@@ -1,0 +1,134 @@
+Customer number: 3165403
+Diary number: 7218/110/2023
+
+KT - Kafka Stream Application:
+==============================
+-In our Architecture, we already have data flow from Kafka to PEGA
+-The existing Kafka in the Datalake we have two approaches to write data onto it
+	-One is writing data into from Spark directly through batch process
+	-Second is from realtime directly i.e. we're getting from JPD/CDC
+		-Ex: There are ten tables in JPD or CDC
+		-Those table data will be written onto the 10 Intermediate topics on the Data ingestion layer with help of Debezium Connector
+		-Then inside Data lake we have Kafka right, we have created Kafka Stream for that, the sources for those stream applications are 10 Intermediate Kafka Topics
+		-Once data received through the Intermediate Kafka Topics is processed and transformed with help of Kafka Streams, the data is written onto the different different target topics (like one for product, business etc)
+		-The data on the target topic is consumed by PEGA
+-Docker-test / Jupyter server is used to test our Kafka related programs/utilities etc
+-To use command line Kafka utilities, we need to download the Confluent Kafka binaries and later run the Consumer-Producer applications
+-At Elisa, once code is developed in IntelliJ, we need to run it on the Server to test it, how to do it?
+	-In intelliJ we have,
+		Clean : To clean all the variables and clean your code at the backend
+		Compile : To build up the code and to build up the code we have certain configurations in the POM file, which will be used to create a class file
+		Package : Post clean and compilation, package is done, it's for creating the jar
+		install : To install code from GitHub
+		deploy : clean + compile + package + vulnerability check and write it to remote repository mentioned in the POM file
+-Once jar is created, it will be saved to any target location, there will two files created, snapshot.jar & snapshot-jar-with-dependencies.jar
+-Once jar is created we need to migrate the jar from local system to server location, this can be achieved using the winscp
+-Once Migrated to Docker-test server, below command is used to run the jar files,
+	-java -cp <jar_file_name> <class_name (package_name + class_name)>
+	ex: java -cp gsmorders-avro-producer-1.0-SNAPSHOT-jar-with-dependencies org.example.avro.test.gsmorders_avro_testing
+
+-POM File:
+----------
+-In each and every application we will be having POM file, it's mandatory one, it has multiple sections like,
+	-defining the package / dependencies name
+	-properties section that has version details of plugins / dependencies
+	-repositories : to be informed by Yogesh
+	-dependencies : Where we mention all our dependencies, which is required by our code like Kafka Client, Apache AVRO is required etc
+	-Plugins : Like avro-maven plugins (used to generate class or source file) etc
+	
+-File Structure:
+----------------
+idea
+src
+	main
+		java
+			<A package>
+				gsmorders_avro_testing
+		resources
+			avro
+				gsmorders.avsc
+			kafkaconfig.properties : details of bootstrap servers and SSL certification
+			streams.properties : schema registry url and ssl details
+	
+************Note: 
+-When we want a "jar" file, we need to make packaging as jar, but the Kafka Application in productuion has a different setup of POM file and everything
+-In production we're not creating a jar, instead we're pushing the jar to one of our remote repository and it's not GitHub
+-For every new consumer groups, we need to request for a new SSL keys from Data Lake team
+-We don't require the streams.properties when we process simple json, strings etc
+-We would require streams.propoerties when we need to process additional schemas like Avro, parquet, even json (if required) etc
+-Kafka streams uses schema registry to check schema of the data present on the Kafka Topic matches with it, later it will flow it further
+
+Avro Sample Message Schema Extractor:
+-------------------------------------
+-There are multiple connect.names, where main one is like for ex:
+	-"connect.name": "jpd.dbserver.sacc.gsmorders.Envelope"
+-Sub connect.names can be like,
+	-"connect.name": "jpd.dbserver.sacc.gsmorders.Value"
+-In the data sent by source, it is divided into below parts,
+	"Before" : It will be blank if op is "i" and will have data if op is "u" or "d"
+	"After" : any changes incase if op is "u" or it's a new message if op is "i"
+	"Source" : jpd server
+	"Op" : "u" (update) or "i" (insert) or "d" (delete)
+	"ts_ms" : Time 
+-"Before", "After" and "Source" are the schema level fields
+
+Different type of POM file:
+---------------------------
+-We don't always prefer to create a dependency jar file, at times we prefer to package as a POM, for example
+	-For jar <packaging>jar</packaging>
+	-For pom <packaging>pom</packaging>
+-In one of the examples we have a <parent> tag, it's a generic tag set as a standard and we can add additional changes under it
+<parent>
+	<groupId>fi.elisa.datalake</groupId>
+	<artifactId>datalake-parent-pom</artifactId>
+	<version>1.1.0</version>
+</parent>
+which already has a "Data Lake" parent pom which is already been created and it's been loading in our remote repository where we have to push our code itself, we're kind of looking into the production way of running the code
+-Since the jar is not created, we will be performing packaging interms of a pom, data is pushed to remote repository in the form artifacts, docker will directly pick the details from there and run it
+-Whenever we're writing a new group Id we'll be using the parent group Id as a prefix, example,
+	<groupId>fi.elisa.datalake.pega.kafka</groupId>
+	<artifactId>pega-kafka-integrations-parent-pom</artifactId>
+	<version>1.0.10-SNAPSHOT</version>
+	<packaging>pom</packaging>
+-We have two additonal things, release and snapshot repository, according to our requirement we can set so an aritifact will be pushed or wriiten ti either release / snapshot directory, whenever we choose deploy in the maven this action item will be trigger
+
+*******Note : 
+-The name of the remote repository which is been used is "artifacts.saunalahti.fi" has all the artifacts which we create as a developer
+-Once the data is in "artifacts.saunalahti.fi" docker will pick the code from here and write it or perform the necessary actions
+-Above all effort of creating parent child kind of relation is done to meet the requirements of CI/CD pipeline
+
+Deepdive:
+---------
+-The main application here is pega-kafka-integration, under this main application, we have different modules to serve the business requirements,
+	-One Kafka Stream for jpd-contract related data
+	-One Kafka Stream for sellable-product related data
+	-:
+	 :
+	 :
+-To interlink multiple multiple modules with parent module we need to mention them inside the parent module:
+<modules>
+	<module>sellable-product</module>
+	<module>kafka-stream-application</module>
+	<module>pega-commons</module>
+	<module>jpd-contract</module>
+	<module>jpd-gsmorders</module>
+</modules>
+-To add a new stream module under the main module, just right click, main application "pega-kafka-ingestion" in the intelliJ choose New > "module" that is it and it gets auto added in the Main POM file as well, but under driver we need to manually add it and also to add as a List in Main.java file******************(try it once)
+-*****Inside module ex: kafka-stream-application, we can mention dependency on other module like pega-commons, jpd-contract etc with a <dependency> tag and not as a <module> tag
+-In a <dependency> if we don't mention version of the artifact, it just means that it is pulled from the <parent>
+-The stream.properties file for each module is kept under class.package name for all module and it as Kafka Topic names used for each module
+-allPegaIntegration.stream() is nothing but the list of objects that is getting called,
+	-new GsmOrdersToPega()
+	-new COntract()
+	-new SellableProduct()
+
+jpd-gsmorders:
+--------------
+-We work with the Avro Files
+-Before/After/Source/OP can be viewed while testing
+-Using JsonNodeFactory, a Json is created
+
+**************************One Line Explanation : kafka-stream-application[pega-kafka-stream-application] calls pega-commons as an interface to read the stream properties files and then pega-common calls remaining to run as a stream
+
+What is Java Interface, a home work for me
+Topology to be revisited 1:05:00
