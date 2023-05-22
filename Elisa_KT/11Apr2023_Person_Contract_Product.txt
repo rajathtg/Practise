@@ -1,0 +1,64 @@
+Project level work flows:
+-------------------------
+-The main source of data which we have is,
+	-Person Data : Indeed it's a customer details
+	-Contract Details : The subscription details held by the customer
+	-Product Details : The actual product it can be data pack, OTT plan etc
+-More data is available in the Product table, it is the lowest layer / granular layer that has all the details
+-The product table receives data from multiple sources, get those all data, join it, apply filters and finally yes, we have the output that will be utilized by the marketting team
+-Even Person and Contract data is used for other purpose as well, even they're main source of data for Product table as well
+-The start+process and end_process of the dags is used for monitoring the start and end process, multiple loginfo steps are added as part of log monitoring or the audit_log process
+-For Prodcut there are close to 20 to 25 tables, which we're joining and processing, for this we need to get the latest data from the Datalake (which has data in two formats, historical & incremental)
+	-aws s3 ls s3://baikal-snapshot/parquet/viestipalvelu/
+		2023/ ##Daywise data, always have T-1 days contracts data, we're going for T-1 just to make sure we're not missing any of the data even if there are late comers
+		latest/ ##This is a snapshot data of full data and doesn't have change history
+
+find_latest_s3_data (task):
+---------------------------
+-Helps in iterating in the below path to get the latest data and return it to Spark Job which read the data directly from that particular path,
+	-aws s3 ls s3://baikal-snapshot/parquet/<tables_list>/2023
+		ex: aws s3 ls s3://baikal-snapshot/parquet/viestipalvelu/2023
+		ex: aws s3 ls s3://baikal-snapshot/parquet/jpd/2023
+-Within the task we have a dictionary, where we will be mentioning all the paths which we're going to use or fetch the data
+-For each and every major tasks, there are multiple utilities available ex: find_latest_s3_key, this helps in fetching the latest record from the baikal-snapshot bucket, by looping through the dates from current date
+-Point to note, the details for "user_device_model" and "product_group" we don't get data on daily basis, hence in the path details, which is a dict we have mentioned path until latest/
+-Once the latest data is identified, XCOM_PUSH is used, later XCOM_PULL is used to communicate between the tasks in Airflow
+-Post which we're calling jpd_common_base, this is not called for any business purpose, basically it is called for simplification of data
+
+Note: 
+-GitHub repository, airflow-jobs/dags/pega/ it is the main or master branch, here all the Pega related jobs will be available here
+-Here we can all jobs directly or some modules based on the requirement
+-For example, jpd-product-to-pega.py has 1000s of lines, hence it is divided into multiple modules and we will call that module, to call we got to import similar to package
+-jp_base_common.py:
+-------------------
+	-Whatever Airflow tasks created for Product dag, they all use certain specific certain kind of data, which is the main source of data, after that it will do required join with other complementory data
+	-Few data remains through out the work flow and others remain as main source of data which is being used everywhere
+	-So, common module is created, the data required by multiple tasks (through out workflow) is created and in every other module, this data is directly read and need of computation again and again can be avoided
+	-Within common below validations are done,
+		-SSN #, account_id validations
+	-ytheystiedot (contact details of Person)
+	-HETU (called as SSN#)
+	-Address part is enriched based on requirement
+	*****Here the final data is a joined data of contract, product and ytheystiedot
+	-Products main source is COntract (i.e. jpd_contract), from contract we will be seggregating based on the needs
+	-Null checks are also important
+	-The child and Parent Product concept to understand the products bought by child under the name of Parent since the child is minor, ex Parent1-Product has a sub product Parent2-Product, has a sub product Parent3-Product and so on....
+
+Data Flow is as below:
+----------------------
+-The base/basic data is jpd_base, coming directly from CRM system
+-To track back, jpd_base is helpful, it's like parent data
+-Source is always jpd and mdm is also using jpd data, performs authentication, enriches jpd data and makes it ready for business process
+-Prod_Holding data : also uses jpd_data and enriches with certain more details
+-last_prod_changes_module : Has details on previous closed date, previous opened date, contract previous_id etc
+
+jpd_base_batch1 (Airflow Task):
+-------------------------------
+-The main source for this task comes from previous task which is a joined data of contract, product and ytheystiedot
+-This script is responsible for generating jpd base for the modules - Handset, viihde (OTT/entertainment), vahtilive (watching live content), Turvapaketti (security packages), Pilivilina (Drop Box, kind of cloud storage), Pilivilna Plus and load it to data lake for the further processing in Product table generation
+-Avattu(opened) and Suljettu (closed)
+-Contract_aindex acts as primary key
+-Extraction of Handset data this comes from jpd_handset_base
+-viihde base data comes from contract details
+
+Finally, the outputs for jpd_base_batch 1 &2 are loaded to the baikal-pega/aprquet/product/ for product, |||ly replace with contract and Person

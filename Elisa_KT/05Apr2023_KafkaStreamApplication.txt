@@ -1,6 +1,3 @@
-Customer number: 3165403
-Diary number: 7218/110/2023
-
 KT - Kafka Stream Application:
 ==============================
 -In our Architecture, we already have data flow from Kafka to PEGA
@@ -10,10 +7,11 @@ KT - Kafka Stream Application:
 		-Ex: There are ten tables in JPD or CDC
 		-Those table data will be written onto the 10 Intermediate topics on the Data ingestion layer with help of Debezium Connector
 		-Then inside Data lake we have Kafka right, we have created Kafka Stream for that, the sources for those stream applications are 10 Intermediate Kafka Topics
-		-Once data received through the Intermediate Kafka Topics is processed and transformed with help of Kafka Streams, the data is written onto the different different target topics (like one for product, business etc)
+		-Once data received through the Intermediate Kafka Topics is processed and transformed with help of Kafka Streams, the data is written onto the different target topics (like one for product, contract, business etc)
 		-The data on the target topic is consumed by PEGA
--Docker-test / Jupyter server is used to test our Kafka related programs/utilities etc
+-The whatever Stream Applications we have developed, we can use Docker-test / Jupyter server to test our Kafka related programs/utilities etc
 -To use command line Kafka utilities, we need to download the Confluent Kafka binaries and later run the Consumer-Producer applications
++++++++++++++++++++++++++
 -At Elisa, once code is developed in IntelliJ, we need to run it on the Server to test it, how to do it?
 	-In intelliJ we have,
 		Clean : To clean all the variables and clean your code at the backend
@@ -22,7 +20,8 @@ KT - Kafka Stream Application:
 		install : To install code from GitHub
 		deploy : clean + compile + package + vulnerability check and write it to remote repository mentioned in the POM file
 -Once jar is created, it will be saved to any target location, there will two files created, snapshot.jar & snapshot-jar-with-dependencies.jar
--Once jar is created we need to migrate the jar from local system to server location, this can be achieved using the winscp
+++++++++++++++++++++++++++++++
+-Incase we're using IntelliJ Once jar is created we need to migrate the jar from local system to server location, this can be achieved using the winscp
 -Once Migrated to Docker-test server, below command is used to run the jar files,
 	-java -cp <jar_file_name> <class_name (package_name + class_name)>
 	ex: java -cp gsmorders-avro-producer-1.0-SNAPSHOT-jar-with-dependencies org.example.avro.test.gsmorders_avro_testing

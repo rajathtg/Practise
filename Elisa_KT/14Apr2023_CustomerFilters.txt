@@ -1,0 +1,102 @@
+Filters Used in Data Load to On-Premise DB:
+-------------------------------------------
+	-Old Customer Filters : Effective until Oct,2022
+	-New Customer Filters : Effective from Feb 2023
+
+Note: This concept is mainly for the customer base to which PEGA is marketting
+	
+-As we're aware there are three major entities as per marketting perspective
+	-Person > Contract > Product (Get to know how they're linked from Yogesh's Video)
+	
+1. One contract can have multiple products or group of products for same kind of package
+2. For each entity (Person, Contract and Product) we used to have different data, and it used to come from MDM and that is were all the data is been merged
+3. For JPD side our contract is a customer and not person data, hence from JPD side we can't pull the MDM ID or anything for a Person Data
+4. From JPD side we have contract and customers and we don't have any products
+5. In general in JPD, a contract is a customer, ex: a individual goes to a shop/online, wants to open a new contract there, a customer number is created and that's our contract in terms of marketting perspective, therefore under each customer number a their contracts will be tagged and their contract is our product and it is related to product level in marketting field
+6. In that case our contract and product in relation to JPD data is as below,
+	Contract >>> JPD Customer
+	Product	 >>> JPD COntract
+	so we have to go one level down, while playing with JPD data
+
+Why are we using MDM more or referring to MDM?
+----------------------------------------------
+1. At JPD side everytime we open, we create a new customer number, there is no way all these customers are number tagged to one person, but JPD doesn't know that, we don't have an entity that can hold them together, that's why we use MDM
+2. MDM helps to check all the customers and contracts from JPD based on their SSN and address details and everything based on many other rules and it creates one metadata entity for us
+3. The meta data entity created by MDM is the Person data which we are using
+
+Why there is a need for New Filters? and what's the issue with Old Filters:
+------------------------------------------------------------------------------
+
+Older Filters Problem:
+	1. Person:
+		-lower(Bereavement)!='true' >>> Customer is not alive is true
+		-lower(ISCUSTOMERACTIVE) = 'true' >>> To extract only active customers data
+		-Ideally this flag is not reliable as we thought earlier, considering MDM is seeing a sunset, there needs to be some changes to be called i.e. new filters to be developed
+	2. Contract:
+		-All Active and Future Contracts
+		-lower(ISCUSTOMERACTIVE) = 'true' and CLOSEDDATE <= 18 Months >>> .i.e retain closed contracts that we closed within last 18 months for active customers
+		-lower(ISCUSTOMERACTIVE) = 'false' and CLOSEDDATE <= 3 Months >>> .i.e retain closed contracts that we closed within last 3 months for inactive customers
+		-This already creates a gap, contract table has inactive customers details (retained for 3 months) and if they want to find matching Person details then it's not possible :(
+	3. Product:
+		-All Active and Future Products
+		-lower(ISCUSTOMERACTIVE) = 'true' and PRODUCTENDDATE <= 18 Months >>> .i.e retain closed products that we closed within last 18 months for active customers
+		-lower(ISCUSTOMERACTIVE) = 'false' and PRODUCTENDDATE <= 3 Months >>> .i.e retain closed products that we closed within last 3 months for inactive customers
+		-This already creates a gap, contract table has inactive customers details (retained for 3 months) and if they want to find matching Person details then it's not possible :(
+		
+New Filters:
+------------
+-Since Feb 2023, below customer filters have been implemented
+-The hierarchy has been defined as Product >> Contract >> Person
+-Hence, Marketing permissions (like customer provide a mandate to receive SMS, EMAIL, Device, Survey Marketting etc.) dependency has been implemented at Product level along with all other required filters rather than at Person level
+-In general Marketting Campaings to a Person is handled by PEGA team, but similar ideas are been used in the New Filters
+-As per GDPR rules and Finnish Laws, if there is inactive customers and he has denied all kinds of permissions, then we can't market to them, this also needs to be added in new Filters
+-If active customers also denies all marketting permissions, we have multiple ways to find loop holes and enable it, inactive means it is difficult
+
+1. First we try to understand what kind of products we need to retain at product level, based on that we pull out contracts and Person details for the given contracts
+******Note: The actual business hierarchy remains the same i.e. Person > Contract > Product, only for the filter purpose we went with reverse order
+
+
+Note:
+PSD : Product Start Date
+PED : Product End Date
+CT : Current_Timestamp
+
+Product Status is Active / Open :
+	1. PSD <= CT and (PED is Null or PED > CT)
+	2. PSD is NUll and PED > CT
+Product Status is Future :
+	1. PSD > CT and (PED is NULL or PED > CT)
+Product Status is Inactive / Closed : 
+	1. PED <= CT
+
+--------------------
+
+Below is the way to check the Customer (MPER/IND) data or the conditions he must have :
+	Open product (any product, product type can be anything)
+	OR
+	Future product (Open date in Future)
+	OR
+	(
+	(
+	(
+	Closed product (other than Luottokauppa)
+	AND
+	Latest product closed less than 12 months ago
+	)
+	OR
+	(
+	Closed product (Luottokauppa)
+	AND
+	Latest product closed less than 12 months ago or product open date less than 48 months ago
+	)
+	)
+	AND
+	one of marketting permissions active with "AllowedConsent"
+	)
+	OR
+	MPER in USER_MDMID in PRODUCT to identity if customer is a user else FILTER OUT ******These are called as GSM users where Dad buys contract for minor, but as per rules we can't market to minor instead store their details, once they reach maturity they can be potential customers
+	
+*******Note: Luottokauppa is a device Product, bought by the customer, ex he bought an iphone, router etc then he gets a warranty of 3 years and top of that as per GDPR + Finnish Laws we can keep or send marketting emails to owner for +1 years after 3 years of warranty so a total of 4 years in case where the Luottokauppa is "True"
+	-Refer the COnfluence or Python script fl_product_to_pega.py
+	
+This helped in removing close to 150,000 customers from customers base who weren't essential or to whom sending marketting was not as per GDPR + Finnish Laws and instead 90,000 customers were added to whom sending the details as discussed were important, all this marketting details to customers were shared by PEGA

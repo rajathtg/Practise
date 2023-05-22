@@ -1,0 +1,31 @@
+-Mediamorph is the Main Data Source
+-Received in the form of CSV files, pulled into Data Lake
+-It's a incremental
+-AITIO : Sold it to external vendor called as NENT (Received in the form of Parquet FIle)
+
+
+Viihde Usage to Pega:
+---------------------
+-User Login Information is received from JPD
+-Only Usage trends received from Mediamorph
+
+PEGA Curious about:
+-------------------
+-PEGA VIIHDE Usage
+-VIIHDE EPISODE STATS
+-VIIHDE EPISODE TITLE
+-RECORDING DETAIL
+
+netgem : set-up-box
+
+Customers watch through:
+	-APP
+	-WEB
+	-SETUP Box
+	-TVOD
+	-SVOD
+	-
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Technical Availability:
+-----------------------
